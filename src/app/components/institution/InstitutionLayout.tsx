@@ -1,0 +1,264 @@
+import React, { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Home, Users, BarChart3, Eye, FileText, User,
+  Lock, ShieldOff,
+} from 'lucide-react';
+import { useInstitutionAccess } from '../../contexts/InstitutionAccessContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { NotifBellButton, NotificationsPanel } from '../shared/NotificationsPanel';
+import { useUser } from '../../contexts/UserContext';
+import { ModuleAcces } from '../../contexts/BackOfficeContext';
+
+const PRIMARY_COLOR = '#712864';
+
+// Map modules -> routes institution
+const MODULE_ROUTES: Record<keyof ModuleAcces, string[]> = {
+  dashboard: ['/institution', '/institution/dashboard', '/institution/dashboard-analytics'],
+  analytics: ['/institution/analytics'],
+  acteurs: ['/institution/acteurs'],
+  supervision: ['/institution/supervision'],
+  audit: ['/institution/audit-trail'],
+  export: [],
+};
+
+// Items de navigation complets — filtrés selon les permissions
+const ALL_NAV_ITEMS = [
+  { label: 'Accueil', path: '/institution', icon: Home, module: 'dashboard' as keyof ModuleAcces, exact: true },
+  { label: 'Acteurs', path: '/institution/acteurs', icon: Users, module: 'acteurs' as keyof ModuleAcces },
+  { label: 'Supervision', path: '/institution/supervision', icon: Eye, module: 'supervision' as keyof ModuleAcces },
+  { label: 'Analytics', path: '/institution/analytics', icon: BarChart3, module: 'analytics' as keyof ModuleAcces },
+  { label: 'Audit', path: '/institution/audit-trail', icon: FileText, module: 'audit' as keyof ModuleAcces },
+  { label: 'Moi', path: '/institution/profil', icon: User, module: null },
+];
+
+function AccessDenied({ module }: { module: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"
+    >
+      <motion.div
+        animate={{ rotate: [0, -5, 5, -5, 0] }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
+        style={{ background: `${PRIMARY_COLOR}15` }}
+      >
+        <Lock className="w-10 h-10" style={{ color: PRIMARY_COLOR }} />
+      </motion.div>
+      <h2 className="font-black text-gray-900 text-xl mb-2">Accès restreint</h2>
+      <p className="text-gray-500 text-sm max-w-xs">
+        Votre institution n'a pas accès au module <strong>{module}</strong>.
+        Contactez l'administrateur du BackOffice Jùlaba pour demander un accès.
+      </p>
+      <div className="mt-6 px-4 py-2.5 rounded-2xl border-2 border-dashed text-xs text-gray-400" style={{ borderColor: `${PRIMARY_COLOR}40` }}>
+        Accès géré par le Super Admin Jùlaba
+      </div>
+    </motion.div>
+  );
+}
+
+function InstitutionSuspended() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center min-h-[80vh] px-8 text-center"
+    >
+      <motion.div
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="w-24 h-24 rounded-3xl flex items-center justify-center mb-6 bg-red-50"
+      >
+        <ShieldOff className="w-12 h-12 text-red-400" />
+      </motion.div>
+      <h2 className="font-black text-gray-900 text-2xl mb-3">Compte suspendu</h2>
+      <p className="text-gray-500 text-sm max-w-sm">
+        Votre accès institutionnel a été temporairement suspendu par l'administrateur BackOffice.
+        Contactez le support Jùlaba pour plus d'informations.
+      </p>
+    </motion.div>
+  );
+}
+
+function BottomNav({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-gray-100 lg:hidden">
+      <div className="flex items-center justify-around px-2 py-2">
+        {navItems.map(item => {
+          const isActive = item.exact
+            ? location.pathname === item.path
+            : location.pathname.startsWith(item.path);
+          return (
+            <motion.button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl min-w-0"
+              style={isActive ? { background: `${PRIMARY_COLOR}15` } : {}}
+              whileTap={{ scale: 0.92 }}
+            >
+              <item.icon
+                className="w-5 h-5 flex-shrink-0"
+                style={{ color: isActive ? PRIMARY_COLOR : '#9CA3AF' }}
+              />
+              <span
+                className="text-[10px] font-bold truncate"
+                style={{ color: isActive ? PRIMARY_COLOR : '#9CA3AF' }}
+              >
+                {item.label}
+              </span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+function DesktopSidebar({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { institutionProfil } = useInstitutionAccess();
+
+  return (
+    <nav className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-gray-100 flex-col z-40 shadow-sm">
+      {/* Logo */}
+      <div className="px-6 py-6 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: PRIMARY_COLOR }}>
+            <Home className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-black text-gray-900">Jùlaba</p>
+            <p className="text-xs text-gray-400 truncate max-w-[140px]">{institutionProfil.nom.split(' — ')[0]}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Region badge */}
+      <div className="px-6 py-3 border-b border-gray-50">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Supervision</span>
+        <p className="text-sm font-bold text-gray-700 mt-0.5">{institutionProfil.region}</p>
+      </div>
+
+      {/* Nav */}
+      <div className="flex-1 px-3 py-4 space-y-1">
+        {navItems.map(item => {
+          const isActive = item.exact
+            ? location.pathname === item.path
+            : location.pathname.startsWith(item.path);
+          return (
+            <motion.button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left font-bold text-sm"
+              style={isActive
+                ? { backgroundColor: `${PRIMARY_COLOR}15`, color: PRIMARY_COLOR }
+                : { color: '#6B7280' }
+              }
+              whileHover={isActive ? {} : { backgroundColor: '#F9FAFB' }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {item.label}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Statut accès */}
+      <div className="px-4 py-4 border-t border-gray-100">
+        <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Accès accordés</p>
+          <p className="text-xs font-bold" style={{ color: PRIMARY_COLOR }}>
+            {Object.values(institutionProfil.modules).filter(v => v !== 'aucun').length} modules actifs
+          </p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Géré par le BackOffice Jùlaba</p>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+export function InstitutionLayout() {
+  const { user } = useUser();
+  const { canAccess, institutionProfil } = useInstitutionAccess();
+  const location = useLocation();
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const institutionId = user?.id || 'institution-001';
+
+  // Construire la liste de navigation filtrée
+  const navItems = ALL_NAV_ITEMS.filter(item => {
+    if (!item.module) return true; // "Moi" toujours visible
+    return canAccess(item.module);
+  });
+
+  // Vérifier si l'institution est suspendue
+  if (institutionProfil.statut === 'suspendu') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <InstitutionSuspended />
+        <ProfileSwitcher />
+      </div>
+    );
+  }
+
+  // Vérifier l'accès à la route actuelle
+  const currentRouteBlocked = (() => {
+    for (const item of ALL_NAV_ITEMS) {
+      if (!item.module) continue;
+      const matches = item.exact
+        ? location.pathname === item.path
+        : location.pathname.startsWith(item.path);
+      if (matches && !canAccess(item.module)) {
+        return item.label;
+      }
+    }
+    return null;
+  })();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar Desktop */}
+      <DesktopSidebar navItems={navItems} />
+
+      {/* Boutons flottants : Notifications */}
+      <div className="fixed top-4 right-4 z-50 lg:top-6 lg:right-6 flex items-center gap-2">
+        <NotifBellButton
+          userId={institutionId}
+          accentColor={PRIMARY_COLOR}
+          onOpen={() => setShowNotifications(true)}
+        />
+      </div>
+
+      {/* Panel Notifications */}
+      <NotificationsPanel
+        userId={institutionId}
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        accentColor={PRIMARY_COLOR}
+      />
+
+      {/* Contenu principal */}
+      <main className="lg:ml-64">
+        {currentRouteBlocked ? (
+          <AccessDenied module={currentRouteBlocked} />
+        ) : (
+          <Outlet />
+        )}
+      </main>
+
+      {/* Navigation mobile — filtrée */}
+      <BottomNav navItems={navItems} />
+
+      {/* Dev only */}
+      <ProfileSwitcher />
+    </div>
+  );
+}

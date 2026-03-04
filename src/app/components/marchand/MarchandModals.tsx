@@ -1,0 +1,978 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Calendar, TrendingUp, AlertCircle, DollarSign, Award, FileText, Receipt, Wallet, Package } from 'lucide-react';
+import { useApp } from '../../contexts/AppContext';
+import { useNavigate } from 'react-router';
+
+// Import des images de billets CFA
+import billet500 from 'figma:asset/b2d48685cf36b9b0ee1dc90888ad064716ce9a36.png';
+import billet1000 from 'figma:asset/17233155e5ff734b592dc9de8f379384df82f47b.png';
+import billet2000 from 'figma:asset/e1d816e66c34d75f62e5b541b87428ef8bfb941e.png';
+import billet5000 from 'figma:asset/8f6d5122b50aeda0ef83b01cd66e776da1d61995.png';
+import billet10000 from 'figma:asset/51c36f41e1771b2eed9d1e549c313b2aef1180e4.png';
+
+// Import des images de pièces CFA
+import piece25 from 'figma:asset/bbee0eb0f81c6fe238ec6cf7c5ebfbc06f28811d.png';
+import piece50 from 'figma:asset/40cff97daad841504be3bdd1ffe2beaae8b1f490.png';
+import piece100 from 'figma:asset/568afa237d9314d49693e52f27dc76f0708eb39c.png';
+import piece200 from 'figma:asset/273eef1501206a5916a4c49b5adf249f65c944c2.png';
+
+// ✨ ==== COMPOSANTS DE BASE ==== ✨
+
+interface BaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+function BaseModal({ isOpen, onClose, children }: BaseModalProps) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop avec blur */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            onClick={onClose}
+          />
+          
+          {/* Contenu du modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', duration: 0.5 }}
+              className="w-full max-w-md pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {children}
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+interface StyledButtonProps {
+  onClick: () => void;
+  variant?: 'primary' | 'outline' | 'danger' | 'success';
+  disabled?: boolean;
+  children: React.ReactNode;
+  className?: string;
+  fullWidth?: boolean;
+}
+
+function StyledButton({ onClick, variant = 'primary', disabled, children, className = '', fullWidth }: StyledButtonProps) {
+  const baseStyle = 'px-6 py-3.5 rounded-2xl font-semibold text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
+  
+  const variantStyles = {
+    primary: 'text-white shadow-lg hover:shadow-xl',
+    outline: 'bg-white border text-gray-700 hover:bg-gray-50',
+    danger: 'bg-red-600 text-white shadow-lg hover:bg-red-700 hover:shadow-xl',
+    success: 'text-white shadow-lg hover:shadow-xl',
+  };
+
+  let bgColor = '#C46210';
+  if (variant === 'danger') bgColor = '#DC2626';
+  if (variant === 'success') bgColor = '#16A34A';
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseStyle} ${variantStyles[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      style={variant === 'primary' || variant === 'success' ? { backgroundColor: bgColor } : variant === 'outline' ? { borderWidth: '2px', borderColor: '#E5E7EB' } : undefined}
+      whileHover={!disabled ? { scale: 1.02 } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+interface StyledInputProps {
+  id?: string;
+  type: string;
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: boolean;
+  autoFocus?: boolean;
+  disabled?: boolean;
+}
+
+function StyledInput({ id, type, placeholder, value, onChange, error, autoFocus, disabled }: StyledInputProps) {
+  return (
+    <input
+      id={id}
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      autoFocus={autoFocus}
+      disabled={disabled}
+      className={`w-full px-4 py-4 rounded-2xl border text-lg font-medium transition-all duration-200 focus:outline-none focus:ring-4 ${
+        error
+          ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
+          : 'border-gray-300 focus:ring-orange-100'
+      } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+      style={!error ? { borderWidth: '2px', borderColor: '#D1D5DB' } : undefined}
+    />
+  );
+}
+
+// ✨ Sélecteur de billets
+interface BilletsSelecteurProps {
+  onBilletClick: (montant: number) => void;
+}
+
+function BilletsSelecteur({ onBilletClick }: BilletsSelecteurProps) {
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const billets = [
+    { valeur: 500, image: billet500 },
+    { valeur: 1000, image: billet1000 },
+    { valeur: 2000, image: billet2000 },
+    { valeur: 5000, image: billet5000 },
+    { valeur: 10000, image: billet10000 },
+  ];
+
+  // Dupliquer les billets pour créer l'effet de boucle infinie
+  const billetsDupliques = [...billets, ...billets, ...billets];
+
+  return (
+    <div className="mb-6">
+      <p className="text-sm font-semibold mb-3 text-gray-700">
+        Sélectionne tes billets (clique pour ajouter)
+      </p>
+      <div 
+        className="relative overflow-x-auto overflow-y-hidden -mx-1 px-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        style={{ scrollbarWidth: 'thin' }}
+      >
+        <motion.div
+          className="flex gap-2 pb-2"
+          animate={{
+            x: isPaused ? undefined : [0, -((billets.length * 85) + (billets.length * 8))],
+          }}
+          transition={{
+            x: {
+              repeat: Infinity,
+              repeatType: "loop",
+              duration: 40,
+              ease: "linear",
+            },
+          }}
+        >
+          {billetsDupliques.map((billet, index) => (
+            <motion.button
+              key={`${billet.valeur}-${index}`}
+              onClick={() => onBilletClick(billet.valeur)}
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex-shrink-0 relative group"
+            >
+              <img
+                src={billet.image}
+                alt={`${billet.valeur} FCFA`}
+                className="h-12 w-auto rounded-lg shadow-lg transition-shadow group-hover:shadow-xl"
+              />
+              <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs font-bold px-2 py-0.5 rounded">
+                {billet.valeur}
+              </div>
+            </motion.button>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ✨ Sélecteur de pièces
+interface PiecesSelecteurProps {
+  onPieceClick: (montant: number) => void;
+}
+
+function PiecesSelecteur({ onPieceClick }: PiecesSelecteurProps) {
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const pieces = [
+    { valeur: 25, image: piece25 },
+    { valeur: 50, image: piece50 },
+    { valeur: 100, image: piece100 },
+    { valeur: 200, image: piece200 },
+  ];
+
+  // Dupliquer les pièces pour créer l'effet de boucle infinie
+  const piecesDupliques = [...pieces, ...pieces, ...pieces, ...pieces];
+
+  return (
+    <div className="mb-6">
+      <p className="text-sm font-semibold mb-3 text-gray-700">
+        Sélectionne tes pièces (clique pour ajouter)
+      </p>
+      <div 
+        className="relative overflow-x-auto overflow-y-hidden -mx-1 px-1 h-20 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        style={{ scrollbarWidth: 'thin' }}
+      >
+        <motion.div
+          className="flex gap-2 pb-2"
+          animate={{
+            x: isPaused ? undefined : [0, -((pieces.length * 70) + (pieces.length * 8))],
+          }}
+          transition={{
+            x: {
+              repeat: Infinity,
+              repeatType: "loop",
+              duration: 30,
+              ease: "linear",
+            },
+          }}
+        >
+          {piecesDupliques.map((piece, index) => (
+            <motion.button
+              key={`${piece.valeur}-${index}`}
+              onClick={() => onPieceClick(piece.valeur)}
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex-shrink-0 relative group"
+            >
+              <img
+                src={piece.image}
+                alt={`${piece.valeur} FCFA`}
+                className="h-12 w-auto rounded-full shadow-lg transition-shadow group-hover:shadow-xl"
+              />
+              <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                {piece.valeur}
+              </div>
+            </motion.button>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ✨ ==== MODALES ==== ✨
+
+interface OpenDayModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function OpenDayModal({ isOpen, onClose }: OpenDayModalProps) {
+  const { openDay, speak } = useApp();
+  const [fondInitial, setFondInitial] = useState('');
+  const [error, setError] = useState('');
+
+  const handleBilletClick = (montant: number) => {
+    const currentValue = parseFloat(fondInitial) || 0;
+    const newValue = currentValue + montant;
+    setFondInitial(newValue.toString());
+    setError('');
+    speak(`${montant} francs ajouté. Total : ${newValue.toLocaleString()} francs`);
+  };
+
+  const handlePieceClick = (montant: number) => {
+    const currentValue = parseFloat(fondInitial) || 0;
+    const newValue = currentValue + montant;
+    setFondInitial(newValue.toString());
+    setError('');
+    speak(`${montant} francs ajouté. Total : ${newValue.toLocaleString()} francs`);
+  };
+
+  const handleInputChange = (value: string) => {
+    setFondInitial(value);
+    const montant = parseFloat(value);
+    
+    if (value && !isNaN(montant) && montant % 100 !== 0) {
+      setError('Le montant doit être un multiple de 100 FCFA');
+    } else {
+      setError('');
+    }
+  };
+
+  const handleSubmit = () => {
+    const montant = parseFloat(fondInitial);
+    if (isNaN(montant) || montant < 0) {
+      speak('Le montant saisi est invalide');
+      setError('Le montant saisi est invalide');
+      return;
+    }
+    
+    if (montant % 100 !== 0) {
+      speak('Le montant doit être un multiple de 100 francs');
+      setError('Le montant doit être un multiple de 100 FCFA');
+      return;
+    }
+    
+    openDay(montant);
+    speak(`Ta journée est ouverte avec ${montant.toLocaleString()} francs CFA`);
+    onClose();
+    setFondInitial('');
+    setError('');
+  };
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden" style={{ borderColor: '#C46210' }}>
+        {/* Header */}
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(196, 98, 16, 0.15)' }}
+            >
+              <Calendar className="w-7 h-7" style={{ color: '#C46210' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: '#C46210' }}>
+                Ouvre ta journée
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Combien tu as en caisse ce matin ?
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 pb-6">
+          <BilletsSelecteur onBilletClick={handleBilletClick} />
+          <PiecesSelecteur onPieceClick={handlePieceClick} />
+
+          <div className="mb-2">
+            <label htmlFor="fondInitial" className="text-sm font-semibold mb-2 block text-gray-700">
+              Fond de caisse initial
+            </label>
+            <StyledInput
+              id="fondInitial"
+              type="number"
+              placeholder="Montant en FCFA (multiple de 100)"
+              value={fondInitial}
+              onChange={(e) => handleInputChange(e.target.value)}
+              error={!!error}
+            />
+            {error && (
+              <p className="text-sm text-red-600 mt-2 font-medium">{error}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 flex gap-3">
+          <StyledButton
+            variant="outline"
+            onClick={onClose}
+          >
+            Annuler
+          </StyledButton>
+          <StyledButton
+            onClick={handleSubmit}
+            disabled={!!error || !fondInitial}
+            className="flex-1"
+          >
+            Ouvrir la journée
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface EditFondModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentFond: number;
+}
+
+export function EditFondModal({ isOpen, onClose, currentFond }: EditFondModalProps) {
+  const { updateFondInitial, speak } = useApp();
+  const [nouveauFond, setNouveauFond] = useState(currentFond.toString());
+
+  const handleBilletClick = (montant: number) => {
+    const currentValue = parseFloat(nouveauFond) || 0;
+    const newValue = currentValue + montant;
+    setNouveauFond(newValue.toString());
+    speak(`${montant} francs ajouté. Nouveau total : ${newValue.toLocaleString()} francs`);
+  };
+
+  const handlePieceClick = (montant: number) => {
+    const currentValue = parseFloat(nouveauFond) || 0;
+    const newValue = currentValue + montant;
+    setNouveauFond(newValue.toString());
+    speak(`${montant} francs ajouté. Nouveau total : ${newValue.toLocaleString()} francs`);
+  };
+
+  const handleSubmit = () => {
+    const montant = parseFloat(nouveauFond);
+    if (isNaN(montant) || montant < 0) {
+      speak('Le montant saisi est invalide');
+      return;
+    }
+    updateFondInitial(montant);
+    speak(`Ton fond de caisse est maintenant de ${montant.toLocaleString()} francs CFA`);
+    onClose();
+  };
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden" style={{ borderColor: '#C46210' }}>
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(196, 98, 16, 0.15)' }}
+            >
+              <DollarSign className="w-7 h-7" style={{ color: '#C46210' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: '#C46210' }}>
+                Modifier le fond
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Modifie le montant de ton fond de caisse initial.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6">
+          <BilletsSelecteur onBilletClick={handleBilletClick} />
+          <PiecesSelecteur onPieceClick={handlePieceClick} />
+
+          <div className="mb-2">
+            <label htmlFor="nouveauFond" className="text-sm font-semibold mb-2 block text-gray-700">
+              Nouveau fond de caisse
+            </label>
+            <StyledInput
+              id="nouveauFond"
+              type="number"
+              placeholder="Montant en FCFA"
+              value={nouveauFond}
+              onChange={(e) => setNouveauFond(e.target.value)}
+            />
+            <p className="text-sm text-gray-500 mt-2 font-medium">
+              Fond actuel : {currentFond.toLocaleString()} FCFA
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <StyledButton variant="outline" onClick={onClose}>
+            Annuler
+          </StyledButton>
+          <StyledButton onClick={handleSubmit} className="flex-1">
+            Modifier
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface CloseDayModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  stats: {
+    ventes: number;
+    depenses: number;
+    caisse: number;
+  };
+}
+
+export function CloseDayModal({ isOpen, onClose, stats }: CloseDayModalProps) {
+  const { closeDay, speak, getSalesHistory, getFinancialSummary } = useApp();
+  const navigate = useNavigate();
+  const [comptageReel, setComptageReel] = useState(stats.caisse.toString());
+  const [isClosing, setIsClosing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleClose = async () => {
+    setIsClosing(true);
+    const montant = parseFloat(comptageReel);
+    
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    closeDay(montant);
+    speak('Ta journée est fermée. À demain !');
+    
+    setIsClosing(false);
+    onClose();
+  };
+
+  const handleNavigateToSales = () => {
+    onClose();
+    navigate('/marchand/ventes-passees');
+  };
+
+  const handleNavigateToCaisse = () => {
+    onClose();
+    navigate('/marchand/resume-caisse');
+  };
+
+  const marge = stats.ventes - stats.depenses;
+  const ecart = parseFloat(comptageReel || '0') - stats.caisse;
+
+  // Récupérer les ventes du jour pour analyse
+  const todaySales = getSalesHistory({ 
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
+
+  // Top 3 produits vendus
+  const topProducts = todaySales.reduce((acc, sale) => {
+    const existing = acc.find(p => p.name === sale.productName);
+    if (existing) {
+      existing.quantity += sale.quantity;
+      existing.total += sale.price * sale.quantity;
+    } else {
+      acc.push({ name: sale.productName, quantity: sale.quantity, total: sale.price * sale.quantity });
+    }
+    return acc;
+  }, [] as { name: string; quantity: number; total: number }[])
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 3);
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden border-red-500 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertCircle className="w-7 h-7 text-red-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-red-600">
+                Fermer la caisse
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Voici le résumé de ta journée avant de fermer.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6 space-y-3">
+          <div className="p-4 rounded-2xl border bg-green-50" style={{ borderColor: '#86EFAC' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Ventes du jour</p>
+            <p className="text-2xl font-bold text-green-700">
+              {stats.ventes.toLocaleString()} FCFA
+            </p>
+            <p className="text-xs text-gray-500 mt-1">{stats.nombreVentes} vente{stats.nombreVentes > 1 ? 's' : ''}</p>
+          </div>
+
+          <div className="p-4 rounded-2xl border bg-red-50" style={{ borderColor: '#FCA5A5' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Dépenses du jour</p>
+            <p className="text-2xl font-bold text-red-700">
+              {stats.depenses.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border ${marge >= 0 ? 'bg-green-50' : 'bg-red-50'}`} style={{ borderColor: marge >= 0 ? '#86EFAC' : '#FCA5A5' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Marge</p>
+            <p className={`text-2xl font-bold ${marge >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {marge >= 0 ? '+' : ''}{marge.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border" style={{ backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Caisse théorique</p>
+            <p className="text-2xl font-bold" style={{ color: '#C46210' }}>
+              {stats.caisse.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-300">
+            <p className="text-xs font-semibold text-gray-700 mb-2">Comptage réel</p>
+            <StyledInput
+              type="number"
+              placeholder="Montant en FCFA"
+              value={comptageReel}
+              onChange={(e) => setComptageReel(e.target.value)}
+              autoFocus
+              disabled={isClosing}
+            />
+            {ecart !== 0 && comptageReel && (
+              <p className={`text-xs font-medium mt-2 ${ecart > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Écart: {ecart > 0 ? '+' : ''}{ecart.toLocaleString()} FCFA
+              </p>
+            )}
+          </div>
+
+          {/* Analyse détaillée */}
+          {topProducts.length > 0 && (
+            <motion.div
+              className="p-4 rounded-2xl bg-white border border-gray-200"
+              whileHover={{ scale: 1.01 }}
+            >
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4" style={{ color: '#C46210' }} />
+                  <p className="text-xs font-bold text-gray-700">Analyse détaillée</p>
+                </div>
+                <motion.div
+                  animate={{ rotate: showDetails ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-gray-400"
+                >
+                  ▼
+                </motion.div>
+              </button>
+              
+              <AnimatePresence>
+                {showDetails && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 space-y-2"
+                  >
+                    <p className="text-xs font-semibold text-gray-600 mb-2">Top 3 produits vendus:</p>
+                    {topProducts.map((product, index) => (
+                      <div key={product.name} className="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                            style={{ backgroundColor: '#C46210' }}
+                          >
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-800">{product.name}</p>
+                            <p className="text-xs text-gray-500">{product.quantity} unité{product.quantity > 1 ? 's' : ''}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs font-bold" style={{ color: '#C46210' }}>
+                          {product.total.toLocaleString()} FCFA
+                        </p>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {/* Boutons de navigation */}
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <motion.button
+              onClick={handleNavigateToSales}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-gray-300 hover:border-[#C46210] transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={isClosing}
+            >
+              <Receipt className="w-4 h-4" style={{ color: '#C46210' }} />
+              <span className="text-xs font-semibold text-gray-700">Ventes détaillées</span>
+            </motion.button>
+
+            <motion.button
+              onClick={handleNavigateToCaisse}
+              className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-gray-300 hover:border-[#C46210] transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={isClosing}
+            >
+              <Wallet className="w-4 h-4" style={{ color: '#C46210' }} />
+              <span className="text-xs font-semibold text-gray-700">Résumé caisse</span>
+            </motion.button>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <StyledButton variant="outline" onClick={onClose} disabled={isClosing}>
+            Annuler
+          </StyledButton>
+          <StyledButton
+            variant="danger"
+            onClick={handleClose}
+            disabled={isClosing}
+            className="flex-1"
+          >
+            {isClosing ? 'Fermeture...' : 'Fermer la caisse'}
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface StatsVentesModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  montant: number;
+}
+
+export function StatsVentesModal({ isOpen, onClose, montant }: StatsVentesModalProps) {
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden border-green-500">
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+              <TrendingUp className="w-7 h-7 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-green-700">
+                Ventes du jour
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Détails de tes ventes d'aujourd'hui.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6">
+          <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border" style={{ borderColor: '#86EFAC' }}>
+            <p className="text-sm font-semibold text-gray-600 mb-2">Total des ventes</p>
+            <motion.p
+              className="text-5xl font-bold text-green-700"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              {montant.toLocaleString()}
+            </motion.p>
+            <p className="text-lg font-bold text-green-600 mt-1">FCFA</p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <StyledButton variant="success" onClick={onClose} fullWidth>
+            OK
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface StatsMargeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  marge: number;
+}
+
+export function StatsMargeModal({ isOpen, onClose, marge }: StatsMargeModalProps) {
+  const isPositive = marge >= 0;
+  
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className={`bg-white rounded-3xl border-4 shadow-2xl overflow-hidden ${isPositive ? 'border-green-500' : 'border-red-500'}`}>
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
+              <TrendingUp className={`w-7 h-7 ${isPositive ? 'text-green-600' : 'text-red-600 rotate-180'}`} />
+            </div>
+            <div>
+              <h2 className={`text-2xl font-bold ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
+                Marge du jour
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            {isPositive
+              ? 'Bravo ! Ta marge est positive.'
+              : 'Attention, tes dépenses dépassent tes ventes.'}
+          </p>
+        </div>
+
+        <div className="px-6 pb-6">
+          <div className={`text-center p-8 rounded-2xl bg-gradient-to-br border ${isPositive ? 'from-green-50 to-green-100' : 'from-red-50 to-red-100'}`} style={{ borderColor: isPositive ? '#86EFAC' : '#FCA5A5' }}>
+            <p className="text-sm font-semibold text-gray-600 mb-2">Marge</p>
+            <motion.p
+              className={`text-5xl font-bold ${isPositive ? 'text-green-700' : 'text-red-700'}`}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              {isPositive ? '+' : ''}{marge.toLocaleString()}
+            </motion.p>
+            <p className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'} mt-1`}>FCFA</p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <StyledButton
+            variant={isPositive ? 'success' : 'danger'}
+            onClick={onClose}
+            fullWidth
+          >
+            OK
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface ScoreModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function ScoreModal({ isOpen, onClose }: ScoreModalProps) {
+  const score = 85;
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden" style={{ borderColor: '#C46210' }}>
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(196, 98, 16, 0.15)' }}
+            >
+              <Award className="w-7 h-7" style={{ color: '#C46210' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: '#C46210' }}>
+                Ton Score JULABA
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Détails de ton score de crédit.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6">
+          <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 border mb-6" style={{ borderColor: '#FED7AA' }}>
+            <motion.p
+              className="text-6xl font-bold"
+              style={{ color: '#C46210' }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              {score}
+            </motion.p>
+            <p className="text-2xl font-bold text-gray-600 mt-2">/100</p>
+          </div>
+
+          <div className="space-y-2.5 mb-6">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-green-50 border border-green-200">
+              <p className="text-sm font-semibold text-gray-700">Régularité des ventes</p>
+              <p className="text-sm font-bold text-green-700">Excellent</p>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-green-50 border border-green-200">
+              <p className="text-sm font-semibold text-gray-700">Gestion de caisse</p>
+              <p className="text-sm font-bold text-green-700">Très bien</p>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-yellow-50 border border-yellow-200">
+              <p className="text-sm font-semibold text-gray-700">Épargne</p>
+              <p className="text-sm font-bold text-yellow-700">Bien</p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl border" style={{ backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }}>
+            <p className="text-sm font-bold mb-2" style={{ color: '#C46210' }}>
+              ✨ Ton djè est solide !
+            </p>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Continue à enregistrer tes ventes pour améliorer ton score et débloquer des crédits.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <StyledButton onClick={onClose} fullWidth>
+            OK
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+interface ResumeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  stats: {
+    ventes: number;
+    depenses: number;
+    caisse: number;
+  };
+}
+
+export function ResumeModal({ isOpen, onClose, stats }: ResumeModalProps) {
+  const marge = stats.ventes - stats.depenses;
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-white rounded-3xl border-4 shadow-2xl overflow-hidden" style={{ borderColor: '#C46210' }}>
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-4 mb-3">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(196, 98, 16, 0.15)' }}
+            >
+              <FileText className="w-7 h-7" style={{ color: '#C46210' }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: '#C46210' }}>
+                Résumé du jour
+              </h2>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Voici un aperçu complet de ta journée.
+          </p>
+        </div>
+
+        <div className="px-6 pb-6 space-y-3">
+          <div className="p-4 rounded-2xl border bg-green-50" style={{ borderColor: '#86EFAC' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Ventes du jour</p>
+            <p className="text-2xl font-bold text-green-700">
+              {stats.ventes.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border bg-red-50" style={{ borderColor: '#FCA5A5' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Dépenses du jour</p>
+            <p className="text-2xl font-bold text-red-700">
+              {stats.depenses.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border ${marge >= 0 ? 'bg-green-50' : 'bg-red-50'}`} style={{ borderColor: marge >= 0 ? '#86EFAC' : '#FCA5A5' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Marge</p>
+            <p className={`text-2xl font-bold ${marge >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {marge >= 0 ? '+' : ''}{marge.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border" style={{ backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }}>
+            <p className="text-xs font-semibold text-gray-600 mb-1">Caisse théorique</p>
+            <p className="text-2xl font-bold" style={{ color: '#C46210' }}>
+              {stats.caisse.toLocaleString()} FCFA
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-300">
+            <p className="text-xs font-semibold text-gray-700 mb-2">Comptage réel</p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <StyledButton onClick={onClose} fullWidth>
+            OK
+          </StyledButton>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
