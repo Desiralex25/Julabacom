@@ -792,6 +792,23 @@ app.get("/make-server-488793d3/tts/voices", async (c) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.log(`ElevenLabs voices API error (${response.status}):`, errorText);
+      
+      // Si erreur de permission (401), retourner des voix par défaut au lieu d'une erreur
+      if (response.status === 401 || errorText.includes('missing_permissions')) {
+        console.log('⚠️ Permission manquante - Utilisation des voix par défaut');
+        return c.json({
+          success: true,
+          voices: [
+            { voice_id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte (FR)', category: 'premade' },
+            { voice_id: 'oWAxZDx7w5VEj9dCyTzz', name: 'Grace (FR)', category: 'premade' },
+            { voice_id: 'XrExE9yKIg1WjnnlVkGX', name: 'Matilda (EN)', category: 'premade' },
+            { voice_id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam (EN)', category: 'premade' },
+          ],
+          fallback: true,
+          warning: 'Voix par défaut utilisées - Permissions API limitées'
+        });
+      }
+      
       return c.json({ 
         success: false,
         error: 'Erreur lors de la récupération des voix',

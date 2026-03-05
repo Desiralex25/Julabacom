@@ -88,6 +88,7 @@ import { NouvelleIdentification } from './components/identificateur/NouvelleIden
 import { FicheIdentificationDynamique } from './components/identificateur/FicheIdentificationDynamique';
 import { SupportPage } from './components/shared/SupportPage';
 import { BOSupport } from './components/backoffice/BOSupport';
+import { BOLogin } from './components/backoffice/BOLogin';
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import AuthTestPage from './pages/AuthTestPage';
 import TestTantie from './pages/TestTantie';
@@ -240,10 +241,14 @@ export const router = createBrowserRouter([
       },
       // ── BACK-OFFICE CENTRAL ─────────────────────────
       {
+        path: '/backoffice/login',
+        element: <BOLogin />,
+      },
+      {
         path: '/backoffice',
         element: <BORoot />,
         children: [
-          { index: true, element: null },
+          { index: true, element: <Navigate to="/backoffice/login" replace /> },
           { path: 'dashboard', element: <BODashboard /> },
           { path: 'acteurs', element: <BOActeurs /> },
           { path: 'acteurs/:id', element: <BOActeurDetail /> },

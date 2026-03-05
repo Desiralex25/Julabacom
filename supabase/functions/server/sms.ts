@@ -87,8 +87,19 @@ export async function sendSMS(phone: string, message: string): Promise<WassoyaSM
     };
   }
 
-  console.log(`📱 Envoi SMS via Wassoya à ${formattedPhone}: "${message}"`);
-  console.log(`📤 Paramètres: from="${senderId}", to="${formattedPhone}", content="${message.substring(0, 50)}..."`);
+  // Préparer le body de la requête
+  const requestBody = {
+    from: senderId,
+    to: formattedPhone,
+    content: message,
+  };
+
+  console.log(`📱 Envoi SMS via Wassoya`);
+  console.log(`📤 URL: ${apiUrl}`);
+  console.log(`📤 From: "${senderId}"`);
+  console.log(`📤 To: "${formattedPhone}"`);
+  console.log(`📤 Content: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`);
+  console.log(`📤 Body complet:`, JSON.stringify(requestBody));
 
   try {
     // Appel API Wassoya selon la documentation officielle
@@ -100,15 +111,25 @@ export async function sendSMS(phone: string, message: string): Promise<WassoyaSM
         // Header alternatif au cas où Wassoya utilise X-API-Key
         'X-API-Key': apiKey,
       },
-      body: JSON.stringify({
-        from: senderId,           // Nom de l'expéditeur (11 caractères max)
-        to: formattedPhone,       // Numéro format international (2250700000000)
-        content: message,         // Contenu du message (160 caractères max)
-        // notifyUrl: optionnel - on peut l'ajouter plus tard si nécessaire
-      })
+      body: JSON.stringify(requestBody)
     });
 
-    const data: WassoyaAPIResponse = await response.json();
+    console.log(`📥 Wassoya response status: ${response.status}`);
+
+    // Lire la réponse (text d'abord pour debug)
+    const responseText = await response.text();
+    console.log(`📥 Wassoya response body:`, responseText);
+
+    let data: WassoyaAPIResponse;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('❌ Erreur parsing JSON response:', parseError);
+      return {
+        success: false,
+        error: `Réponse invalide de Wassoya: ${responseText.substring(0, 100)}`
+      };
+    }
 
     if (!response.ok) {
       console.error(`❌ Erreur HTTP ${response.status} de Wassoya:`, data);

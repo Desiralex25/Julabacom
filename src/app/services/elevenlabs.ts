@@ -241,24 +241,29 @@ export async function getAvailableVoices(): Promise<Voice[]> {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('Get voices error:', errorMessage);
+    console.warn('⚠️ Erreur récupération voix ElevenLabs (utilisation des voix par défaut):', errorMessage);
     
-    // Retourner des voix par défaut en cas d'erreur
-    console.log('Utilisation des voix par défaut');
+    // Retourner des voix par défaut en cas d'erreur (ne pas bloquer l'application)
+    console.log('✅ Utilisation des voix par défaut - L\'application reste fonctionnelle');
     return [
       {
         voice_id: RECOMMENDED_VOICES.CHARLOTTE,
-        name: 'Charlotte (FR)',
+        name: 'Charlotte (FR) - Défaut',
         category: 'premade',
       },
       {
         voice_id: RECOMMENDED_VOICES.GRACE,
-        name: 'Grace (FR)',
+        name: 'Grace (FR) - Défaut',
         category: 'premade',
       },
       {
         voice_id: RECOMMENDED_VOICES.MATILDA,
-        name: 'Matilda (EN)',
+        name: 'Matilda (EN) - Défaut',
+        category: 'premade',
+      },
+      {
+        voice_id: RECOMMENDED_VOICES.ADAM,
+        name: 'Adam (EN) - Défaut',
         category: 'premade',
       },
     ];

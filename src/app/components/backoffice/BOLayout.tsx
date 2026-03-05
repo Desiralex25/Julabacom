@@ -478,7 +478,10 @@ export function BOLayout() {
 
   const handleLogout = () => {
     speak('Au revoir. Déconnexion du Back-Office.');
-    setTimeout(() => { setBOUser(null); navigate('/backoffice'); }, 1000);
+    setTimeout(() => { 
+      setBOUser(null); 
+      navigate('/backoffice/login'); 
+    }, 1000);
   };
 
   const handleVoirTicket = useCallback((ticketId: string) => {
