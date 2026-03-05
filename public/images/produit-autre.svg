@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#F5F5F5"/>
+  <!-- Panier -->
+  <path d="M100 240 Q100 330 200 340 Q300 330 300 240 L280 200 L120 200 Z" fill="#A1887F"/>
+  <path d="M110 240 Q110 320 200 330 Q290 320 290 240 L272 208 L128 208 Z" fill="#BCAAA4"/>
+  <!-- Tressage -->
+  <g stroke="rgba(90,60,40,0.3)" stroke-width="2">
+    <line x1="128" y1="208" x2="110" y2="295"/>
+    <line x1="155" y1="206" x2="140" y2="325"/>
+    <line x1="182" y1="205" x2="170" y2="330"/>
+    <line x1="209" y1="205" x2="200" y2="330"/>
+    <line x1="236" y1="206" x2="228" y2="328"/>
+    <line x1="263" y1="207" x2="258" y2="322"/>
+    <line x1="112" y1="230" x2="288" y2="230"/>
+    <line x1="110" y1="255" x2="289" y2="255"/>
+    <line x1="110" y1="280" x2="289" y2="280"/>
+    <line x1="111" y1="305" x2="288" y2="305"/>
+  </g>
+  <!-- Anse -->
+  <path d="M140 200 Q140 140 200 130 Q260 140 260 200" stroke="#795548" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- Légumes qui dépassent -->
+  <circle cx="165" cy="195" r="22" fill="#E53935"/>
+  <circle cx="200" cy="190" r="20" fill="#F9A825"/>
+  <circle cx="235" cy="195" r="18" fill="#43A047"/>
+  <text x="200" y="375" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#5D4037">Autre produit</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#F3E5F5"/>
+  <ellipse cx="200" cy="230" rx="80" ry="110" fill="#7B1FA2"/>
+  <ellipse cx="200" cy="230" rx="75" ry="105" fill="#9C27B0"/>
+  <ellipse cx="170" cy="185" rx="25" ry="15" fill="rgba(255,255,255,0.25)"/>
+  <rect x="193" y="108" width="14" height="35" rx="7" fill="#2E8B57"/>
+  <path d="M200 115 Q178 95 168 80 Q188 95 200 115Z" fill="#388E3C"/>
+  <path d="M200 115 Q222 95 232 80 Q212 95 200 115Z" fill="#2E8B57"/>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#6A1B9A">Aubergines</text>
+</svg>

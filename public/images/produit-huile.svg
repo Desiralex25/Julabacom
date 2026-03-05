@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFF8E1"/>
+  <!-- Bouteille -->
+  <rect x="155" y="160" width="90" height="180" rx="15" fill="#FFA000"/>
+  <rect x="155" y="160" width="90" height="180" rx="15" fill="rgba(255,215,0,0.4)"/>
+  <rect x="170" y="140" width="60" height="30" rx="8" fill="#F57C00"/>
+  <rect x="183" y="118" width="34" height="28" rx="8" fill="#E65100"/>
+  <rect x="188" y="108" width="24" height="18" rx="5" fill="#BF360C"/>
+  <!-- Étiquette -->
+  <rect x="162" y="200" width="76" height="90" rx="8" fill="white"/>
+  <rect x="166" y="208" width="68" height="4" rx="2" fill="#FFA000"/>
+  <text x="200" y="235" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="#E65100">HUILE</text>
+  <text x="200" y="250" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="#F57C00">de palme</text>
+  <rect x="166" y="260" width="68" height="4" rx="2" fill="#FFA000"/>
+  <!-- Reflet bouteille -->
+  <rect x="162" y="165" width="15" height="140" rx="7" fill="rgba(255,255,255,0.3)"/>
+  <text x="200" y="375" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#E65100">Huile</text>
+</svg>
