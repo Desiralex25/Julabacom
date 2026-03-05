@@ -29,8 +29,8 @@ if (localStorage.getItem('julaba_cache_version') !== CACHE_VERSION) {
   localStorage.setItem('julaba_cache_version', CACHE_VERSION);
 }
 
-// Mode développement pour tester Tantie Sagesse
-const SHOW_TANTIE_TEST = import.meta.env.DEV;
+// Panneau de test Tantie Sagesse (toujours activé pour tester ElevenLabs)
+const SHOW_TANTIE_TEST = true;
 
 export default function App() {
   return (

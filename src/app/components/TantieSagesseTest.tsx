@@ -3,11 +3,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Volume2, VolumeX, Loader2, CheckCircle2, XCircle, Settings, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as ElevenLabs from '../services/elevenlabs';
 
 export function TantieSagesseTest() {
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -96,152 +97,183 @@ export function TantieSagesseTest() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-20 right-4 z-50 w-96 bg-white/90 backdrop-blur-xl border-2 border-orange-200 rounded-3xl p-6 shadow-2xl"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-lg text-gray-900">Test Tantie Sagesse</h3>
-        <AnimatePresence mode="wait">
-          {status === 'success' && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-            >
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-            </motion.div>
-          )}
-          {status === 'error' && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-            >
-              <XCircle className="w-6 h-6 text-red-500" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+    <>
+      {/* Bouton flottant pour ouvrir/fermer le panneau */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white hover:shadow-orange-300 transition-all"
+      >
+        <Settings className="w-6 h-6" />
+      </motion.button>
 
-      {/* Sélection de voix */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Voix ElevenLabs {voicesLoading && '(chargement...)'}
-        </label>
-        {voicesLoadError && (
-          <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-800">
-            {voicesLoadError} - Utilisation des voix par défaut
-          </div>
-        )}
-        <select
-          value={selectedVoice}
-          onChange={(e) => setSelectedVoice(e.target.value)}
-          className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none transition-all"
-        >
-          <option value={ElevenLabs.RECOMMENDED_VOICES.CHARLOTTE}>
-            Charlotte (Recommandée)
-          </option>
-          <option value={ElevenLabs.RECOMMENDED_VOICES.GRACE}>Grace</option>
-          <option value={ElevenLabs.RECOMMENDED_VOICES.MATILDA}>Matilda</option>
-          <option value={ElevenLabs.RECOMMENDED_VOICES.ADAM}>Adam (Masculine)</option>
-          {voices.length > 0 && voices.map((voice) => (
-            <option key={voice.voice_id} value={voice.voice_id}>
-              {voice.name}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-gray-500">
-          {voices.length > 0 ? `${voices.length} voix chargées` : 'Voix par défaut uniquement'}
-        </p>
-      </div>
+      {/* Panneau de test */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', duration: 0.3 }}
+            className="fixed bottom-36 right-4 z-50 w-96 bg-white/95 backdrop-blur-xl border-2 border-orange-200 rounded-3xl p-6 shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg text-gray-900">Test Tantie Sagesse</h3>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
 
-      {/* Texte personnalisé */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Texte à dire
-        </label>
-        <textarea
-          value={customText}
-          onChange={(e) => setCustomText(e.target.value)}
-          rows={3}
-          className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none transition-all resize-none"
-          placeholder="Entrez le texte ici..."
-        />
-      </div>
+            {/* Indicateur de statut */}
+            <AnimatePresence mode="wait">
+              {status === 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-3 flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-2xl"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <span className="text-sm text-green-700 font-medium">Lecture réussie</span>
+                </motion.div>
+              )}
+              {status === 'error' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-3 flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-2xl"
+                >
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span className="text-sm text-red-700 font-medium">Erreur</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-      {/* Boutons de test */}
-      <div className="space-y-2">
-        <button
-          onClick={testElevenLabs}
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Volume2 className="w-5 h-5" />
-          )}
-          Test ElevenLabs
-        </button>
+            {/* Sélection de voix */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Voix ElevenLabs {voicesLoading && '(chargement...)'}
+              </label>
+              {voicesLoadError && (
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-800">
+                  {voicesLoadError} - Utilisation des voix par défaut
+                </div>
+              )}
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none transition-all"
+              >
+                <option value={ElevenLabs.RECOMMENDED_VOICES.CHARLOTTE}>
+                  Charlotte (Recommandée)
+                </option>
+                <option value={ElevenLabs.RECOMMENDED_VOICES.GRACE}>Grace</option>
+                <option value={ElevenLabs.RECOMMENDED_VOICES.MATILDA}>Matilda</option>
+                <option value={ElevenLabs.RECOMMENDED_VOICES.ADAM}>Adam (Masculine)</option>
+                {voices.length > 0 && voices.map((voice) => (
+                  <option key={voice.voice_id} value={voice.voice_id}>
+                    {voice.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                {voices.length > 0 ? `${voices.length} voix chargées` : 'Voix par défaut uniquement'}
+              </p>
+            </div>
 
-        <button
-          onClick={testWebSpeech}
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Volume2 className="w-5 h-5" />
-          )}
-          Test Web Speech
-        </button>
+            {/* Texte personnalisé */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Texte à dire
+              </label>
+              <textarea
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 rounded-2xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none transition-all resize-none"
+                placeholder="Entrez le texte ici..."
+              />
+            </div>
 
-        <button
-          onClick={stopAll}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all"
-        >
-          <VolumeX className="w-5 h-5" />
-          Arrêter
-        </button>
-      </div>
+            {/* Boutons de test */}
+            <div className="space-y-2">
+              <button
+                onClick={testElevenLabs}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
+                Test ElevenLabs
+              </button>
 
-      {/* Message d'erreur */}
-      {errorMessage && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 p-3 bg-red-50 border-2 border-red-200 rounded-2xl text-sm text-red-700"
-        >
-          {errorMessage}
-        </motion.div>
-      )}
+              <button
+                onClick={testWebSpeech}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
+                Test Web Speech
+              </button>
 
-      {/* Informations */}
-      <div className="mt-4 p-3 bg-orange-50 border-2 border-orange-200 rounded-2xl text-xs text-gray-600">
-        <p className="font-medium mb-2">Configuration requise :</p>
-        <ul className="space-y-1">
-          <li className="flex items-center gap-2">
-            {voicesLoadError ? (
-              <XCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
-            ) : (
-              <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
+              <button
+                onClick={stopAll}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-2xl font-medium hover:shadow-lg transition-all"
+              >
+                <VolumeX className="w-5 h-5" />
+                Arrêter
+              </button>
+            </div>
+
+            {/* Message d'erreur */}
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-4 p-3 bg-red-50 border-2 border-red-200 rounded-2xl text-sm text-red-700"
+              >
+                {errorMessage}
+              </motion.div>
             )}
-            <span>Clé API ElevenLabs dans Supabase</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <CheckCircle2 className="w-3 h-3 text-blue-500 flex-shrink-0" />
-            <span>Fallback automatique vers Web Speech</span>
-          </li>
-        </ul>
-        {voicesLoadError && (
-          <p className="mt-2 text-red-600 font-medium">
-            Pour activer ElevenLabs, ajoutez ELEVENLABS_API_KEY dans les Secrets Supabase
-          </p>
+
+            {/* Informations */}
+            <div className="mt-4 p-3 bg-orange-50 border-2 border-orange-200 rounded-2xl text-xs text-gray-600">
+              <p className="font-medium mb-2">Configuration requise :</p>
+              <ul className="space-y-1">
+                <li className="flex items-center gap-2">
+                  {voicesLoadError ? (
+                    <XCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
+                  )}
+                  <span>Clé API ElevenLabs dans Supabase</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                  <span>Fallback automatique vers Web Speech</span>
+                </li>
+              </ul>
+              {voicesLoadError && (
+                <p className="mt-2 text-red-600 font-medium">
+                  Pour activer ElevenLabs, ajoutez ELEVENLABS_API_KEY dans les Secrets Supabase
+                </p>
+              )}
+            </div>
+          </motion.div>
         )}
-      </div>
-    </motion.div>
+      </AnimatePresence>
+    </>
   );
 }

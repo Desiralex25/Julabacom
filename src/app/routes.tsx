@@ -90,6 +90,7 @@ import { SupportPage } from './components/shared/SupportPage';
 import { BOSupport } from './components/backoffice/BOSupport';
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import AuthTestPage from './pages/AuthTestPage';
+import TestTantie from './pages/TestTantie';
 
 export const router = createBrowserRouter([
   {
@@ -118,6 +119,10 @@ export const router = createBrowserRouter([
       {
         path: '/auth-test',
         element: <AuthTestPage />,
+      },
+      {
+        path: '/test-tantie',
+        element: <TestTantie />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {
