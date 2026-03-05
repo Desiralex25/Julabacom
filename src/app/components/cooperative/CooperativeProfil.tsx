@@ -93,7 +93,6 @@ export function CooperativeProfil() {
       dateEmission: '12 Jan 2024',
       status: 'valide' as const,
       delivrePar: 'Ministère du Commerce, Abidjan',
-      imageUrl: '/images/doc-paper.png',
     },
     {
       id: 'statuts',
@@ -102,7 +101,6 @@ export function CooperativeProfil() {
       dateEmission: '10 Jan 2024',
       status: 'valide' as const,
       delivrePar: 'Notaire Kouassi Jean - Abidjan',
-      imageUrl: '/images/doc-paper.png',
     },
     {
       id: 'agrement',
@@ -131,7 +129,6 @@ export function CooperativeProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: '/images/doc-cni.png',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -151,7 +148,6 @@ export function CooperativeProfil() {
       type: 'certification-julaba',
       title: 'Certification JULABA Coopérative',
       status: 'verified' as DocumentStatus,
-      imageUrl: '/images/doc-certificat.png',
       uploadedAt: '2024-02-20T08:00:00Z',
       verifiedAt: '2024-02-20T14:00:00Z',
       verifiedBy: 'Aminata Touré - JULABA',

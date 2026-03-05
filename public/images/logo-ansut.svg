@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
-  <rect width="200" height="80" rx="8" fill="#009A00"/>
-  <text x="100" y="32" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="white">ANSUT</text>
-  <text x="100" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" fill="#C8E6C9">Autorité Nationale</text>
-  <text x="100" y="63" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" fill="#C8E6C9">des Systèmes d'Information</text>
-  <rect x="20" y="70" width="160" height="2" rx="1" fill="white"/>
-</svg>

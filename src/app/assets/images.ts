@@ -22,9 +22,6 @@ export const IMG_TANTIE_SAGESSE_ICON_INSTITUTION   = '/images/tantie-sagesse-ico
 export const IMG_TANTIE_SAGESSE_ICON_IDENTIFICATEUR = '/images/tantie-sagesse-icon-identificateur.png';
 
 // ── Logos institutionnels ─────────────────────────────────────
-export const IMG_ARMOIRIES_CI         = '/images/armoiries-ci.png';
-export const IMG_LOGO_DGE             = '/images/logo-dge.png';
-export const IMG_LOGO_ANSUT           = '/images/logo-ansut.png';
 export const IMG_LOGO_JULABA          = '/images/logo-julaba.png';
 export const IMG_LOGO_JULABA_SPLASH   = '/images/logo-julaba-splash.png';
 export const IMG_LOGO_PARTENAIRES     = '/images/partenaires.png';
@@ -69,11 +66,6 @@ export const IMG_PRODUIT_ANANAS       = '/images/produit-ananas.png';
 export const IMG_PRODUIT_ARACHIDE     = '/images/produit-arachide.png';
 export const IMG_PRODUIT_AUTRE        = '/images/produit-autre.png';
 export const IMG_PRODUIT_REPAS        = '/images/produit-repas.png';
-
-// ── Documents ─────────────────────────────────────────────────
-export const IMG_DOC_CNI              = '/images/doc-cni.png';
-export const IMG_DOC_CERTIFICAT       = '/images/doc-certificat.png';
-export const IMG_DOC_PAPER            = '/images/doc-paper.png';
 
 // ── Fonds d'écran Onboarding ──────────────────────────────────
 export const IMG_BG_MARKET            = '/images/bg-market.png';
