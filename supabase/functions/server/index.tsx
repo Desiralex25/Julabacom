@@ -3,6 +3,7 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import * as kv from "./kv_store.tsx";
+import { sendSMS } from "./sms.ts";
 
 const app = new Hono();
 
@@ -379,6 +380,260 @@ app.post("/make-server-488793d3/auth/logout", async (c) => {
     console.log('Logout error:', error);
     return c.json({ 
       error: 'Erreur serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTHENTIFICATION OTP (SMS)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * POST /auth/send-otp - Envoyer un code OTP par SMS
+ * Body: { phone: string }
+ * En production: envoie un vrai SMS via Twilio/Vonage/etc
+ * En développement: stocke le code dans KV et le log
+ */
+app.post("/make-server-488793d3/auth/send-otp", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone } = body;
+
+    if (!phone || !/^\d{10}$/.test(phone)) {
+      return c.json({ 
+        error: 'Numéro de téléphone invalide (10 chiffres requis)' 
+      }, 400);
+    }
+
+    // Générer un code OTP aléatoire de 4 chiffres
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    // Expiration: 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    // Stocker l'OTP dans KV avec le téléphone comme clé
+    const otpKey = `otp:${phone}`;
+    await kv.set(otpKey, {
+      code: otpCode,
+      expiresAt: expiresAt,
+      attempts: 0,
+      createdAt: new Date().toISOString()
+    });
+
+    // Log pour développement
+    console.log(`📱 OTP pour ${phone}: ${otpCode} (expire à ${expiresAt})`);
+
+    // Envoyer le SMS via Wassoya
+    const smsMessage = `Votre code Jùlaba : ${otpCode}\nValide 10 minutes.\nNe partagez jamais ce code.`;
+    const smsResult = await sendSMS(phone, smsMessage);
+
+    if (!smsResult.success) {
+      console.error(`⚠️ Erreur envoi SMS Wassoya: ${smsResult.error}`);
+      // On continue quand même - l'utilisateur peut voir le code en dev
+    } else {
+      console.log(`✅ SMS envoyé avec succès à ${phone} via Wassoya`);
+    }
+
+    // Déterminer si on est en mode développement
+    const isDev = Deno.env.get('DENO_ENV') !== 'production';
+
+    return c.json({
+      success: true,
+      message: 'Code OTP envoyé avec succès',
+      smsDelivered: smsResult.success,
+      // En dev uniquement - afficher le code
+      ...(isDev && {
+        devOnly: {
+          code: otpCode,
+          expiresAt: expiresAt,
+          smsError: smsResult.success ? undefined : smsResult.error
+        }
+      })
+    });
+
+  } catch (error) {
+    console.log('Error sending OTP:', error);
+    return c.json({ 
+      error: 'Erreur lors de l\'envoi du code OTP',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+/**
+ * POST /auth/verify-otp - Vérifier le code OTP et connecter l'utilisateur
+ * Body: { phone: string, code: string }
+ */
+app.post("/make-server-488793d3/auth/verify-otp", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone, code } = body;
+
+    if (!phone || !code) {
+      return c.json({ 
+        error: 'Téléphone et code requis' 
+      }, 400);
+    }
+
+    // Récupérer l'OTP stocké
+    const otpKey = `otp:${phone}`;
+    const otpData = await kv.get(otpKey);
+
+    if (!otpData) {
+      return c.json({ 
+        error: 'Code OTP invalide ou expiré' 
+      }, 401);
+    }
+
+    // Vérifier l'expiration
+    if (new Date(otpData.expiresAt) < new Date()) {
+      await kv.del(otpKey);
+      return c.json({ 
+        error: 'Code OTP expiré. Demandez un nouveau code.' 
+      }, 401);
+    }
+
+    // Vérifier le nombre de tentatives (max 3)
+    if (otpData.attempts >= 3) {
+      await kv.del(otpKey);
+      return c.json({ 
+        error: 'Trop de tentatives. Demandez un nouveau code.' 
+      }, 429);
+    }
+
+    // Vérifier le code
+    if (otpData.code !== code) {
+      // Incrémenter les tentatives
+      await kv.set(otpKey, {
+        ...otpData,
+        attempts: otpData.attempts + 1
+      });
+      
+      return c.json({ 
+        error: 'Code OTP incorrect',
+        attemptsRemaining: 3 - (otpData.attempts + 1)
+      }, 401);
+    }
+
+    // Code correct ! Supprimer l'OTP
+    await kv.del(otpKey);
+
+    // Vérifier si l'utilisateur existe dans la base
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users_julaba')
+      .select('*')
+      .eq('phone', phone)
+      .single();
+
+    if (profileError || !userProfile) {
+      // Nouvel utilisateur - retourner un token temporaire pour l'onboarding
+      return c.json({
+        success: true,
+        newUser: true,
+        phone: phone,
+        message: 'Bienvenue ! Complétez votre profil pour continuer.'
+      });
+    }
+
+    // Utilisateur existant - créer une session Supabase
+    const authEmail = `${phone}@julaba.local`;
+    
+    // Tenter de se connecter avec le compte Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: phone // Mot de passe = numéro de téléphone par défaut
+    });
+
+    if (authError) {
+      console.log('Auth error after OTP:', authError);
+      // Si pas de compte auth, en créer un
+      const { data: newAuthData, error: createError } = await supabase.auth.admin.createUser({
+        email: authEmail,
+        password: phone,
+        email_confirm: true,
+        user_metadata: {
+          phone: phone,
+          name: `${userProfile.first_name} ${userProfile.last_name}`
+        }
+      });
+
+      if (createError) {
+        console.log('Error creating auth user:', createError);
+        return c.json({ 
+          error: 'Erreur lors de la création de session',
+          details: createError.message
+        }, 500);
+      }
+
+      // Mettre à jour le profil avec l'auth_user_id
+      await supabase
+        .from('users_julaba')
+        .update({ auth_user_id: newAuthData.user.id })
+        .eq('id', userProfile.id);
+
+      // Générer un token d'accès
+      const { data: sessionData } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: authEmail
+      });
+
+      return c.json({
+        success: true,
+        newUser: false,
+        accessToken: sessionData.properties.action_link,
+        user: {
+          id: userProfile.id,
+          phone: userProfile.phone,
+          firstName: userProfile.first_name,
+          lastName: userProfile.last_name,
+          role: userProfile.role,
+          region: userProfile.region,
+          commune: userProfile.commune,
+          activity: userProfile.activity,
+          market: userProfile.market,
+          cooperativeName: userProfile.cooperative_name,
+          institutionName: userProfile.institution_name,
+          score: userProfile.score,
+          validated: userProfile.validated,
+          createdAt: userProfile.created_at
+        }
+      });
+    }
+
+    // Mettre à jour last_login_at
+    await supabase
+      .from('users_julaba')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', userProfile.id);
+
+    return c.json({
+      success: true,
+      newUser: false,
+      accessToken: authData.session.access_token,
+      refreshToken: authData.session.refresh_token,
+      user: {
+        id: userProfile.id,
+        phone: userProfile.phone,
+        firstName: userProfile.first_name,
+        lastName: userProfile.last_name,
+        role: userProfile.role,
+        region: userProfile.region,
+        commune: userProfile.commune,
+        activity: userProfile.activity,
+        market: userProfile.market,
+        cooperativeName: userProfile.cooperative_name,
+        institutionName: userProfile.institution_name,
+        score: userProfile.score,
+        validated: userProfile.validated,
+        createdAt: userProfile.created_at
+      }
+    });
+
+  } catch (error) {
+    console.log('Error verifying OTP:', error);
+    return c.json({ 
+      error: 'Erreur lors de la vérification du code OTP',
       details: error instanceof Error ? error.message : 'Erreur inconnue'
     }, 500);
   }

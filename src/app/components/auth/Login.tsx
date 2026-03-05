@@ -1,3 +1,4 @@
+// Page de connexion Jùlaba - Logo blanc officiel intégré
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
@@ -7,7 +8,9 @@ import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
-import logoJulabaBlanc from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
+import { sendOTP, verifyOTP } from '../../utils/api';
+
+const logoJulabaBlanc = '/images/logo-julaba-blanc.svg';
 const logoOrange = '/images/logo-orange.svg';
 const logoTonDje = '/images/logo-tondje.svg';
 const tantieSagesseImg = '/images/tantie-sagesse.svg';
@@ -18,18 +21,17 @@ export function Login() {
   const { setUser: setUserProfile } = useUser();
   const [phone, setPhone] = useState('');
   const [showOTP, setShowOTP] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '']); // Changed to 4 digits
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [error, setError] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [tantieSpeechText, setTantieSpeechText] = useState('Appuie sur moi pour me parler');
+  const [isLoading, setIsLoading] = useState(false);
+  const [devOtpCode, setDevOtpCode] = useState('');
   const recognitionRef = useRef<any>(null);
   const hasSpokenWelcome = useRef(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-
-  // Default OTP code for demo
-  const DEFAULT_OTP = '1234'; // Changed to 4 digits
 
   // Charger les voix au démarrage
   useEffect(() => {
@@ -173,18 +175,42 @@ export function Login() {
     }
   }, [showOTP]);
 
-  const handlePhoneSubmit = () => {
+  const handlePhoneSubmit = async () => {
     if (phone.length !== 10) {
       setError('Le numéro doit contenir 10 chiffres');
       speakWithText('Le numéro doit contenir 10 chiffres');
       return;
     }
 
-    // TODO: Vérifier le numéro dans Supabase
-    // Pour l'instant, on accepte tous les numéros pour permettre les tests
-    speakWithText('Un code de vérification a été envoyé par SMS');
-    setShowOTP(true);
+    setIsLoading(true);
     setError('');
+
+    try {
+      const result = await sendOTP(phone);
+
+      if (result.error) {
+        setError(result.error);
+        speakWithText(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      // En mode développement, afficher le code OTP
+      if (result.data?.code) {
+        setDevOtpCode(result.data.code);
+        console.log('🔐 Code OTP de développement:', result.data.code);
+      }
+
+      speakWithText('Un code de vérification a été envoyé par SMS');
+      setShowOTP(true);
+      setError('');
+    } catch (err) {
+      console.error('Error in handlePhoneSubmit:', err);
+      setError('Erreur lors de l\'envoi du code');
+      speakWithText('Erreur lors de l\'envoi du code');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOTPChange = (index: number, value: string) => {
@@ -201,7 +227,7 @@ export function Login() {
     }
   };
 
-  const handleOTPSubmit = () => {
+  const handleOTPSubmit = async () => {
     const otpCode = otp.join('');
     
     if (otpCode.length !== 4) {
@@ -210,16 +236,67 @@ export function Login() {
       return;
     }
 
-    // TODO: Valider OTP avec Supabase et récupérer l'utilisateur
-    // Pour l'instant, afficher un message d'erreur car pas de backend connecté
-    setError('Connexion impossible : backend non configuré. Configure Supabase pour continuer.');
-    speakWithText('Connexion impossible. Le backend doit être configuré.');
-    
-    // TEMPORAIRE : Pour les tests, décommenter les lignes suivantes et créer un user de test
-    // const testUser = { id: '1', phone, firstName: 'Test', lastName: 'User', role: 'marchand', ... };
-    // setAppUser(testUser);
-    // setUserProfile(testUser);
-    // navigate('/marchand');
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await verifyOTP(phone, otpCode);
+
+      if (result.error) {
+        setError(result.error);
+        speakWithText(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      // Nouvel utilisateur - rediriger vers l'onboarding
+      if (result.data?.newUser) {
+        speakWithText('Bienvenue ! Complète ton profil pour continuer.');
+        // TODO: Rediriger vers l'onboarding
+        navigate('/onboarding', { state: { phone } });
+        return;
+      }
+
+      // Utilisateur existant - connecté !
+      if (result.data?.user) {
+        const user = result.data.user;
+        
+        // Sauvegarder l'utilisateur dans les contextes
+        setAppUser(user);
+        setUserProfile(user);
+
+        // Sauvegarder le token
+        if (result.data.accessToken) {
+          localStorage.setItem('julaba_access_token', result.data.accessToken);
+        }
+        if (result.data.refreshToken) {
+          localStorage.setItem('julaba_refresh_token', result.data.refreshToken);
+        }
+
+        speakWithText(`Bienvenue ${user.firstName} ! Redirection en cours...`);
+
+        // Rediriger selon le rôle
+        setTimeout(() => {
+          const roleRoutes: Record<string, string> = {
+            'marchand': '/marchand',
+            'producteur': '/producteur',
+            'cooperative': '/cooperative',
+            'institution': '/institution',
+            'identificateur': '/identificateur',
+            'consommateur': '/consommateur',
+            'super_admin': '/super-admin'
+          };
+          
+          const route = roleRoutes[user.role] || '/marchand';
+          navigate(route);
+        }, 1500);
+      }
+    } catch (err) {
+      console.error('Error in handleOTPSubmit:', err);
+      setError('Erreur lors de la vérification');
+      speakWithText('Erreur lors de la vérification');
+      setIsLoading(false);
+    }
   };
 
   const handleMicClick = () => {
@@ -416,11 +493,12 @@ export function Login() {
 
               <Button
                 onClick={handlePhoneSubmit}
-                className="w-full h-14 rounded-2xl text-lg font-semibold"
+                disabled={isLoading || phone.length !== 10}
+                className="w-full h-14 rounded-2xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#C46210' }}
               >
-                Continuer
-                <ArrowRight className="w-5 h-5 ml-2" />
+                {isLoading ? 'Envoi en cours...' : 'Continuer'}
+                {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
 
               {error && error.includes('pas encore enregistré') && (
@@ -469,12 +547,26 @@ export function Login() {
                 </motion.p>
               )}
 
+              {/* Code OTP en mode développement */}
+              {devOtpCode && import.meta.env.DEV && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 p-3 rounded-2xl bg-blue-50 border-2 border-blue-200"
+                >
+                  <p className="text-xs text-blue-600 font-medium text-center">
+                    Mode développement - Code OTP : <span className="font-bold text-xl">{devOtpCode}</span>
+                  </p>
+                </motion.div>
+              )}
+
               <Button
                 onClick={handleOTPSubmit}
-                className="w-full h-14 rounded-2xl text-lg font-semibold"
+                disabled={isLoading || otp.join('').length !== 4}
+                className="w-full h-14 rounded-2xl text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#C46210' }}
               >
-                Valider
+                {isLoading ? 'Vérification...' : 'Valider'}
               </Button>
 
               <button
