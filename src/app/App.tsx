@@ -21,12 +21,16 @@ import { SupportConfigProvider } from './contexts/SupportConfigContext';
 import { TicketsProvider } from './contexts/TicketsContext';
 import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
+import { TantieSagesseTest } from './components/TantieSagesseTest';
 
 // ✅ Cache version UI (acceptable - préférence cosmétique)
 const CACHE_VERSION = 'v3-clean';
 if (localStorage.getItem('julaba_cache_version') !== CACHE_VERSION) {
   localStorage.setItem('julaba_cache_version', CACHE_VERSION);
 }
+
+// Mode développement pour tester Tantie Sagesse
+const SHOW_TANTIE_TEST = import.meta.env.DEV;
 
 export default function App() {
   return (
@@ -53,6 +57,7 @@ export default function App() {
                                           <ProducteurProvider>
                                             <RouterProvider router={router} />
                                             <Toaster />
+                                            {SHOW_TANTIE_TEST && <TantieSagesseTest />}
                                           </ProducteurProvider>
                                         </IdentificateurProvider>
                                       </InstitutionAccessProvider>

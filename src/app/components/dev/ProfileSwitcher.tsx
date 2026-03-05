@@ -3,10 +3,8 @@
  * JÙLABA — ProfileSwitcher (MODE DEV UNIQUEMENT)
  * ═══════════════════════════════════════════════════════════════════
  * 
- * IMPORTANT : Ce composant est DÉSACTIVÉ en attente de Supabase.
- * Les mock users ont été supprimés pour la migration production.
- * 
- * TODO: Réactiver avec liste d'utilisateurs depuis Supabase
+ * Composant de développement permettant l'accès rapide à tous les profils
+ * utilisateurs et au Back-Office sans authentification.
  */
 
 import React, { useState } from 'react';
@@ -14,8 +12,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
-import { Users, X, Code, ShieldCheck, Crown, Globe, MapPin, BarChart3, ChevronRight, AlertCircle } from 'lucide-react';
+import { Users, X, Code, Crown, Globe, MapPin, BarChart3, ChevronRight, Store, Leaf, UsersRound, Building2, Scan } from 'lucide-react';
 import { useBackOffice, MOCK_BO_USERS, BORoleType } from '../../contexts/BackOfficeContext';
+import { DEV_MOCK_USERS } from '../../data/mockUsers';
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -27,6 +26,14 @@ const BO_ROLES: { role: BORoleType; label: string; desc: string; icon: any; colo
   { role: 'analyste', label: 'Analyste', desc: 'Lecture seule', icon: BarChart3, color: '#8B5CF6' },
 ];
 
+const PROFILE_COLORS: Record<string, { color: string; icon: any }> = {
+  'marchand': { color: '#10B981', icon: Store },
+  'producteur': { color: '#F59E0B', icon: Leaf },
+  'cooperative': { color: '#8B5CF6', icon: UsersRound },
+  'institution': { color: '#3B82F6', icon: Building2 },
+  'identificateur': { color: '#EC4899', icon: Scan },
+};
+
 export function ProfileSwitcher() {
   const navigate = useNavigate();
   const { setUser: setAppUser } = useApp();
@@ -35,6 +42,7 @@ export function ProfileSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const [showBO, setShowBO] = useState(false);
   const [boLoading, setBoLoading] = useState<BORoleType | null>(null);
+  const [profileLoading, setProfileLoading] = useState<string | null>(null);
 
   const handleBOAccess = async (role: BORoleType) => {
     setBoLoading(role);
@@ -47,6 +55,32 @@ export function ProfileSwitcher() {
       navigate('/backoffice/dashboard');
     }
     setBoLoading(null);
+  };
+
+  const handleProfileSwitch = async (userId: string) => {
+    setProfileLoading(userId);
+    await new Promise(r => setTimeout(r, 350));
+    const user = DEV_MOCK_USERS.find(u => u.id === userId);
+    if (user) {
+      console.log('[ProfileSwitcher] Switching to user:', user);
+      setAppUser(user);
+      setUserProfile(user);
+      console.log('[ProfileSwitcher] User set successfully');
+      setIsOpen(false);
+      setShowBO(false);
+      
+      // Navigation selon le profil
+      const routes: Record<string, string> = {
+        'marchand': '/marchand',
+        'producteur': '/producteur',
+        'cooperative': '/cooperative',
+        'institution': '/institution',
+        'identificateur': '/identificateur',
+      };
+      console.log('[ProfileSwitcher] Navigating to:', routes[user.role]);
+      navigate(routes[user.role] || '/');
+    }
+    setProfileLoading(null);
   };
 
   const isDevEnvironment =
@@ -118,27 +152,52 @@ export function ProfileSwitcher() {
               {/* Content */}
               <div className="p-6 max-h-[60vh] overflow-y-auto">
                 {!showBO ? (
-                  // Acteurs Jùlaba - DÉSACTIVÉ
-                  <div className="text-center py-8 space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto">
-                      <AlertCircle className="w-8 h-8 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Profils désactivés
-                      </h3>
-                      <p className="text-sm text-gray-600 max-w-xs mx-auto">
-                        Les utilisateurs mock ont été supprimés pour la migration Supabase.
-                        Configure Supabase pour activer le changement de profil.
-                      </p>
-                    </div>
+                  // Acteurs Jùlaba - ACTIVÉ
+                  <div className="space-y-3">
+                    {DEV_MOCK_USERS.map((user) => {
+                      const { color, icon: Icon } = PROFILE_COLORS[user.role] || { color: '#6B7280', icon: Users };
+                      return (
+                        <motion.button
+                          key={user.id}
+                          onClick={() => handleProfileSwitch(user.id)}
+                          disabled={profileLoading !== null}
+                          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-lg disabled:opacity-50"
+                          style={{
+                            borderColor: profileLoading === user.id ? color : '#E5E7EB',
+                            backgroundColor: profileLoading === user.id ? `${color}15` : 'white'
+                          }}
+                          whileHover={{ scale: profileLoading === null ? 1.02 : 1 }}
+                          whileTap={{ scale: profileLoading === null ? 0.98 : 1 }}
+                        >
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
+                            <Icon className="w-5 h-5" style={{ color }} />
+                          </div>
+                          <div className="flex-1 text-left">
+                            <div className="font-semibold text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500 capitalize">
+                              {user.role === 'marchand' && 'Commerçant'}
+                              {user.role === 'producteur' && 'Producteur'}
+                              {user.role === 'cooperative' && 'Coopérative'}
+                              {user.role === 'institution' && 'Institution'}
+                              {user.role === 'identificateur' && 'Identificateur'}
+                              {' • '}
+                              {user.region}
+                            </div>
+                          </div>
+                          {profileLoading === user.id ? (
+                            <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 ) : (
-                  // Back-Office - ACTIF (utilise toujours MOCK_BO_USERS)
+                  // Back-Office - ACTIF
                   <div className="space-y-3">
-                    <p className="text-xs text-gray-500 mb-4 bg-yellow-50 p-3 rounded-2xl border border-yellow-200">
-                      ⚠️ Back-Office utilise encore des mock users. À migrer vers Supabase.
-                    </p>
                     {BO_ROLES.map(({ role, label, desc, icon: Icon, color }) => (
                       <motion.button
                         key={role}

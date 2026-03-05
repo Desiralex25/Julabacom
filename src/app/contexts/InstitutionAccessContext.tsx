@@ -28,6 +28,12 @@ export function InstitutionAccessProvider({ children }: { children: ReactNode })
   // TODO: Charger depuis Supabase via session utilisateur
   const institutionProfil = institutions.find(i => i.id === CONNECTED_INSTITUTION_ID) || null;
 
+  // Debug en mode DEV
+  if (import.meta.env.DEV) {
+    console.log('[InstitutionAccessContext] Institutions disponibles:', institutions);
+    console.log('[InstitutionAccessContext] Institution connectée (ID:', CONNECTED_INSTITUTION_ID, '):', institutionProfil);
+  }
+
   const getLevel = (module: keyof ModuleAcces): NiveauAcces => {
     return institutionProfil?.modules[module] || 'aucun';
   };

@@ -41,7 +41,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Percent, Edit3, User, Plus, Bug, Wrench, ArrowDown, Minus, Building,
   Printer, Hash, Navigation, Map, Gift, UserPlus, PiggyBank, Moon,
   Shuffle, Mail, Snowflake, Smile, Circle, Bell, CheckCircle, XCircle,
-  Award, Zap, Star, BarChart2 : BarChart2, ThumbsUp, Flame, ArrowLeft,
+  Award, Zap, Star, BarChart2, ThumbsUp, Flame, ArrowLeft,
   ChevronRight, Play, Volume2,
 };
 
@@ -1037,7 +1037,7 @@ export function UniversalAcademy() {
 
   // ════════════════════════════════════════════════════════════════════════════
   // SCREEN: VICTORY
-  // ════════════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════���═══════════════════════
   if (screen === 'victory' && game && victoryData) {
     const perfect = game.correctCount === game.questions.length;
     const stars = game.correctCount >= 5 ? 3 : game.correctCount >= 3 ? 2 : 1;

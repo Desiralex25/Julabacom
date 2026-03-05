@@ -12,6 +12,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as ElevenLabs from '../services/elevenlabs';
 
 export type UserRole = 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
 
@@ -145,25 +146,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ✅ Toutes les données doivent venir de Supabase via un useEffect dédié
 
-  // Voice synthesis function
+  // ═══════════════════════════════════════════════════════════════════
+  // TANTIE SAGESSE - Synthèse vocale avec ElevenLabs
+  // ═══════════════════════════════════════════════════════════════════
+  
+  /**
+   * Fonction de synthèse vocale principale
+   * Utilise ElevenLabs en priorité avec fallback automatique vers Web Speech API
+   */
   const speak = (text: string) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || !text || text.trim().length === 0) return;
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
-      utterance.rate = 0.9;
-      
-      utterance.onerror = (event) => {
-        if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          console.error('Erreur synthèse vocale:', event.error);
-        }
-      };
-      
-      window.speechSynthesis.speak(utterance);
-    }
+    // Utiliser ElevenLabs avec fallback automatique vers Web Speech API
+    ElevenLabs.speakWithFallback(
+      text,
+      isOnline, // N'utiliser ElevenLabs que si en ligne
+      ElevenLabs.RECOMMENDED_VOICES.CHARLOTTE // Voix Tantie Sagesse par défaut
+    ).catch((error) => {
+      console.error('Erreur Tantie Sagesse:', error);
+    });
   };
 
   // Monitor online/offline status

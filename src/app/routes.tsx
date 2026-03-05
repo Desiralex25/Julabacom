@@ -88,6 +88,8 @@ import { NouvelleIdentification } from './components/identificateur/NouvelleIden
 import { FicheIdentificationDynamique } from './components/identificateur/FicheIdentificationDynamique';
 import { SupportPage } from './components/shared/SupportPage';
 import { BOSupport } from './components/backoffice/BOSupport';
+import SupabaseTestPage from './pages/SupabaseTestPage';
+import AuthTestPage from './pages/AuthTestPage';
 
 export const router = createBrowserRouter([
   {
@@ -108,6 +110,14 @@ export const router = createBrowserRouter([
       {
         path: '/login',
         element: <Login />,
+      },
+      {
+        path: '/supabase-test',
+        element: <SupabaseTestPage />,
+      },
+      {
+        path: '/auth-test',
+        element: <AuthTestPage />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {

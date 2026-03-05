@@ -185,6 +185,30 @@ export const MOCK_BO_USERS: BOUser[] = [
   { id: 'bo5', nom: 'DIALLO', prenom: 'Mamadou', email: 'gestionnaire.bouake@julaba.ci', role: 'gestionnaire_zone', region: 'Bouaké', lastLogin: '2026-03-01T09:20:00', actif: false },
 ];
 
+// ⚠️ Institution mock pour développement
+export const MOCK_INSTITUTIONS: InstitutionBO[] = [
+  {
+    id: 'inst1',
+    nom: 'Direction Générale de l\'Économie',
+    type: 'ministere',
+    region: 'Abidjan',
+    email: 'contact@dge.gouv.ci',
+    referentNom: 'Jean KOUADIO',
+    referentTelephone: '+225 07 07 07 07 07',
+    statut: 'actif',
+    dateCreation: '2024-01-01',
+    modules: {
+      dashboard: 'complet',
+      analytics: 'complet',
+      acteurs: 'lecture',
+      supervision: 'complet',
+      audit: 'lecture',
+      export: 'complet',
+    },
+    creePar: 'Super Admin',
+  },
+];
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 interface BackOfficeContextType {
@@ -227,7 +251,7 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   const [commissions, setCommissions] = useState<BOCommission[]>([]);
   const [auditLogs, setAuditLogs] = useState<BOAuditLog[]>([]);
   const [boUsers, setBOUsers] = useState<BOUser[]>(MOCK_BO_USERS); // Garde MOCK_BO_USERS pour DEV
-  const [institutions, setInstitutions] = useState<InstitutionBO[]>([]);
+  const [institutions, setInstitutions] = useState<InstitutionBO[]>(MOCK_INSTITUTIONS); // Institution mock pour DEV
 
   const hasPermission = (permission: string): boolean => {
     if (!boUser) return false;

@@ -84,38 +84,148 @@ function InstitutionSuspended() {
   );
 }
 
-function BottomNav({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
+function BottomNav({ navItems, institutionProfil }: { navItems: typeof ALL_NAV_ITEMS; institutionProfil: any }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ HARMONISATION : Afficher seulement 4 items principaux (comme les autres profils)
+  const mainItems = navItems.filter(item => item.module !== null).slice(0, 4);
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-gray-100 lg:hidden">
-      <div className="flex items-center justify-around px-2 py-2">
-        {navItems.map(item => {
-          const isActive = item.exact
-            ? location.pathname === item.path
-            : location.pathname.startsWith(item.path);
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl min-w-0 active:scale-95 transition-transform"
-              style={isActive ? { background: `${PRIMARY_COLOR}15` } : {}}
-            >
-              <item.icon
-                className="w-5 h-5 flex-shrink-0"
-                style={{ color: isActive ? PRIMARY_COLOR : '#9CA3AF' }}
-              />
-              <span
-                className="text-[10px] font-bold truncate"
-                style={{ color: isActive ? PRIMARY_COLOR : '#9CA3AF' }}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden pb-safe">
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        className="relative mx-4 mb-4 rounded-[2rem] overflow-hidden"
+        style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 -4px 40px rgba(0, 0, 0, 0.1), 0 8px 32px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        {/* Active indicator wave */}
+        <AnimatePresence mode="wait">
+          {mainItems.map((item, index) => {
+            const isActive = item.exact
+              ? location.pathname === item.path
+              : location.pathname.startsWith(item.path);
+            if (isActive) {
+              return (
+                <motion.div
+                  key={item.path}
+                  className="absolute top-0 h-1 rounded-full"
+                  style={{ 
+                    backgroundColor: PRIMARY_COLOR,
+                    width: '25%',
+                  }}
+                  initial={{ left: '0%', opacity: 0 }}
+                  animate={{ 
+                    left: `${index * 25}%`,
+                    opacity: 1,
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 300, 
+                    damping: 30 
+                  }}
+                />
+              );
+            }
+            return null;
+          })}
+        </AnimatePresence>
+
+        {/* Tabs Container */}
+        <div className="flex items-center justify-around px-2">
+          {mainItems.map(item => {
+            const isActive = item.exact
+              ? location.pathname === item.path
+              : location.pathname.startsWith(item.path);
+            const Icon = item.icon;
+            return (
+              <motion.button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="relative flex flex-col items-center justify-center flex-1 transition-all py-3"
+                whileTap={{ scale: 0.85 }}
               >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                {/* Icon with 3D effect */}
+                <motion.div
+                  className="relative mb-1"
+                  animate={isActive ? {
+                    y: [0, -4, 0],
+                    rotateY: [0, 5, 0, -5, 0],
+                  } : {}}
+                  transition={isActive ? {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  } : {}}
+                >
+                  {/* 3D Shadow */}
+                  {isActive && (
+                    <motion.div
+                      className="absolute inset-0 blur-md opacity-50"
+                      style={{ backgroundColor: PRIMARY_COLOR }}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.5, 0.3],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  )}
+                  
+                  <Icon 
+                    className="w-6 h-6 relative z-10 transition-all" 
+                    style={{ 
+                      color: isActive ? PRIMARY_COLOR : '#9CA3AF',
+                      filter: isActive ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' : 'none',
+                    }}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                </motion.div>
+
+                {/* Label */}
+                <motion.span
+                  className="text-xs font-medium transition-all"
+                  style={{ 
+                    color: isActive ? PRIMARY_COLOR : '#9CA3AF',
+                  }}
+                  animate={isActive ? {
+                    scale: [1, 1.05, 1],
+                  } : {}}
+                  transition={isActive ? {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  } : {}}
+                >
+                  {item.label}
+                </motion.span>
+
+                {/* Active dot */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      className="absolute -bottom-1 w-1 h-1 rounded-full"
+                      style={{ backgroundColor: PRIMARY_COLOR }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                    />
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
     </nav>
   );
 }
@@ -124,6 +234,8 @@ function DesktopSidebar({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { institutionProfil } = useInstitutionAccess();
+
+  if (!institutionProfil) return null;
 
   return (
     <nav className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-gray-100 flex-col z-40 shadow-sm">
@@ -194,6 +306,12 @@ export function InstitutionLayout() {
 
   const institutionId = user?.id || 'institution-001';
 
+  // Debug en mode DEV
+  if (import.meta.env.DEV) {
+    console.log('[InstitutionLayout] User:', user);
+    console.log('[InstitutionLayout] User role:', user?.role);
+  }
+
   // Vérifier si l'utilisateur est connecté en tant qu'institution
   if (user?.role !== 'institution') {
     return (
@@ -232,6 +350,19 @@ export function InstitutionLayout() {
             Retour à l'accueil
           </motion.button>
         </motion.div>
+        {import.meta.env.DEV && <ProfileSwitcher />}
+      </div>
+    );
+  }
+
+  // Vérifier si le profil institution est chargé
+  if (!institutionProfil) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full animate-pulse" style={{ backgroundColor: `${PRIMARY_COLOR}20` }} />
+          <p className="text-gray-500">Chargement du profil institution...</p>
+        </div>
         {import.meta.env.DEV && <ProfileSwitcher />}
       </div>
     );
@@ -300,7 +431,7 @@ export function InstitutionLayout() {
       </main>
 
       {/* Navigation mobile — filtrée */}
-      <BottomNav navItems={navItems} />
+      <BottomNav navItems={navItems} institutionProfil={institutionProfil} />
 
       {/* Dev only */}
       {import.meta.env.DEV && <ProfileSwitcher />}

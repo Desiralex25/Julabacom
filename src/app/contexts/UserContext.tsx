@@ -69,7 +69,33 @@ const DEFAULT_USER: UserData = {
 };
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUserState] = useState<UserData | null>(null);
+  const [user, setUserState] = useState<UserData | null>(() => {
+    // ✅ En mode DEV, restaurer l'utilisateur depuis sessionStorage si disponible
+    if (import.meta.env.DEV) {
+      try {
+        const stored = sessionStorage.getItem('julaba_dev_user');
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn('Error loading dev user:', e);
+      }
+    }
+    return null;
+  });
+
+  // ✅ Sauvegarder l'utilisateur en sessionStorage en mode DEV
+  useEffect(() => {
+    if (import.meta.env.DEV && user) {
+      try {
+        sessionStorage.setItem('julaba_dev_user', JSON.stringify(user));
+      } catch (e) {
+        console.warn('Error saving dev user:', e);
+      }
+    } else if (import.meta.env.DEV && !user) {
+      sessionStorage.removeItem('julaba_dev_user');
+    }
+  }, [user]);
 
   // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
   // TODO: Charger le profil utilisateur depuis Supabase au démarrage

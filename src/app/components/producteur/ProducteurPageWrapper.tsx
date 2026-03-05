@@ -160,14 +160,13 @@ export function ProducteurPageWrapper({ children, suggestions }: ProducteurPageW
                         <motion.button
                           key={index}
                           onClick={() => handleExampleClick(phrase)}
-                          className="p-4 rounded-2xl text-left"
+                          className="p-4 rounded-2xl text-left hover:bg-white/35"
                           style={{
                             backgroundColor: 'rgba(255, 255, 255, 0.25)',
                             backdropFilter: 'blur(15px)',
                             border: '1.5px solid rgba(255, 255, 255, 0.4)',
                             borderRadius: index % 2 === 0 ? '20px 20px 20px 4px' : '20px 20px 4px 20px',
                           }}
-                          className="hover:bg-white/35"
                           whileHover={{ scale: 1.05, y: -6 }}
                           whileTap={{ scale: 0.95 }}
                           initial={{ opacity: 0, y: 20 }}
