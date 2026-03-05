@@ -656,8 +656,8 @@ export function Rapports() {
                   <h3 className="text-lg font-bold text-gray-900">Performance hebdomadaire</h3>
                   <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height={256}>
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={performanceHebdo}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="jour" stroke="#9CA3AF" />
@@ -684,8 +684,8 @@ export function Rapports() {
                   <h3 className="text-lg font-bold text-gray-900">Évolution mensuelle</h3>
                   <Activity className="w-5 h-5" style={{ color: '#9F8170' }} />
                 </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height={256}>
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={performanceMensuelle}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="semaine" stroke="#9CA3AF" />

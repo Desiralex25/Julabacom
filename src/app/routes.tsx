@@ -92,6 +92,8 @@ import { BOLogin } from './components/backoffice/BOLogin';
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import AuthTestPage from './pages/AuthTestPage';
 import TestTantie from './pages/TestTantie';
+import TestElevenLabs from './pages/TestElevenLabs';
+import DatabaseViewer from './pages/DatabaseViewer';
 
 export const router = createBrowserRouter([
   {
@@ -124,6 +126,14 @@ export const router = createBrowserRouter([
       {
         path: '/test-tantie',
         element: <TestTantie />,
+      },
+      {
+        path: '/test-elevenlabs',
+        element: <TestElevenLabs />,
+      },
+      {
+        path: '/database',
+        element: <DatabaseViewer />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {

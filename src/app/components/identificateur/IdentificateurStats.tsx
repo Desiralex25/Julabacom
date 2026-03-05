@@ -178,7 +178,8 @@ export function IdentificateurStats() {
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={250}>
+        <div className="min-h-[250px]">
+          <ResponsiveContainer width="100%" height={250}>
           <LineChart data={evolutionData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis dataKey="date" stroke="#9CA3AF" style={{ fontSize: '12px' }} />
@@ -201,6 +202,7 @@ export function IdentificateurStats() {
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </motion.div>
 
       {/* Répartition par commune */}
@@ -212,7 +214,8 @@ export function IdentificateurStats() {
       >
         <h2 className="font-semibold text-gray-900 mb-6">Répartition par commune</h2>
         
-        <ResponsiveContainer width="100%" height={250}>
+        <div className="min-h-[250px]">
+          <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
               data={communeData}
@@ -231,6 +234,7 @@ export function IdentificateurStats() {
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
+        </div>
       </motion.div>
 
       {/* Top produits identifiés */}
@@ -242,7 +246,8 @@ export function IdentificateurStats() {
       >
         <h2 className="font-semibold text-gray-900 mb-6">Top produits identifiés</h2>
         
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300}>
           <BarChart data={produitsData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis dataKey="produit" stroke="#9CA3AF" style={{ fontSize: '12px' }} />
@@ -258,6 +263,7 @@ export function IdentificateurStats() {
             <Bar dataKey="nombre" fill={PRIMARY_COLOR} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </motion.div>
     </div>
   );

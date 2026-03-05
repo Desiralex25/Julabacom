@@ -429,7 +429,8 @@ export function ResumeCaisse() {
             <h3 className="text-sm font-bold text-gray-800 mb-4">
               Évolution du solde
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <div className="min-h-[200px]">
+              <ResponsiveContainer width="100%" height={200}>
               <LineChart data={evolutionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="day" stroke="#9CA3AF" style={{ fontSize: '10px' }} />
@@ -453,6 +454,7 @@ export function ResumeCaisse() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </motion.div>
         )}
 

@@ -64,7 +64,12 @@ export async function speak(
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('ElevenLabs TTS error:', errorData);
+        // Ne pas logger comme erreur si c'est un problème de compte gratuit (401)
+        if (response.status === 401) {
+          console.info('ℹ️ ElevenLabs Free Tier désactivé - utilisation de la synthèse vocale native');
+        } else {
+          console.warn('⚠️ ElevenLabs TTS warning:', errorData);
+        }
         throw new Error(errorData.error || 'Erreur de synthèse vocale');
       }
 
@@ -115,7 +120,9 @@ export async function speak(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('Speak error:', errorMessage);
+    console.error('❌ ElevenLabs TTS error:', errorMessage);
+    console.info('💡 Pour utiliser le fallback Web Speech API, appelez speakWithFallback() au lieu de speak()');
+    
     if (onError) onError(errorMessage);
     return false;
   }

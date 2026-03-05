@@ -480,7 +480,8 @@ export function RapportsIdentificateur() {
                     <p className="text-xs text-gray-600">Identifications vs Objectifs</p>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <div className="min-h-[250px]">
+                  <ResponsiveContainer width="100%" height={250}>
                   <AreaChart data={performanceData}>
                     <defs>
                       <linearGradient id="colorIdentifications" x1="0" y1="0" x2="0" y2="1">
@@ -522,6 +523,7 @@ export function RapportsIdentificateur() {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
               </motion.div>
 
               {/* Section 2: Performance hebdomadaire */}
@@ -546,7 +548,8 @@ export function RapportsIdentificateur() {
                     <p className="text-xs text-gray-600">Répartition par jour et par type</p>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <div className="min-h-[250px]">
+                  <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={weeklyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis dataKey="jour" stroke="#6B7280" style={{ fontSize: '12px' }} />
@@ -564,6 +567,7 @@ export function RapportsIdentificateur() {
                     <Bar dataKey="producteurs" fill="#16A34A" radius={[8, 8, 0, 0]} name="Producteurs" />
                   </BarChart>
                 </ResponsiveContainer>
+                </div>
               </motion.div>
 
               {/* Section 3: Répartition et Top Zones */}
@@ -584,7 +588,8 @@ export function RapportsIdentificateur() {
                       <p className="text-xs text-gray-600">Par type d'acteur</p>
                     </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={200}>
+                  <div className="min-h-[200px]">
+                    <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie
                         data={repartitionData}
@@ -609,6 +614,7 @@ export function RapportsIdentificateur() {
                       />
                     </PieChart>
                   </ResponsiveContainer>
+                  </div>
                   <div className="flex items-center justify-center gap-6 mt-2">
                     {repartitionData.map((item) => (
                       <div key={item.name} className="flex items-center gap-2">

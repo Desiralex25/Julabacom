@@ -208,8 +208,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </div>
 
           {/* Graphique */}
-          <div className="h-32 mb-4">
-            <ResponsiveContainer width="100%" height={128}>
+          <div className="h-32 min-h-[128px] mb-4">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={demandesData}>
                 <Line 
                   type="monotone" 
