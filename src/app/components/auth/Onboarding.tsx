@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Phone } from 'lucide-react';
 import { Button } from '../ui/button';
+import { getSystemSettings } from '../../utils/api';
 
 export function Onboarding() {
   const location = useLocation();
   const navigate = useNavigate();
   const phone = location.state?.phone || '';
+  const [supportPhone, setSupportPhone] = useState<string>('');
+
+  useEffect(() => {
+    // Récupérer le numéro de support depuis le serveur
+    getSystemSettings().then(response => {
+      if (response.success && response.settings?.supportPhone) {
+        setSupportPhone(response.settings.supportPhone);
+      }
+    }).catch(error => {
+      console.error('Erreur récupération paramètres système:', error);
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#C46210] to-[#A85108] flex flex-col items-center justify-center p-4">
@@ -25,9 +38,22 @@ export function Onboarding() {
         </p>
 
         <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 mb-6">
-          <p className="text-sm text-amber-800 font-medium">
+          <p className="text-sm text-amber-800 font-medium mb-4">
             Pour créer ton compte, contacte un agent identificateur ou un administrateur Jùlaba.
           </p>
+          
+          {supportPhone && (
+            <motion.a
+              href={`tel:${supportPhone}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-3 bg-gradient-to-r from-[#C46210] to-[#A85108] text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow"
+            >
+              <Phone className="w-5 h-5" />
+              <span>Appeler le support : {supportPhone}</span>
+            </motion.a>
+          )}
         </div>
 
         <Button

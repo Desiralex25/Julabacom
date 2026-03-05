@@ -386,6 +386,35 @@ app.post("/make-server-488793d3/auth/logout", async (c) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
+// PARAMÈTRES SYSTÈME
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /system/settings - Récupérer les paramètres système publics
+ * Retourne les paramètres configurés par le BO (numéro de support, etc.)
+ */
+app.get("/make-server-488793d3/system/settings", async (c) => {
+  try {
+    // Récupérer le numéro de support configuré par le BO
+    const supportPhone = await kv.get('system:support_phone');
+    
+    return c.json({
+      success: true,
+      settings: {
+        supportPhone: supportPhone || '0700000000', // Valeur par défaut
+      }
+    });
+
+  } catch (error) {
+    console.log('Error fetching system settings:', error);
+    return c.json({ 
+      error: 'Erreur lors de la récupération des paramètres',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // AUTHENTIFICATION OTP (SMS)
 // ═══════════════════════════════════════════════════════════════════
 

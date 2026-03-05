@@ -84,3 +84,39 @@ export async function verifyOTP(phone: string, code: string): Promise<ApiRespons
     };
   }
 }
+
+/**
+ * Récupérer les paramètres système (numéro de support, etc.)
+ */
+export async function getSystemSettings(): Promise<{ 
+  success?: boolean;
+  error?: string;
+  settings?: {
+    supportPhone?: string;
+  };
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/system/settings`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${publicAnonKey}`
+      }
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { 
+        error: data.error || 'Erreur lors de la récupération des paramètres'
+      };
+    }
+
+    return { success: true, settings: data.settings };
+  } catch (error) {
+    console.error('Error fetching system settings:', error);
+    return { 
+      error: 'Erreur réseau'
+    };
+  }
+}
