@@ -17,7 +17,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel, danger }: any
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel}>
           <motion.div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2"
             style={{ borderColor: danger ? '#EF4444' : BO_PRIMARY }}

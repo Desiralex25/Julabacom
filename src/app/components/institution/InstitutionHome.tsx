@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../contexts/AppContext';
-import { Navigation } from '../layout/Navigation';
 import { Card } from '../ui/card';
 import {
   AreaChart,
@@ -35,7 +34,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import tantieSagesseImg from 'figma:asset/267116a23e4c64fcb00a127e2e64d1ebe888d92e.png';
+const tantieSagesseImg = '/images/tantie-sagesse-institution.svg';
 
 const PRIMARY_COLOR = '#712864';
 
@@ -118,7 +117,7 @@ export function InstitutionHome() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-purple-50 via-white to-gray-50">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-purple-50 via-white to-gray-50">
 
         {/* ── Tantie Sagesse — IDENTIQUE à IdentificateurHome ─────────────── */}
         <motion.div
@@ -144,44 +143,49 @@ export function InstitutionHome() {
             </motion.div>
 
             {/* Card contenu à droite */}
-            <Card className="flex-1 px-8 py-6 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: PRIMARY_COLOR }}>
+            <Card className="flex-1 px-5 py-5 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: PRIMARY_COLOR }}>
               <motion.div
                 className="absolute inset-0 opacity-5"
                 style={{ background: `linear-gradient(135deg, ${PRIMARY_COLOR}FF 0%, ${PRIMARY_COLOR}99 100%)` }}
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 3, repeat: Infinity }}
               />
-              <div className="relative z-10 w-full h-full">
-                <motion.h3
-                  className="font-bold text-2xl text-gray-900 mb-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  Tantie Sagesse
-                </motion.h3>
-                <motion.p
-                  className="text-gray-600 leading-relaxed pr-4"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Bonjour {user?.firstName} ! {MACRO_KPIs.acteursActifs.toLocaleString()} acteurs actifs sur {MACRO_KPIs.totalActeurs.toLocaleString()} inscrits
-                </motion.p>
+              <div className="relative z-10 flex flex-col justify-between h-full">
+                <div className="flex-1 flex flex-col justify-center">
+                  <motion.h3
+                    className="font-black text-gray-900 mb-1 leading-tight"
+                    style={{ fontSize: 'clamp(1.4rem, 4.5vw, 2.2rem)' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    Tantie Sagesse
+                  </motion.h3>
+                  <motion.p
+                    className="text-gray-600 leading-snug"
+                    style={{ fontSize: 'clamp(0.8rem, 2.5vw, 1rem)' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    Bonjour {user?.firstName} ! {MACRO_KPIs.acteursActifs.toLocaleString()} acteurs actifs sur {MACRO_KPIs.totalActeurs.toLocaleString()} inscrits
+                  </motion.p>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <motion.button
+                    onClick={handleListenMessage}
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLOR }}
+                    whileHover={{ scale: 1.1, boxShadow: `0 8px 20px ${PRIMARY_COLOR}40` }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </motion.button>
+                </div>
               </div>
-              <motion.button
-                onClick={handleListenMessage}
-                className="flex items-center gap-2 px-6 py-3 rounded-full text-base font-semibold text-white shadow-md absolute bottom-5 left-8 z-20"
-                style={{ backgroundColor: PRIMARY_COLOR }}
-                whileHover={{ scale: 1.05, boxShadow: `0 8px 20px ${PRIMARY_COLOR}33` }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Volume2 className="w-5 h-5" />
-                Écouter
-              </motion.button>
             </Card>
           </div>
         </motion.div>
@@ -390,8 +394,8 @@ export function InstitutionHome() {
               <ResponsiveContainer width="50%" height={160}>
                 <PieChart>
                   <Pie data={DATA_REPARTITION} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value">
-                    {DATA_REPARTITION.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
+                    {DATA_REPARTITION.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: any) => [v.toLocaleString(), '']} />
@@ -463,18 +467,23 @@ export function InstitutionHome() {
         >
           <motion.button
             onClick={() => navigate('/institution/acteurs')}
-            className="text-left bg-gradient-to-r from-purple-600 via-purple-700 to-purple-600 rounded-3xl p-6 shadow-2xl border-2 border-purple-500 overflow-hidden relative"
+            className="text-left rounded-3xl p-6 shadow-2xl border-2 overflow-hidden relative"
+            style={{ 
+              background: 'linear-gradient(to right, #9333ea, #7e22ce, #9333ea)',
+              borderColor: '#a855f7'
+            }}
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.2), rgba(255,255,255,0))' }}
               animate={{ x: ['-100%', '100%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
             />
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border-2 border-white/30">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }}>
                   <Users className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -488,18 +497,23 @@ export function InstitutionHome() {
 
           <motion.button
             onClick={() => navigate('/institution/supervision')}
-            className="text-left bg-gradient-to-r from-teal-600 via-teal-700 to-teal-600 rounded-3xl p-6 shadow-2xl border-2 border-teal-500 overflow-hidden relative"
+            className="text-left rounded-3xl p-6 shadow-2xl border-2 overflow-hidden relative"
+            style={{ 
+              background: 'linear-gradient(to right, #0d9488, #0f766e, #0d9488)',
+              borderColor: '#14b8a6'
+            }}
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
           >
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.2), rgba(255,255,255,0))' }}
               animate={{ x: ['-100%', '100%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'linear', delay: 1.5 }}
             />
             <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center border-2 border-white/30">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center border-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }}>
                   <BarChart3 className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -512,8 +526,6 @@ export function InstitutionHome() {
           </motion.button>
         </motion.div>
       </div>
-
-      <Navigation role="institution" onMicClick={handleTantieClick} />
     </>
   );
 }

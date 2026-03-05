@@ -11,7 +11,7 @@ import {
   ModuleType,
   ModuleConfig,
 } from '../../config/tantieSagesseConfig';
-import tantieSagesseImg from 'figma:asset/c57c6b035a1cf2a547f2ddf8ab7ca6884bc3980e.png';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 interface TantieSagesseProps {
   floating?: boolean; // Mode flottant ou intégré

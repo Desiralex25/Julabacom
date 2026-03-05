@@ -3,18 +3,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Sprout } from 'lucide-react';
 import { useProducteur } from '../../contexts/ProducteurContext';
 import { useApp } from '../../contexts/AppContext';
-import imgTomate    from 'figma:asset/3f404bf155a6eee4cc2737b6af97a7c631b87222.png';
-import imgAubergine from 'figma:asset/6ce6df54809849e879a06eaf7918a55ca163820f.png';
-import imgPiment    from 'figma:asset/d54203781be4a457752de89ea0db6890f85d988e.png';
-import imgGombo     from 'figma:asset/95307b3732ef40ca9d8bd6624da7c522d9948462.png';
-import imgManioc    from 'figma:asset/a8dd641535ef5323445a866d2e4bd615e27fc174.png';
-import imgIgname    from 'figma:asset/3455362570027e36c9a85017824295c213e28df6.png';
-import imgMais      from 'figma:asset/e1a0b089a99b00606487505dfc216319053c9041.png';
-import imgRiz       from 'figma:asset/56b3634c65cdeb27356c50771cd1f9dcc7896111.png';
-import imgBanane    from 'figma:asset/92dc960457fec2eabe1d823033adf5fa3c460d5a.png';
-import imgOignon    from 'figma:asset/c3ae45cebe4fdb00d42876b5d0ceefb1dc8f4f6a.png';
-import imgAvocat    from 'figma:asset/4d72e34496aa54e4e0690caf465e524ccfaba086.png';
-import imgAutre     from 'figma:asset/258632942d5c4b19368d2b4708d1d8028773eb5e.png';
+const imgTomate    = '/images/produit-tomate.svg';
+const imgAubergine = '/images/produit-aubergine.svg';
+const imgPiment    = '/images/produit-piment.svg';
+const imgGombo     = '/images/produit-gombo.svg';
+const imgManioc    = '/images/produit-manioc.svg';
+const imgIgname    = '/images/produit-igname.svg';
+const imgMais      = '/images/produit-mais.svg';
+const imgRiz       = '/images/produit-riz.svg';
+const imgBanane    = '/images/produit-banane.svg';
+const imgOignon    = '/images/produit-oignon.svg';
+const imgAvocat    = '/images/produit-avocat.svg';
+const imgAutre     = '/images/produit-autre.svg';
 
 interface CreerCycleModalProps {
   isOpen: boolean;
@@ -91,7 +91,7 @@ export function CreerCycleModal({ isOpen, onClose }: CreerCycleModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
           />
 
           {/* Modal */}
@@ -100,7 +100,7 @@ export function CreerCycleModal({ isOpen, onClose }: CreerCycleModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: 30 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[101] overflow-hidden"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden"
             style={{ maxHeight: '90vh' }}
           >
             {/* Header vert */}

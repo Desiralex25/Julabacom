@@ -28,27 +28,23 @@ const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
 export function ScoreProvider({ children }: { children: ReactNode }) {
   const [scores, setScores] = useState<Map<string, ScoreJulaba>>(new Map());
 
-  // Charger depuis localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('julaba_scores');
-    if (stored) {
-      const scoresArray: [string, ScoreJulaba][] = JSON.parse(stored);
-      setScores(new Map(scoresArray));
-    }
-  }, []);
-
-  // Sauvegarder automatiquement
-  useEffect(() => {
-    const scoresArray = Array.from(scores.entries());
-    localStorage.setItem('julaba_scores', JSON.stringify(scoresArray));
-  }, [scores]);
+  // TODO: Charger depuis Supabase
+  // ✅ localStorage SUPPRIMÉ
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data } = await supabase.from('scores').select('*');
+  //     const scoresMap = new Map(data?.map(s => [s.userId, s]) || []);
+  //     setScores(scoresMap);
+  //   };
+  //   loadData();
+  // }, []);
 
   // 📊 Calculer le critère "Régularité" (35%)
   const calculerRegularite = (userId: string): number => {
     // Compter les jours actifs dans les 30 derniers jours
     // Un jour est actif si au moins 1 transaction/action
-    
-    const transactions = JSON.parse(localStorage.getItem('julaba_transactions') || '[]');
+    // TODO: Charger depuis Supabase
+    const transactions: any[] = [];
     const userTransactions = transactions.filter((t: any) => t.userId === userId);
     
     const derniers30Jours = new Date();
@@ -71,8 +67,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
 
   // 📄 Calculer le critère "Documents" (15%)
   const calculerDocuments = (userId: string): number => {
-    // Récupérer les documents de l'utilisateur
-    const users = JSON.parse(localStorage.getItem('julaba_users') || '[]');
+    // TODO: Charger depuis Supabase
+    const users: any[] = [];
     const user = users.find((u: any) => u.id === userId);
     
     if (!user || !user.documents) return 0;
@@ -87,8 +83,9 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
 
   // 💰 Calculer le critère "Volume" (35%)
   const calculerVolume = (userId: string, region: string): number => {
-    const transactions = JSON.parse(localStorage.getItem('julaba_transactions') || '[]');
-    const walletTransactions = JSON.parse(localStorage.getItem('julaba_wallet_transactions') || '[]');
+    // TODO: Charger depuis Supabase
+    const transactions: any[] = [];
+    const walletTransactions: any[] = [];
     
     const derniers30Jours = new Date();
     derniers30Jours.setDate(derniers30Jours.getDate() - 30);
@@ -99,7 +96,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       .reduce((sum: number, t: any) => sum + (t.amount || t.price * t.quantity || 0), 0);
     
     // Calculer moyenne zone (tous utilisateurs de la même région)
-    const users = JSON.parse(localStorage.getItem('julaba_users') || '[]');
+    // TODO: Charger depuis Supabase
+    const users: any[] = [];
     const usersZone = users.filter((u: any) => u.region === region);
     
     if (usersZone.length === 0) return 50; // Défaut si pas de données
@@ -122,9 +120,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
 
   // ⭐ Calculer le critère "Feedback" (15%)
   const calculerFeedback = (userId: string): number => {
-    // Récupérer les feedbacks (à implémenter avec FeedbackContext)
-    // Pour l'instant, mock
-    const feedbacks = JSON.parse(localStorage.getItem('julaba_feedbacks') || '[]');
+    // TODO: Charger depuis Supabase
+    const feedbacks: any[] = [];
     const userFeedbacks = feedbacks.filter((f: any) => f.targetUserId === userId);
     
     if (userFeedbacks.length === 0) return 50; // Défaut si aucun feedback
@@ -136,8 +133,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
 
   // 🎯 Calculer le score total
   const calculerScore = async (userId: string): Promise<ScoreJulaba> => {
-    // Récupérer infos utilisateur
-    const users = JSON.parse(localStorage.getItem('julaba_users') || '[]');
+    // TODO: Charger depuis Supabase
+    const users: any[] = [];
     const user = users.find((u: any) => u.id === userId);
     
     if (!user) throw new Error('Utilisateur introuvable');
@@ -211,8 +208,6 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
     
     // Sauvegarder
     setScores(new Map(scores.set(userId, scoreJulaba)));
-    
-    console.log(`⭐ Score calculé pour ${userId} : ${scoreTotal}/100 (${niveau})`);
     
     return scoreJulaba;
   };

@@ -19,6 +19,7 @@ import { useApp } from '../../contexts/AppContext';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NotificationButton } from './NotificationButton';
+import { Montant } from '../shared/Montant';
 
 export function VentesPassees() {
   const navigate = useNavigate();
@@ -121,7 +122,7 @@ export function VentesPassees() {
           >
             <p className="text-xs font-semibold text-gray-600 mb-1">Total ventes</p>
             <p className="text-lg font-bold text-green-700">
-              {stats.totalVentes.toLocaleString()} FCFA
+              <Montant value={stats.totalVentes} size="md" color="#15803d" />
             </p>
           </motion.div>
 
@@ -132,7 +133,7 @@ export function VentesPassees() {
           >
             <p className="text-xs font-semibold text-gray-600 mb-1">Marges</p>
             <p className="text-lg font-bold" style={{ color: '#C46210' }}>
-              {stats.totalMarges.toLocaleString()} FCFA
+              <Montant value={stats.totalMarges} size="md" color="#C46210" />
             </p>
           </motion.div>
 
@@ -329,10 +330,10 @@ export function VentesPassees() {
                   {/* Montant principal */}
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-600">
-                      {sale.quantity} × {sale.price.toLocaleString()} FCFA
+                      {sale.quantity} × {sale.price.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                     </span>
                     <span className="text-xl font-bold" style={{ color: '#C46210' }}>
-                      {(sale.price * sale.quantity).toLocaleString()} FCFA
+                      <Montant value={sale.price * sale.quantity} size="lg" color="#C46210" />
                     </span>
                   </div>
 
@@ -359,7 +360,7 @@ export function VentesPassees() {
                               Marge unitaire
                             </span>
                             <span className="text-sm font-bold text-green-700">
-                              {sale.margin.toLocaleString()} FCFA
+                              {sale.margin.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                             </span>
                           </div>
                         )}
@@ -369,7 +370,7 @@ export function VentesPassees() {
                               Marge totale
                             </span>
                             <span className="text-sm font-bold text-green-700">
-                              +{sale.totalMargin.toLocaleString()} FCFA
+                              +{sale.totalMargin.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                             </span>
                           </div>
                         )}
@@ -379,7 +380,7 @@ export function VentesPassees() {
                               Prix d'achat unitaire
                             </span>
                             <span className="text-sm text-gray-700">
-                              {sale.purchasePrice.toLocaleString()} FCFA
+                              {sale.purchasePrice.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                             </span>
                           </div>
                         )}

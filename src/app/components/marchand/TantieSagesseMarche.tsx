@@ -120,7 +120,6 @@ export function TantieSagesseMarche({
 
   // Traiter les commandes vocales
   const processVoiceCommand = (command: string) => {
-    console.log('Command:', command);
 
     // Réponse à la question d'aide
     if (conversationState === 'waiting') {

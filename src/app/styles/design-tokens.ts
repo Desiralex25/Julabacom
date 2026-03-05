@@ -212,16 +212,34 @@ export const MOTION = {
 // 📐 Z-INDEX
 // ============================================
 
+/**
+ * HIÉRARCHIE Z-INDEX JULABA — NE PAS MODIFIER SANS RAISON
+ *
+ * Header:          40
+ * Sidebar:         45
+ * BottomBar:       50
+ * Popover:         60
+ * Toast:           70
+ * Tooltip:         80
+ * ModalBackdrop:  200   ← tous les backdrops
+ * Modal:          210   ← toutes les cartes de modal
+ * ModalTop:       220   ← modal sur modal (rare)
+ * DevTools:      9999
+ */
 export const Z_INDEX = {
   base: 0,
   dropdown: 10,
   sticky: 20,
   fixed: 30,
-  modalBackdrop: 100,
-  modal: 110,
+  header: 40,
+  sidebar: 45,
+  bottomBar: 50,
   popover: 60,
   toast: 70,
   tooltip: 80,
+  modalBackdrop: 200,
+  modal: 210,
+  modalTop: 220,
   max: 9999,
 } as const;
 

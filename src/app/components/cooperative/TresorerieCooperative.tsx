@@ -19,11 +19,13 @@ import {
 } from 'lucide-react';
 import { useCooperative } from '../../contexts/CooperativeContext';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { Navigation } from '../layout/Navigation';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Montant, MontantCard } from '../shared/Montant';
 
 const COOPERATIVE_COLOR = '#2072AF';
 
@@ -40,7 +42,7 @@ export function TresorerieCooperative() {
     getTotalCotisations,
     membres,
   } = useCooperative();
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
 
   const [filtrePeriode, setFiltrePeriode] = useState<FiltrePeriode>('tout');
   const [filtreCategorie, setFiltreCategorie] = useState<FiltreCategorie>('tout');
@@ -48,11 +50,8 @@ export function TresorerieCooperative() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [transactionSelectionnee, setTransactionSelectionnee] = useState<any>(null);
 
-  // Gérer l'affichage de la bottom bar selon l'état des modals
-  React.useEffect(() => {
-    const isAnyModalOpen = showAjoutModal || showDetailModal;
-    setIsModalOpen(isAnyModalOpen);
-  }, [showAjoutModal, showDetailModal, setIsModalOpen]);
+  // Sync ModalContext
+  useModalRegister(showAjoutModal || showDetailModal);
 
   // Formulaire nouvelle transaction
   const [typeTransaction, setTypeTransaction] = useState<'entree' | 'sortie'>('entree');
@@ -191,7 +190,7 @@ export function TresorerieCooperative() {
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
               >
-                {soldeActuel.toLocaleString()} FCFA
+                <Montant value={soldeActuel} size="2xl" color="white" />
               </motion.h1>
             </div>
 
@@ -207,7 +206,7 @@ export function TresorerieCooperative() {
                   </div>
                   <p className="text-xs text-blue-100">Entrées</p>
                 </div>
-                <p className="text-xl font-bold text-white">{totalEntrees.toLocaleString()}</p>
+                <p className="text-xl font-bold text-white">{totalEntrees.toLocaleString()} <span className="text-sm opacity-70">FCFA</span></p>
               </motion.div>
 
               <motion.div
@@ -220,7 +219,7 @@ export function TresorerieCooperative() {
                   </div>
                   <p className="text-xs text-blue-100">Sorties</p>
                 </div>
-                <p className="text-xl font-bold text-white">{totalSorties.toLocaleString()}</p>
+                <p className="text-xl font-bold text-white">{totalSorties.toLocaleString()} <span className="text-sm opacity-70">FCFA</span></p>
               </motion.div>
             </div>
 
@@ -397,7 +396,7 @@ export function TresorerieCooperative() {
                         className="text-lg font-bold"
                         style={{ color: transaction.type === 'entree' ? '#10B981' : '#EF4444' }}
                       >
-                        {transaction.type === 'entree' ? '+' : '-'}{transaction.montant.toLocaleString()}
+                        {transaction.type === 'entree' ? '+' : '-'}{transaction.montant.toLocaleString()} <span className="text-xs opacity-70">FCFA</span>
                       </p>
                       {transaction.statut === 'en_attente' && (
                         <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full mt-1">
@@ -429,7 +428,7 @@ export function TresorerieCooperative() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowAjoutModal(false)}
           >
             <motion.div
@@ -548,7 +547,7 @@ export function TresorerieCooperative() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
             onClick={() => setShowDetailModal(false)}
           >
             <motion.div
@@ -575,7 +574,7 @@ export function TresorerieCooperative() {
                 </div>
                 <p className="text-3xl font-bold">
                   {transactionSelectionnee.type === 'entree' ? '+' : '-'}
-                  {transactionSelectionnee.montant.toLocaleString()} FCFA
+                  {transactionSelectionnee.montant.toLocaleString()} <span className="text-lg opacity-70 font-bold">FCFA</span>
                 </p>
               </div>
 

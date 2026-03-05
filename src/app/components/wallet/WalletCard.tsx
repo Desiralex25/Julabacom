@@ -15,6 +15,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Card } from '../ui/card';
 import { RechargeWalletModal } from './RechargeWalletModal';
 import { WithdrawWalletModal } from './WithdrawWalletModal';
+import { Montant } from '../shared/Montant';
 
 interface WalletCardProps {
   roleColor?: string;
@@ -76,6 +77,7 @@ export function WalletCard({ roleColor = '#2E8B57', onNavigate }: WalletCardProp
             onClick={handleToggleExpand}
             className="w-full p-5 flex items-center justify-between text-left cursor-pointer"
             whileTap={{ scale: 0.99 }}
+            style={{ backgroundColor: '#ffffff' }}
             whileHover={onNavigate ? { backgroundColor: `${roleColor}08` } : {}}
           >
             <div className="flex items-center gap-3 flex-1">
@@ -95,11 +97,11 @@ export function WalletCard({ roleColor = '#2E8B57', onNavigate }: WalletCardProp
                   style={{ color: roleColor }}
                 >
                   {showBalance ? available.toLocaleString() : '••••••'}
-                  <span className="text-sm ml-1">FCFA</span>
+                  <span className="text-xs ml-1 opacity-60 font-bold">FCFA</span>
                 </p>
                 {escrowBalance > 0 && (
                   <p className="text-xs text-gray-500 mt-1">
-                    {showBalance ? escrowBalance.toLocaleString() : '•••'} FCFA en attente
+                    {showBalance ? escrowBalance.toLocaleString() : '•••'} <span className="text-[10px]">FCFA</span> en attente
                   </p>
                 )}
               </div>
@@ -194,7 +196,7 @@ export function WalletCard({ roleColor = '#2E8B57', onNavigate }: WalletCardProp
                             En attente de livraison
                           </p>
                           <p className="text-xl font-bold" style={{ color: roleColor }}>
-                            {showBalance ? escrowBalance.toLocaleString() : '••••••'} FCFA
+                            {showBalance ? escrowBalance.toLocaleString() : '••••••'} <span className="text-xs opacity-70 font-bold">FCFA</span>
                           </p>
                         </div>
                       </div>

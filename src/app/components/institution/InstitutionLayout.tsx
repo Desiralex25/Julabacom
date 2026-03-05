@@ -10,6 +10,7 @@ import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { NotifBellButton, NotificationsPanel } from '../shared/NotificationsPanel';
 import { useUser } from '../../contexts/UserContext';
 import { ModuleAcces } from '../../contexts/BackOfficeContext';
+import { ScrollToTop } from '../layout/ScrollToTop';
 
 const PRIMARY_COLOR = '#712864';
 
@@ -95,12 +96,11 @@ function BottomNav({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
             ? location.pathname === item.path
             : location.pathname.startsWith(item.path);
           return (
-            <motion.button
+            <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl min-w-0"
+              className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl min-w-0 active:scale-95 transition-transform"
               style={isActive ? { background: `${PRIMARY_COLOR}15` } : {}}
-              whileTap={{ scale: 0.92 }}
             >
               <item.icon
                 className="w-5 h-5 flex-shrink-0"
@@ -112,7 +112,7 @@ function BottomNav({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
               >
                 {item.label}
               </span>
-            </motion.button>
+            </button>
           );
         })}
       </div>
@@ -159,7 +159,7 @@ function DesktopSidebar({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left font-bold text-sm"
               style={isActive
                 ? { backgroundColor: `${PRIMARY_COLOR}15`, color: PRIMARY_COLOR }
-                : { color: '#6B7280' }
+                : { color: '#6B7280', backgroundColor: '#ffffff' }
               }
               whileHover={isActive ? {} : { backgroundColor: '#F9FAFB' }}
               whileTap={{ scale: 0.97 }}
@@ -186,12 +186,56 @@ function DesktopSidebar({ navItems }: { navItems: typeof ALL_NAV_ITEMS }) {
 }
 
 export function InstitutionLayout() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const { canAccess, institutionProfil } = useInstitutionAccess();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const institutionId = user?.id || 'institution-001';
+
+  // Vérifier si l'utilisateur est connecté en tant qu'institution
+  if (user?.role !== 'institution') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white rounded-3xl border-2 border-gray-200 p-8 text-center"
+        >
+          <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: `${PRIMARY_COLOR}20` }}>
+            <ShieldOff className="w-10 h-10" style={{ color: PRIMARY_COLOR }} />
+          </div>
+          <h2 className="font-black text-gray-900 text-xl mb-3">Accès Institution requis</h2>
+          <p className="text-gray-600 text-sm mb-2">
+            Cette page est réservée aux utilisateurs avec un profil <strong>Institution</strong>.
+          </p>
+          {import.meta.env.DEV && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-4 text-left">
+              <p className="text-xs font-bold text-blue-900 mb-2">MODE DÉVELOPPEMENT</p>
+              <p className="text-xs text-blue-700 mb-3">
+                Utilisez le bouton <strong>DEV</strong> en bas à droite pour changer de profil.
+                Sélectionnez <strong>Institution — Jean Kouadio</strong> pour accéder à cette interface.
+              </p>
+              <p className="text-[10px] text-blue-600">
+                Role actuel : <strong>{user?.role || 'Non connecté'}</strong>
+              </p>
+            </div>
+          )}
+          <motion.button
+            onClick={() => navigate('/')}
+            className="w-full py-3 rounded-2xl font-bold text-white"
+            style={{ backgroundColor: PRIMARY_COLOR }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Retour à l'accueil
+          </motion.button>
+        </motion.div>
+        {import.meta.env.DEV && <ProfileSwitcher />}
+      </div>
+    );
+  }
 
   // Construire la liste de navigation filtrée
   const navItems = ALL_NAV_ITEMS.filter(item => {
@@ -204,7 +248,7 @@ export function InstitutionLayout() {
     return (
       <div className="min-h-screen bg-gray-50">
         <InstitutionSuspended />
-        <ProfileSwitcher />
+        {import.meta.env.DEV && <ProfileSwitcher />}
       </div>
     );
   }
@@ -225,6 +269,7 @@ export function InstitutionLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ScrollToTop />
       {/* Sidebar Desktop */}
       <DesktopSidebar navItems={navItems} />
 
@@ -258,7 +303,7 @@ export function InstitutionLayout() {
       <BottomNav navItems={navItems} />
 
       {/* Dev only */}
-      <ProfileSwitcher />
+      {import.meta.env.DEV && <ProfileSwitcher />}
     </div>
   );
 }

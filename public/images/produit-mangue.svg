@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFF8E1"/>
+  <path d="M200 320 Q100 280 100 200 Q100 120 160 110 Q200 105 230 130 Q300 160 300 230 Q300 290 200 320Z" fill="#FF8F00"/>
+  <path d="M200 315 Q105 278 106 200 Q107 125 162 115 Q200 110 228 134 Q295 163 295 228 Q295 285 200 315Z" fill="#FFA000"/>
+  <path d="M200 305 Q118 272 119 200 Q120 135 165 122 Q200 118 225 140 Q285 168 285 225 Q285 275 200 305Z" fill="#FFB300"/>
+  <ellipse cx="160" cy="175" rx="30" ry="18" fill="rgba(255,255,255,0.3)"/>
+  <!-- Tige et feuille -->
+  <line x1="195" y1="110" x2="192" y2="85" stroke="#558B2F" stroke-width="7" stroke-linecap="round"/>
+  <path d="M192 90 Q168 75 155 62 Q175 76 192 90Z" fill="#43A047"/>
+  <path d="M192 88 Q210 72 222 60 Q208 73 192 88Z" fill="#2E8B57"/>
+  <text x="200" y="375" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#E65100">Mangue</text>
+</svg>

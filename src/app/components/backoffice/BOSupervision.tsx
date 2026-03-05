@@ -209,7 +209,7 @@ export function BOSupervision() {
                   ))}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer key="chart-bo-supervision" width="100%" height={220}>
                 <BarChart data={chartData} barSize={32} onClick={d => d?.activePayload && setSelectedRegion(d.activePayload[0]?.payload?.fullRegion)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="region" tick={{ fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
@@ -532,7 +532,7 @@ export function BOSupervision() {
       {/* Modal détail transaction */}
       <AnimatePresence>
         {selected && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setSelected(null)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border-2"
@@ -604,7 +604,7 @@ export function BOSupervision() {
       {/* Modal Confirmation Action */}
       <AnimatePresence>
         {pendingAction && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setPendingAction(null)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2"

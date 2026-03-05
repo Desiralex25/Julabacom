@@ -289,7 +289,7 @@ export function RapportsIdentificateur() {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <FileText className="w-5 h-5" />
+            <FileText className="w-5 h-5 flex-shrink-0" />
             <span>Rapports</span>
           </motion.button>
 
@@ -299,7 +299,7 @@ export function RapportsIdentificateur() {
               speak('Performance');
               toast('Statistiques détaillées de performance');
             }}
-            className={`flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl font-semibold transition-all ${
+            className={`flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl font-semibold transition-all whitespace-nowrap ${
               selectedTab === 'performance'
                 ? 'bg-gradient-to-r from-[#9F8170] to-[#B39485] text-white border-2 border-[#9F8170] shadow-lg'
                 : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#9F8170]'
@@ -307,7 +307,7 @@ export function RapportsIdentificateur() {
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <TrendingUp className="w-5 h-5" />
+            <TrendingUp className="w-5 h-5 flex-shrink-0" />
             <span>Performance</span>
           </motion.button>
         </motion.div>
@@ -709,7 +709,7 @@ export function RapportsIdentificateur() {
       {/* Modal de détails du rapport */}
       <AnimatePresence>
         {showModal && selectedRapport && (
-          <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+          <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
             {/* Backdrop */}
             <motion.div
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -933,7 +933,7 @@ export function RapportsIdentificateur() {
       {/* Modal d'évolution mensuelle */}
       <AnimatePresence>
         {showEvolutionModal && (
-          <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+          <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
             {/* Backdrop */}
             <motion.div
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -1157,7 +1157,7 @@ export function RapportsIdentificateur() {
       {/* Modal de performance hebdomadaire */}
       <AnimatePresence>
         {showWeeklyModal && (
-          <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+          <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
             {/* Backdrop */}
             <motion.div
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"

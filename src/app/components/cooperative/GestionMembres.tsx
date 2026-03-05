@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
+import { Montant, MontantCard } from '../shared/Montant';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users,
   UserPlus,
-  Search,
   Filter,
   Phone,
   MapPin,
@@ -11,7 +13,6 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  Eye,
   Edit,
   Trash2,
   X,
@@ -22,12 +23,15 @@ import {
 } from 'lucide-react';
 import { useCooperative, MembreCooperative } from '../../contexts/CooperativeContext';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { Navigation } from '../layout/Navigation';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { SearchBar } from '../shared/SearchBar';
+import { matchesSearch } from '../../utils/searchUtils';
 
 const COOPERATIVE_COLOR = '#2072AF';
 
@@ -41,7 +45,7 @@ export function GestionMembres() {
     supprimerMembre,
     getMembresActifs,
   } = useCooperative();
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filtreStatut, setFiltreStatut] = useState<FiltreStatut>('tous');
@@ -50,35 +54,29 @@ export function GestionMembres() {
   const [membreSelectionne, setMembreSelectionne] = useState<MembreCooperative | null>(null);
   const [isListening, setIsListening] = useState(false);
 
-  // Gérer l'affichage de la bottom bar selon l'état des modals
-  React.useEffect(() => {
-    const isAnyModalOpen = showAjoutModal || showDetailModal;
-    setIsModalOpen(isAnyModalOpen);
-  }, [showAjoutModal, showDetailModal, setIsModalOpen]);
+  // Sync ModalContext (remplace l'ancien setIsModalOpen)
+  useModalRegister(showAjoutModal || showDetailModal);
 
   // Formulaire nouveau membre
+  const [photoMembre, setPhotoMembre] = useState('');
   const [nomMembre, setNomMembre] = useState('');
   const [prenomMembre, setPrenomMembre] = useState('');
   const [telephoneMembre, setTelephoneMembre] = useState('');
   const [specialiteMembre, setSpecialiteMembre] = useState('Maraîcher');
   const [localisationMembre, setLocalisationMembre] = useState('');
 
-  // Filtrer les membres
+  // Filtrer les membres — fonction unifiée
   const membresFiltres = membres.filter(membre => {
-    // Filtre recherche
-    const searchLower = searchTerm.toLowerCase();
-    const matchSearch =
-      membre.nom.toLowerCase().includes(searchLower) ||
-      membre.prenom.toLowerCase().includes(searchLower) ||
-      membre.telephone.includes(searchTerm) ||
-      membre.specialite.toLowerCase().includes(searchLower) ||
-      membre.localisation.toLowerCase().includes(searchLower);
-
+    const matchSearch = matchesSearch(
+      searchTerm,
+      membre.nom,
+      membre.prenom,
+      membre.telephone,
+      membre.specialite,
+      membre.localisation,
+    );
     if (!matchSearch) return false;
-
-    // Filtre statut
     if (filtreStatut !== 'tous' && membre.statut !== filtreStatut) return false;
-
     return true;
   });
 
@@ -250,27 +248,12 @@ export function GestionMembres() {
         {/* Recherche et Filtres */}
         <div className="px-4 py-4 space-y-3">
           {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher un membre..."
-              className="pl-12 pr-12 h-14 rounded-2xl border-2 border-gray-200 focus:border-blue-500"
-            />
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={startVoiceSearch}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center"
-              style={{
-                backgroundColor: isListening ? COOPERATIVE_COLOR : '#F3F4F6',
-                color: isListening ? 'white' : COOPERATIVE_COLOR,
-              }}
-            >
-              <Mic className="w-4 h-4" />
-            </motion.button>
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+            placeholder="Rechercher un membre..."
+            primaryColor={COOPERATIVE_COLOR}
+          />
 
           {/* Filtres statut */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -383,7 +366,7 @@ export function GestionMembres() {
                         <div className="flex items-center gap-1">
                           <TrendingUp className="w-4 h-4 text-green-600" />
                           <span className="text-xs font-medium text-gray-700">
-                            {membre.totalVentes.toLocaleString()} FCFA
+                            {membre.totalVentes.toLocaleString()} <span className="text-[10px] opacity-70">FCFA</span>
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -416,7 +399,7 @@ export function GestionMembres() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowAjoutModal(false)}
           >
             <motion.div
@@ -442,6 +425,16 @@ export function GestionMembres() {
 
               {/* Formulaire */}
               <div className="p-6 space-y-4">
+                {/* Photo du membre */}
+                <ImagePickerField
+                  label="Photo du membre"
+                  value={photoMembre}
+                  onChange={setPhotoMembre}
+                  primaryColor="#2072AF"
+                  shape="circle"
+                  size={96}
+                />
+
                 {/* Prénom */}
                 <div>
                   <Label className="text-sm font-semibold text-gray-700 mb-2 block">Prénom *</Label>
@@ -479,20 +472,14 @@ export function GestionMembres() {
                 </div>
 
                 {/* Spécialité */}
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">Spécialité *</Label>
-                  <select
-                    value={specialiteMembre}
-                    onChange={(e) => setSpecialiteMembre(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
-                  >
-                    {specialites.map(spec => (
-                      <option key={spec} value={spec}>
-                        {spec}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SelectWithAutre
+                  label="Spécialité *"
+                  value={specialiteMembre}
+                  onChange={setSpecialiteMembre}
+                  options={specialites}
+                  primaryColor={COOPERATIVE_COLOR}
+                  placeholder="Ex: Apiculteur, Pisciculteur..."
+                />
 
                 {/* Localisation */}
                 <div>
@@ -540,7 +527,7 @@ export function GestionMembres() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowDetailModal(false)}
           >
             <motion.div
@@ -582,7 +569,7 @@ export function GestionMembres() {
                 <div className="grid grid-cols-2 gap-2 mt-4 relative z-10">
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
                     <p className="text-xs text-blue-100 mb-1">Total ventes</p>
-                    <p className="text-lg font-bold">{membreSelectionne.totalVentes.toLocaleString()} FCFA</p>
+                    <p className="text-lg font-bold"><Montant value={membreSelectionne.totalVentes} size="md" color="white" /></p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
                     <p className="text-xs text-blue-100 mb-1">Productions actives</p>
@@ -612,7 +599,7 @@ export function GestionMembres() {
                   <p className="text-xs text-gray-500 mb-1">Cotisation mensuelle</p>
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-gray-900">
-                      {membreSelectionne.montantCotisation.toLocaleString()} FCFA
+                      <Montant value={membreSelectionne.montantCotisation} size="sm" color="#1f2937" />
                     </p>
                     {membreSelectionne.cotisationPayee ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">

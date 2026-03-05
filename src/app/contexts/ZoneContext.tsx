@@ -153,23 +153,18 @@ const DEFAULT_ZONES: Zone[] = [
 ];
 
 export function ZoneProvider({ children }: { children: ReactNode }) {
-  const [zones, setZones] = useState<Zone[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to load zones:', e);
-        return DEFAULT_ZONES;
-      }
-    }
-    return DEFAULT_ZONES;
-  });
+  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
+  // TODO: Charger les zones depuis Supabase
+  const [zones, setZones] = useState<Zone[]>(DEFAULT_ZONES);
 
-  // Auto-save to localStorage
-  React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(zones));
-  }, [zones]);
+  // TODO: Charger depuis Supabase au démarrage
+  // React.useEffect(() => {
+  //   const loadZones = async () => {
+  //     const { data } = await supabase.from('zones').select('*');
+  //     if (data) setZones(data);
+  //   };
+  //   loadZones();
+  // }, []);
 
   const addZone = (zoneData: Omit<Zone, 'id' | 'createdAt'>) => {
     const newZone: Zone = {

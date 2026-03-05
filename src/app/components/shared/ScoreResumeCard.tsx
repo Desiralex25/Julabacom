@@ -307,10 +307,11 @@ export function ScoreResumeCard({
 
         <button
           onClick={handleNavigateToAcademy}
-          className="py-3 px-4 rounded-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          className="py-3 px-4 rounded-2xl font-bold text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          style={{ backgroundColor: '#00A896' }}
         >
           <GraduationCap className="w-4 h-4" />
-          Jouons ensemble
+          <span className="text-[16px]" style={{ fontFamily: 'Calisga, serif' }}>Academy</span>
         </button>
       </motion.div>
 
@@ -424,7 +425,7 @@ export function ScoreResumeCard({
                       <p className="text-xs font-medium text-gray-700 flex items-center gap-1">
                         {l.label}
                         {l.tooltip && (
-                          <div
+                          <span
                             role="button"
                             tabIndex={0}
                             onClick={(e) => {
@@ -435,7 +436,7 @@ export function ScoreResumeCard({
                             className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors cursor-pointer"
                           >
                             <Info className="w-2.5 h-2.5 text-gray-600" />
-                          </div>
+                          </span>
                         )}
                       </p>
                     </div>

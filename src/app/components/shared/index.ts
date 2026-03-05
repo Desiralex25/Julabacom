@@ -13,6 +13,9 @@ export type { SharedCardProps } from './Card';
 export { KPIWidget } from './KPIWidget';
 export type { KPIWidgetProps } from './KPIWidget';
 
+export { Montant, MontantCard } from './Montant';
+export type { MontantSize } from './Montant';
+
 export { SharedBadge } from './Badge';
 export type { SharedBadgeProps } from './Badge';
 

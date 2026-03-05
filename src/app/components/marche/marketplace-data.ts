@@ -96,7 +96,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 01 23 45',
     scoreVendeur: 88,
     datePublication: '2026-03-01',
-    image: 'https://images.unsplash.com/photo-1763347120796-f811f8d8337a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsb2NhbCUyMHJpY2UlMjBncmFpbnMlMjB3aGl0ZSUyMGFmcmljYW58ZW58MXx8fHwxNzcyNTcyMTgzfDA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-riz.svg',
   },
   {
     id: 'pp2',
@@ -114,7 +114,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 34 56 78',
     scoreVendeur: 74,
     datePublication: '2026-03-02',
-    image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHlhbSUyMHR1YmVyJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjU3MjE4M3ww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-igname.svg',
   },
   {
     id: 'pp3',
@@ -132,7 +132,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 01 45 67 89',
     scoreVendeur: 61,
     datePublication: '2026-03-02',
-    image: 'https://images.unsplash.com/photo-1701125242150-8b93be3f7989?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaXBlJTIwcmVkJTIwdG9tYXRvZXMlMjBmcmVzaHxlbnwxfHx8fDE3NzI1NzIxODR8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-tomate.svg',
   },
   {
     id: 'pp4',
@@ -150,7 +150,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 56 78 90',
     scoreVendeur: 82,
     datePublication: '2026-03-03',
-    image: 'https://images.unsplash.com/photo-1764050446111-335a35cc7220?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnxlbnwxfHx8fDE3NzI1NzIxODR8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-mais.svg',
   },
   {
     id: 'pp5',
@@ -168,7 +168,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 67 89 01',
     scoreVendeur: 55,
     datePublication: '2026-02-28',
-    image: 'https://images.unsplash.com/photo-1750601455197-a7ba46fb1544?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNoJTIwZ3JlZW58ZW58MXx8fHwxNzcyNTcyMTg0fDA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-plantain.svg',
   },
   {
     id: 'pp6',
@@ -186,7 +186,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 01 78 90 12',
     scoreVendeur: 67,
     datePublication: '2026-03-01',
-    image: 'https://images.unsplash.com/photo-1757283961570-682154747d9c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXNzYXZhJTIwbWFuaW9jJTIwcm9vdCUyMHZlZ2V0YWJsZXxlbnwxfHx8fDE3NzI1NzIxODV8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-manioc.svg',
   },
   {
     id: 'pp7',
@@ -204,7 +204,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 89 01 23',
     scoreVendeur: 79,
     datePublication: '2026-03-03',
-    image: 'https://images.unsplash.com/photo-1594900689460-fdad3599342c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFudXRzJTIwZ3JvdW5kbnV0cyUyMGFyYWNoaWRlc3xlbnwxfHx8fDE3NzI1NzIxODV8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-arachide.svg',
   },
   {
     id: 'pp8',
@@ -222,7 +222,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 90 12 34',
     scoreVendeur: 43,
     datePublication: '2026-03-02',
-    image: 'https://images.unsplash.com/photo-1660295650824-347bd37b6956?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ29tYm8lMjBncmVlbiUyMHZlZ2V0YWJsZSUyMGRyaWVkfGVufDF8fHx8MTc3MjU3MjE4Nnww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-gombo.svg',
   },
 ];
 
@@ -248,7 +248,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-02',
-    image: 'https://images.unsplash.com/photo-1763347120796-f811f8d8337a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsb2NhbCUyMHJpY2UlMjBncmFpbnMlMjB3aGl0ZSUyMGFmcmljYW58ZW58MXx8fHwxNzcyNTcyMTgzfDA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-riz.svg',
   },
   {
     id: 'pc2',
@@ -268,7 +268,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-03',
-    image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHlhbSUyMHR1YmVyJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjU3MjE4M3ww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-igname.svg',
   },
   {
     id: 'pc3',
@@ -288,7 +288,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-03',
-    image: 'https://images.unsplash.com/photo-1764050446111-335a35cc7220?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnxlbnwxfHx8fDE3NzI1NzIxODR8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-mais.svg',
   },
   {
     id: 'pc4',
@@ -308,7 +308,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-04',
-    image: 'https://images.unsplash.com/photo-1594900689460-fdad3599342c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFudXRzJTIwZ3JvdW5kbnV0cyUyMGFyYWNoaWRlc3xlbnwxfHx8fDE3NzI1NzIxODV8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-arachide.svg',
   },
 ];
 

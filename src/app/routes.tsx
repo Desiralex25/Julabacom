@@ -18,6 +18,7 @@ import { Identifications } from './components/identificateur/Identifications';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { Onboarding } from './components/auth/Onboarding';
 import { Login } from './components/auth/Login';
+import { Welcome } from './components/auth/Welcome';
 import { BODashboard } from './components/backoffice/BODashboard';
 import { BOActeurs } from './components/backoffice/BOActeurs';
 import { BOActeurDetail } from './components/backoffice/BOActeurDetail';
@@ -38,7 +39,6 @@ import { BOInstitutions } from './components/backoffice/BOInstitutions';
 import { AppLayout } from './components/layout/AppLayout';
 import { RootLayout } from './components/layout/RootLayout';
 import { MarchandHome } from './components/marchand/MarchandHome';
-import { VendreForm } from './components/marchand/VendreForm';
 import { POSCaisse } from './components/marchand/POSCaisse';
 import { MarchandDepenses } from './components/marchand/MarchandDepenses';
 import { MarcheVirtuel } from './components/marchand/MarcheVirtuel';
@@ -56,7 +56,6 @@ import { ProducteurCommandes } from './components/producteur/CommandesProducteur
 import { RecolteForm } from './components/producteur/RecolteForm';
 import { ProducteurMoi } from './components/producteur/ProducteurMoi';
 import { StocksWrapper } from './components/producteur/StocksWrapper';
-import { Profil } from './components/producteur/Profil';
 import { ProducteurPageWrapper } from './components/producteur/ProducteurPageWrapper';
 import { PublierRecolte } from './components/producteur/PublierRecolte';
 import { CooperativeHome } from './components/cooperative/CooperativeHome';
@@ -103,6 +102,10 @@ export const router = createBrowserRouter([
         element: <Onboarding />,
       },
       {
+        path: '/welcome',
+        element: <Welcome />,
+      },
+      {
         path: '/login',
         element: <Login />,
       },
@@ -112,22 +115,16 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <MarchandHome /> },
-          { path: 'vendre', element: <VendreForm /> },
           { path: 'caisse', element: <POSCaisse /> },
-          { path: 'depense', element: <MarchandDepenses /> },
           { path: 'depenses', element: <MarchandDepenses /> },
-          { path: 'produits', element: <GestionStock /> },
-          { path: 'reglages', element: <Parametres /> },
-          { path: 'marche', element: <MarcheVirtuel /> },
           { path: 'stock', element: <GestionStock /> },
+          { path: 'marche', element: <MarcheVirtuel /> },
           { path: 'profil', element: <MarchandProfil /> },
           { path: 'ventes-passees', element: <VentesPassees /> },
           { path: 'resume-caisse', element: <ResumeCaisse /> },
-          { path: 'mes-commandes', element: <MesCommandes /> },
           { path: 'commandes', element: <MesCommandes /> },
           { path: 'parametres', element: <Parametres /> },
           { path: 'academy', element: <UniversalAcademy /> },
-          { path: 'universal-academy', element: <UniversalAcademy /> },
           { path: 'wallet', element: <WalletPage /> },
           { path: 'alertes', element: <MarchandAlertes /> },
           { path: 'support', element: <SupportPage /> },
@@ -145,9 +142,7 @@ export const router = createBrowserRouter([
           { path: 'declarer-recolte', element: <RecolteForm /> },
           { path: 'recoltes', element: <MesRecoltesPage /> },
           { path: 'stocks', element: <StocksWrapper /> },
-          { path: 'mon-profil', element: <ProducteurPageWrapper><Profil /></ProducteurPageWrapper> },
           { path: 'publier-recolte', element: <PublierRecolte /> },
-          { path: 'mes-recoltes', element: <MesRecoltesPage /> },
           { path: 'academy', element: <UniversalAcademy /> },
           { path: 'wallet', element: <WalletPage /> },
           { path: 'parametres', element: <ProducteurParametres /> },
@@ -165,7 +160,6 @@ export const router = createBrowserRouter([
           { path: 'finances', element: <FinancesCooperative /> },
           { path: 'profil', element: <CooperativeProfil /> },
           { path: 'stock', element: <Stock /> },
-          { path: 'stocks', element: <Stock /> },
           { path: 'tresorerie', element: <TresorerieCooperative /> },
           { path: 'gestion-membres', element: <GestionMembres /> },
           { path: 'marche', element: <MarcheHub /> },
@@ -203,13 +197,12 @@ export const router = createBrowserRouter([
           { index: true, element: <Marketplace /> },
         ],
       },
-      // ── IDENTIFICATEUR ──────────────────────────────
+      // ── IDENTIFICATEUR ─────────────────────────────
       {
         path: '/identificateur',
         element: <IdentificateurLayout />,
         children: [
           { index: true, element: <IdentificateurHome /> },
-          { path: 'acteurs', element: <Identifications /> },
           { path: 'identification', element: <IdentificationPage /> },
           { path: 'suivi', element: <SuiviIdentifications /> },
           { path: 'profil', element: <IdentificateurProfil /> },
@@ -229,11 +222,6 @@ export const router = createBrowserRouter([
           { path: 'parametres', element: <IdentificateurParametres /> },
           { path: 'support', element: <SupportPage /> },
         ],
-      },
-      // Institution Dashboard (desktop, full screen)
-      {
-        path: '/institution/dashboard',
-        element: <Dashboard />,
       },
       // ── BACK-OFFICE CENTRAL ─────────────────────────
       {

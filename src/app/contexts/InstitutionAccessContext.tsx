@@ -1,14 +1,14 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { ModuleAcces, NiveauAcces, InstitutionBO, MOCK_INSTITUTIONS } from './BackOfficeContext';
+import { ModuleAcces, NiveauAcces, InstitutionBO } from './BackOfficeContext';
+import { useBackOffice } from './BackOfficeContext';
 
 // ────────────────────────────────────────────────────────────────────────────
-// Ce context fournit à l'interface Institution les permissions définies par
-// le BackOffice. En production, on chargerait le profil depuis une API.
-// En mode mock, on simule que l'institution connectée est inst1 (CNPS).
+// ✅ NETTOYAGE PHASE 2 : Ce context utilise maintenant les données du BackOfficeContext
+// TODO: En production, charger le profil depuis Supabase via session JWT
 // ────────────────────────────────────────────────────────────────────────────
 
 interface InstitutionAccessContextType {
-  institutionProfil: InstitutionBO;
+  institutionProfil: InstitutionBO | null;
   canAccess: (module: keyof ModuleAcces) => boolean;
   getLevel: (module: keyof ModuleAcces) => NiveauAcces;
   isComplet: (module: keyof ModuleAcces) => boolean;
@@ -17,27 +17,33 @@ interface InstitutionAccessContextType {
 
 const InstitutionAccessContext = createContext<InstitutionAccessContextType | undefined>(undefined);
 
-// ID simulée de l'institution connectée (en prod ce serait dans le JWT/session)
+// ✅ ID simulée de l'institution connectée (en prod ce serait dans le JWT/session)
+// TODO: Charger depuis la session Supabase
 const CONNECTED_INSTITUTION_ID = 'inst1';
 
 export function InstitutionAccessProvider({ children }: { children: ReactNode }) {
-  // Lecture depuis les mock data (en prod : depuis l'API ou BackOfficeContext en temps réel)
-  const [institutions, setInstitutions] = React.useState<InstitutionBO[]>(MOCK_INSTITUTIONS);
-  const institutionProfil = institutions.find(i => i.id === CONNECTED_INSTITUTION_ID) || MOCK_INSTITUTIONS[0];
+  const { institutions } = useBackOffice();
+  
+  // ✅ NETTOYAGE PHASE 2 : Utilise les institutions du BackOfficeContext
+  // TODO: Charger depuis Supabase via session utilisateur
+  const institutionProfil = institutions.find(i => i.id === CONNECTED_INSTITUTION_ID) || null;
 
   const getLevel = (module: keyof ModuleAcces): NiveauAcces => {
-    return institutionProfil.modules[module];
+    return institutionProfil?.modules[module] || 'aucun';
   };
 
   const canAccess = (module: keyof ModuleAcces): boolean => {
+    if (!institutionProfil) return false;
     return institutionProfil.modules[module] !== 'aucun' && institutionProfil.statut === 'actif';
   };
 
   const isComplet = (module: keyof ModuleAcces): boolean => {
+    if (!institutionProfil) return false;
     return institutionProfil.modules[module] === 'complet' && institutionProfil.statut === 'actif';
   };
 
   const isLecture = (module: keyof ModuleAcces): boolean => {
+    if (!institutionProfil) return false;
     return institutionProfil.modules[module] === 'lecture' && institutionProfil.statut === 'actif';
   };
 

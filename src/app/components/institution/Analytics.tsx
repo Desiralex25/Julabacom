@@ -24,7 +24,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import {
@@ -687,8 +686,6 @@ export function Analytics() {
           Exporter le rapport complet
         </motion.button>
       </div>
-
-      <Navigation role="institution" />
     </div>
   );
 }

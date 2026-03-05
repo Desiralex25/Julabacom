@@ -2,8 +2,6 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, 
-  Camera, 
-  Upload, 
   User, 
   Phone, 
   Mail, 
@@ -20,6 +18,7 @@ import {
 import { useNavigate, useLocation } from 'react-router';
 import { useUser } from '../../contexts/UserContext';
 import { useApp } from '../../contexts/AppContext';
+import { ImagePickerField } from '../shared/ImagePickerField';
 
 const PRIMARY_COLOR = '#9F8170';
 const SECONDARY_COLOR = '#DAC8AE';
@@ -293,7 +292,7 @@ export function FormulaireIdentificationMarchand() {
   if (!user) return null;
 
   return (
-    <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-4xl mx-auto min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-4xl mx-auto min-h-screen bg-gradient-to-b from-amber-50 to-white">
       
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -329,63 +328,13 @@ export function FormulaireIdentificationMarchand() {
 
         {/* Section Photo */}
         <div className="mb-6">
-          <label className="block text-sm font-bold text-gray-700 mb-3">Photo d'identité *</label>
-          <div className="flex items-center gap-4">
-            {formData.photo ? (
-              <div className="relative">
-                <img 
-                  src={formData.photo} 
-                  alt="Photo" 
-                  className="w-32 h-32 object-cover rounded-2xl border-4"
-                  style={{ borderColor: PRIMARY_COLOR }}
-                />
-                <button
-                  onClick={() => setFormData({ ...formData, photo: null })}
-                  className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div 
-                className="w-32 h-32 border-4 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
-                style={{ borderColor: SECONDARY_COLOR }}
-              >
-                <Camera className="w-8 h-8 text-gray-400 mb-1" />
-                <p className="text-xs text-gray-500 text-center">Photo</p>
-              </div>
-            )}
-            
-            <div className="flex flex-col gap-2">
-              <motion.button
-                onClick={handleCameraCapture}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm text-white shadow-md"
-                style={{ backgroundColor: PRIMARY_COLOR }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Camera className="w-4 h-4" />
-                Prendre photo
-              </motion.button>
-              
-              <motion.button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm border-2"
-                style={{ borderColor: PRIMARY_COLOR, color: PRIMARY_COLOR }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Upload className="w-4 h-4" />
-                Charger photo
-              </motion.button>
-            </div>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            className="hidden"
+          <ImagePickerField
+            label="Photo d'identité *"
+            value={formData.photo || ''}
+            onChange={(url) => setFormData({ ...formData, photo: url })}
+            primaryColor={PRIMARY_COLOR}
+            shape="circle"
+            size={112}
           />
           {errors.photo && <p className="text-red-500 text-xs mt-2">{errors.photo}</p>}
         </div>

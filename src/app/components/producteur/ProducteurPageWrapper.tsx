@@ -4,7 +4,7 @@ import { Mic, X, MessageCircle, Edit, Mic2 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 
 // Import image Tantie Sagesse
-import tantieSagesseImg from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImg = '/images/tantie-sagesse-producteur.svg';
 
 interface ProducteurPageWrapperProps {
   children: ReactNode;
@@ -26,7 +26,6 @@ export function ProducteurPageWrapper({ children, suggestions }: ProducteurPageW
 
   const handleExampleClick = (phrase: string) => {
     setMessageUtilisateur(phrase);
-    console.log('Commande:', phrase);
   };
 
   const handleMicClick = () => {
@@ -42,7 +41,7 @@ export function ProducteurPageWrapper({ children, suggestions }: ProducteurPageW
     <>
       <Navigation role="producteur" onMicClick={handleMicClick} />
       
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-green-50 to-white">
         {children}
       </div>
 
@@ -53,7 +52,7 @@ export function ProducteurPageWrapper({ children, suggestions }: ProducteurPageW
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end lg:items-center justify-center p-0 lg:p-6"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6"
             onClick={() => setTantieSagesseOuverte(false)}
           >
             <motion.div

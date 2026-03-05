@@ -5,7 +5,7 @@ import { Navigation } from '../layout/Navigation';
 import { getRoleColor } from '../../config/roleConfig';
 
 // Import image Tantie Sagesse
-import tantieSagesseImg from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 interface UniversalPageWrapperProps {
   role: 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
@@ -65,7 +65,6 @@ export function UniversalPageWrapper({
 
   const handleExampleClick = (phrase: string) => {
     setMessageUtilisateur(phrase);
-    console.log('Commande:', phrase);
   };
 
   const handleMicClick = () => {
@@ -93,7 +92,7 @@ export function UniversalPageWrapper({
       <Navigation role={role} onMicClick={handleMicClick} />
       
       <div 
-        className={`pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen ${className}`}
+        className={`pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen ${className}`}
         style={{
           background: `linear-gradient(to bottom, ${gradient.from}, ${gradient.to})`
         }}
@@ -108,7 +107,7 @@ export function UniversalPageWrapper({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end lg:items-center justify-center p-0 lg:p-6"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6"
             onClick={() => setTantieSagesseOuverte(false)}
           >
             <motion.div

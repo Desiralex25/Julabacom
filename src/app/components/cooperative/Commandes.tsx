@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Package,
@@ -26,8 +28,10 @@ import {
 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
-import { NotificationButton } from '../marchand/NotificationButton';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { toast } from 'sonner';
+import { SearchBar } from '../shared/SearchBar';
+import { matchesSearch } from '../../utils/searchUtils';
 
 const C = '#2072AF';
 const C_DARK = '#1E5A8E';
@@ -71,17 +75,17 @@ const STATUT_CONFIG: Record<StatutCommande, { label: string; icon: React.Element
 type FilterType = 'all' | StatutCommande;
 
 export function Commandes() {
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [isListening, setIsListening] = useState(false);
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newStep, setNewStep] = useState(1);
 
   // Form nouvelle commande
   const [newProduit, setNewProduit] = useState('');
+  const [newProduitImage, setNewProduitImage] = useState('');
   const [newQuantite, setNewQuantite] = useState('');
   const [newUnite, setNewUnite] = useState('kg');
   const [newProducteur, setNewProducteur] = useState('');
@@ -100,15 +104,12 @@ export function Commandes() {
     livrees: commandes.filter(c => c.statut === 'livree').length,
   }), [commandes]);
 
-  // Filtrage
+  // Filtrage — fonction unifiée
   const commandesFiltrees = useMemo(() => {
     return commandes.filter(c => {
-      const matchSearch = searchQuery === '' ||
-        c.produit.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.producteur.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.localisation.toLowerCase().includes(searchQuery.toLowerCase());
+      const match = matchesSearch(searchQuery, c.produit, c.producteur, c.localisation);
       const matchFilter = activeFilter === 'all' || c.statut === activeFilter;
-      return matchSearch && matchFilter;
+      return match && matchFilter;
     });
   }, [commandes, searchQuery, activeFilter]);
 
@@ -121,27 +122,7 @@ export function Commandes() {
   }, [commandesFiltrees]);
 
   // Sync Bottom Bar
-  React.useEffect(() => {
-    setIsModalOpen(selectedCommande !== null || showNewModal);
-  }, [selectedCommande, showNewModal, setIsModalOpen]);
-  React.useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
-
-  const startVoiceSearch = useCallback(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      speak('La recherche vocale n\'est pas disponible');
-      return;
-    }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const rec = new SR();
-    rec.lang = 'fr-FR';
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.onstart = () => setIsListening(true);
-    rec.onresult = (e: any) => { setSearchQuery(e.results[0][0].transcript); setIsListening(false); };
-    rec.onerror = () => setIsListening(false);
-    rec.onend = () => setIsListening(false);
-    rec.start();
-  }, [speak]);
+  useModalRegister(selectedCommande !== null || showNewModal);
 
   const doCreateCommande = () => {
     if (!newProduit || !newQuantite || !newProducteur || !newDateLivraison) {
@@ -272,20 +253,20 @@ export function Commandes() {
         <motion.div className="grid grid-cols-2 gap-3 mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <motion.button
             onClick={() => { setActiveFilter('all'); speak('Historique des commandes groupées'); }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
           >
-            <History className="w-5 h-5" style={{ color: C }} />
+            <History className="w-5 h-5 flex-shrink-0" style={{ color: C }} />
             <span className="font-semibold text-gray-700">Commandes</span>
           </motion.button>
           <motion.button
             onClick={() => { setShowNewModal(true); setNewStep(1); speak('Créer une nouvelle commande groupée'); }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-white border-2"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl text-white border-2 whitespace-nowrap"
             style={{ background: `linear-gradient(135deg, ${C}, ${C_DARK})`, borderColor: C }}
             whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
           >
-            <Plus className="w-5 h-5" />
-            <span className="font-semibold">Nouvelle commande</span>
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold">Nouvelle cmd</span>
           </motion.button>
         </motion.div>
 
@@ -316,28 +297,11 @@ export function Commandes() {
 
         {/* Barre de recherche */}
         <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par produit, producteur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 border-gray-200 focus:outline-none text-base placeholder:text-gray-400 shadow-sm"
-              style={{ borderColor: searchQuery ? C : undefined }}
-            />
-            <motion.button
-              onClick={startVoiceSearch}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: isListening ? C_LIGHT : undefined }}
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            >
-              {isListening
-                ? <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}><MicOff className="w-5 h-5" style={{ color: C }} /></motion.div>
-                : <Mic className="w-5 h-5 text-gray-400" />
-              }
-            </motion.button>
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Rechercher par produit, producteur..."
+          />
         </motion.div>
 
         {/* Sections par statut — style Identificateur */}
@@ -380,6 +344,7 @@ export function Commandes() {
                             <motion.div
                               className="p-4"
                               onClick={() => { setSelectedCommande(commande); speak(`Commande ${commande.produit}`); }}
+                              style={{ backgroundColor: '#ffffff' }}
                               whileHover={{ backgroundColor: '#FAFAFA' }}
                             >
                               <div className="flex items-start gap-3">
@@ -452,7 +417,7 @@ export function Commandes() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
             onClick={() => setSelectedCommande(null)}
           >
             <motion.div
@@ -591,7 +556,7 @@ export function Commandes() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
             onClick={() => setShowNewModal(false)}
           >
             <motion.div
@@ -639,6 +604,16 @@ export function Commandes() {
                 {newStep === 1 && (
                   <>
                     <p className="text-sm text-gray-600">Renseignez les informations du produit commandé :</p>
+
+                    <ImagePickerField
+                      label="Photo du produit (facultatif)"
+                      value={newProduitImage}
+                      onChange={setNewProduitImage}
+                      primaryColor={C}
+                      shape="rect"
+                      size={88}
+                    />
+
                     <div>
                       <label className="text-xs font-bold text-gray-700 block mb-2">Nom du produit <span className="text-red-500">*</span></label>
                       <input type="text" placeholder="Ex: Riz local, Ignames, Tomates..."
@@ -656,18 +631,14 @@ export function Commandes() {
                           style={{ borderColor: newQuantite ? C : undefined }}
                         />
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-gray-700 block mb-2">Unité</label>
-                        <select value={newUnite} onChange={(e) => setNewUnite(e.target.value)}
-                          className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:outline-none text-sm bg-white"
-                        >
-                          <option value="kg">kg</option>
-                          <option value="tonnes">tonnes</option>
-                          <option value="régimes">régimes</option>
-                          <option value="sacs">sacs</option>
-                          <option value="caisses">caisses</option>
-                        </select>
-                      </div>
+                      <SelectWithAutre
+                        label="Unité"
+                        value={newUnite}
+                        onChange={setNewUnite}
+                        options={['kg', 'tonnes', 'régimes', 'sacs', 'caisses', 'litre']}
+                        primaryColor={C}
+                        placeholder="Ex: barrique, carton..."
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>

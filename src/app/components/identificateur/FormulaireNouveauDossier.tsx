@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, User, Briefcase, FileText, MapPin, Check, Camera, Upload, Navigation } from 'lucide-react';
+import { ChevronRight, ChevronLeft, User, Briefcase, FileText, MapPin, Check, Navigation } from 'lucide-react';
 import { motion } from 'motion/react';
+import { ImagePickerField } from '../shared/ImagePickerField';
 
 const PRIMARY_COLOR = '#9F8170';
 
@@ -310,39 +311,36 @@ export function FormulaireNouveauDossier() {
             className="space-y-4"
           >
             <h2 className="text-xl font-bold text-gray-900 mb-4">Étape 3 : Documents et photos</h2>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photo de profil <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#9F8170] transition-colors cursor-pointer">
-                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Cliquer pour prendre une photo</p>
-                <input type="file" accept="image/*" capture="user" className="hidden" />
-              </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photo CNI (Carte d'identité) <span className="text-red-500">*</span>
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#9F8170] transition-colors cursor-pointer">
-                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Cliquer pour photographier la CNI</p>
-                <input type="file" accept="image/*" capture="environment" className="hidden" />
-              </div>
-            </div>
+            {/* Photo de profil — ImagePickerField */}
+            <ImagePickerField
+              label="Photo de profil *"
+              value={typeof formData.photoProfil === 'string' ? formData.photoProfil : ''}
+              onChange={(url) => setFormData({ ...formData, photoProfil: url as any })}
+              primaryColor={PRIMARY_COLOR}
+              shape="circle"
+              size={100}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Autres documents (optionnel)
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#9F8170] transition-colors cursor-pointer">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Attestation, permis, etc.</p>
-                <input type="file" multiple accept="image/*,application/pdf" className="hidden" />
-              </div>
-            </div>
+            {/* Photo CNI — ImagePickerField */}
+            <ImagePickerField
+              label="Photo CNI (Carte d'identité) *"
+              value={typeof formData.photoCNI === 'string' ? formData.photoCNI : ''}
+              onChange={(url) => setFormData({ ...formData, photoCNI: url as any })}
+              primaryColor={PRIMARY_COLOR}
+              shape="rect"
+              size={100}
+            />
+
+            {/* Autres documents */}
+            <ImagePickerField
+              label="Autres documents (optionnel)"
+              value={''}
+              onChange={() => {}}
+              primaryColor={PRIMARY_COLOR}
+              shape="rect"
+              size={90}
+            />
           </motion.div>
         )}
 

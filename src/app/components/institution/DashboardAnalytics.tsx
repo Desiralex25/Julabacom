@@ -215,7 +215,7 @@ export function DashboardAnalytics() {
             <BarChart3 className="w-5 h-5" style={{ color: INSTITUTION_COLOR }} />
             Évolution du Volume (FCFA)
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer key="chart-inst-volume" width="100%" height={300}>
             <AreaChart data={donneesGraphique}>
               <defs>
                 <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
@@ -257,7 +257,7 @@ export function DashboardAnalytics() {
             <ShoppingCart className="w-5 h-5 text-blue-600" />
             Nombre de Transactions
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer key="chart-inst-transactions" width="100%" height={300}>
             <BarChart data={donneesGraphique}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
@@ -287,7 +287,7 @@ export function DashboardAnalytics() {
             <PieChart className="w-5 h-5 text-green-600" />
             Répartition des Acteurs
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer key="chart-inst-acteurs" width="100%" height={300}>
             <RechartsPieChart>
               <Pie
                 data={donneesRepartitionActeurs}

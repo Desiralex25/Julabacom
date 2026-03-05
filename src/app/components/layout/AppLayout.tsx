@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
 import { BottomBar } from './BottomBar';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { ScrollToTop } from './ScrollToTop';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ScrollToTop />
       {/* Sidebar Desktop Unifié */}
       <Sidebar role={user.role} />
 
@@ -55,7 +57,7 @@ export function AppLayout() {
       {!hideBottomBar && <BottomBar role={user.role} />}
 
       {/* Dev Profile Switcher - Only in development */}
-      <ProfileSwitcher />
+      {import.meta.env.DEV && <ProfileSwitcher />}
     </div>
   );
 }

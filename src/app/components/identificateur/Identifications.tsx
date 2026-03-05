@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   UserCheck,
-  Search,
   User,
   Phone,
   MapPin,
@@ -12,20 +11,22 @@ import {
   CheckCircle,
   Clock,
   Activity,
-  Mic,
-  MicOff,
   FileText,
   FolderOpen,
   History,
   Plus,
   Send,
   Building2,
+  ChevronRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
+import { SearchBar } from '../shared/SearchBar';
+import { matchesSearch } from '../../utils/searchUtils';
+import { FicheActeurDetailModal } from '../shared/FicheActeurDetailModal';
 
 const PRIMARY_COLOR = '#9F8170';
 
@@ -189,7 +190,7 @@ export function Identifications() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'draft' | 'submitted'>('all');
   const [selectedIdentification, setSelectedIdentification] = useState<string | null>(null);
-  const [isListening, setIsListening] = useState(false);
+  const [ficheActeur, setFicheActeur] = useState<any | null>(null);
   const [selectedRole, setSelectedRole] = useState<'all' | 'marchand' | 'producteur' | 'cooperative'>('all');
 
   // Stats calculées
@@ -201,21 +202,21 @@ export function Identifications() {
     return { total, brouillons, soumis };
   }, []);
 
-  // Filtrer les identifications
+  // Filtrer les identifications — fonction unifiée matchesSearch
   const filteredIdentifications = useMemo(() => {
     return mockIdentifications.filter((identification) => {
-      // Filtre recherche
-      const matchSearch =
-        searchQuery === '' ||
-        identification.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        identification.prenoms.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        identification.telephone.includes(searchQuery);
+      const matchSearch = matchesSearch(
+        searchQuery,
+        identification.nom,
+        identification.prenoms,
+        identification.telephone,
+        identification.commune,
+        identification.activite,
+      );
 
-      // Filtre statut actif - Convertir 'submitted' en 'soumis'
+      // Filtre statut actif
       let statutToMatch = activeFilter;
-      if (activeFilter === 'submitted') {
-        statutToMatch = 'soumis';
-      }
+      if (activeFilter === 'submitted') statutToMatch = 'soumis';
       const matchStatut = activeFilter === 'all' || identification.statut === statutToMatch;
 
       // Filtre rôle
@@ -229,45 +230,9 @@ export function Identifications() {
   const brouillons = filteredIdentifications.filter(i => i.statut === 'draft');
   const soumissions = filteredIdentifications.filter(i => i.statut === 'soumis');
 
-  const handleIdentificationClick = (identificationId: string) => {
-    setSelectedIdentification(selectedIdentification === identificationId ? null : identificationId);
-    speak('Détails de l\'identification');
-  };
-
-  // Fonction de recherche vocale
-  const startVoiceSearch = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      speak('La recherche vocale n\'est pas supportée par votre navigateur');
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.lang = 'fr-FR';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchQuery(transcript);
-      speak(`Recherche pour ${transcript}`);
-      setIsListening(false);
-    };
-
-    recognition.onerror = () => {
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+  const handleIdentificationClick = (identification: any) => {
+    setFicheActeur(identification);
+    speak(`Fiche de ${identification.prenoms} ${identification.nom}`);
   };
 
   return (
@@ -424,24 +389,24 @@ export function Identifications() {
               speak('Acteurs');
               toast('Historique des acteurs : Marchands et Producteurs');
             }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#9F8170] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#9F8170] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <History className="w-5 h-5 text-[#9F8170]" />
+            <History className="w-5 h-5 text-[#9F8170] flex-shrink-0" />
             <span className="font-semibold text-gray-700">Acteurs</span>
           </motion.button>
 
           <motion.button
             onClick={() => {
-              speak('Nouveau dossier');
-              navigate('/identificateur/identification');
+              speak('Nouveau dossier. Choisis le type d\'acteur');
+              navigate('/identificateur/fiche-identification');
             }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-[#9F8170] to-[#B39485] text-white border-2 border-[#9F8170]"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-gradient-to-r from-[#9F8170] to-[#B39485] text-white border-2 border-[#9F8170] whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 flex-shrink-0" />
             <span className="font-semibold">Nouveau dossier</span>
           </motion.button>
         </motion.div>
@@ -556,24 +521,13 @@ export function Identifications() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par nom, téléphone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 border-gray-200 focus:border-[#9F8170] focus:outline-none text-base placeholder:text-gray-400 shadow-sm"
-            />
-            <motion.button
-              onClick={startVoiceSearch}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#9F8170]/10"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              {isListening ? <MicOff className="w-5 h-5 text-[#9F8170]" /> : <Mic className="w-5 h-5 text-gray-400" />}
-            </motion.button>
-          </div>
+          <SearchBar
+            placeholder="Rechercher par nom, téléphone..."
+            value={searchQuery}
+            onChange={(val) => setSearchQuery(val)}
+            primaryColor={PRIMARY_COLOR}
+            onVoiceResult={(t) => { setSearchQuery(t); speak(`Recherche pour ${t}`); }}
+          />
         </motion.div>
 
         {/* Section: BROUILLONS */}
@@ -590,7 +544,6 @@ export function Identifications() {
               <AnimatePresence mode="popLayout">
                 {brouillons.map((identification, index) => {
                   const roleColor = getRoleColor(identification.role);
-                  const isExpanded = selectedIdentification === identification.id;
                   const isCooperative = identification.role === 'cooperative';
 
                   return (
@@ -601,125 +554,54 @@ export function Identifications() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.03 }}
-                      className="bg-white rounded-2xl border-2 border-orange-200 overflow-hidden"
+                      className="bg-white rounded-3xl border-2 border-orange-200 overflow-hidden cursor-pointer shadow-sm"
+                      onClick={() => handleIdentificationClick(identification)}
+                      whileHover={{ scale: 1.01, y: -2, boxShadow: '0 8px 24px rgba(234,88,12,0.12)' }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      {/* Card principale */}
-                      <motion.div
-                        className="p-4"
-                        onClick={() => handleIdentificationClick(identification.id)}
-                        whileHover={{ backgroundColor: '#FAFAFA' }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Avatar */}
-                          <div
-                            className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 border-2"
-                            style={{
-                              backgroundColor: `${roleColor}15`,
-                              borderColor: roleColor,
-                            }}
-                          >
-                            {isCooperative
-                              ? <Building2 className="w-7 h-7" style={{ color: roleColor }} />
-                              : <User className="w-7 h-7" style={{ color: roleColor }} />
-                            }
+                      <div className="p-4 flex items-center gap-3">
+                        {/* Avatar */}
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 shadow-sm"
+                          style={{ backgroundColor: `${roleColor}15`, borderColor: `${roleColor}40` }}
+                        >
+                          {isCooperative
+                            ? <Building2 className="w-7 h-7" style={{ color: roleColor }} />
+                            : <User className="w-7 h-7" style={{ color: roleColor }} />
+                          }
+                        </div>
+
+                        {/* Infos */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-gray-900 text-base truncate mb-1">
+                            {identification.prenoms} {identification.nom}
+                          </h3>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                              style={{ backgroundColor: `${roleColor}15`, color: roleColor }}>
+                              {identification.role.charAt(0).toUpperCase() + identification.role.slice(1)}
+                            </span>
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 border border-orange-300 text-xs font-bold text-orange-700">
+                              <Edit3 className="w-3 h-3" />
+                              Brouillon
+                            </span>
                           </div>
-
-                          {/* Infos principales */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-gray-900 text-base truncate">
-                                  {identification.prenoms} {identification.nom}
-                                </h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <div
-                                    className="px-2 py-0.5 rounded-full text-xs font-bold"
-                                    style={{
-                                      backgroundColor: `${roleColor}15`,
-                                      color: roleColor,
-                                    }}
-                                  >
-                                    {identification.role.charAt(0).toUpperCase() +
-                                      identification.role.slice(1)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-orange-100 border-orange-300">
-                                    <Edit3 className="w-3 h-3 text-orange-700" />
-                                    <span className="text-xs font-bold text-orange-700">
-                                      Brouillon
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Infos rapides */}
-                            <div className="space-y-1 mt-2 text-xs text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                <span>{identification.telephone}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                <span className="truncate">
-                                  {identification.marche} - {identification.commune}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  Modifié le {new Date(identification.dateModification).toLocaleDateString(
-                                    'fr-FR',
-                                    {
-                                      day: '2-digit',
-                                      month: 'short',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    }
-                                  )}
-                                </span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{identification.telephone}</span>
+                            <span className="flex items-center gap-1 truncate"><MapPin className="w-3 h-3" />{identification.commune}</span>
                           </div>
                         </div>
-                      </motion.div>
 
-                      {/* Détails étendus */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t-2 border-orange-200 overflow-hidden"
-                          >
-                            <div className="p-4 space-y-3 bg-orange-50/30">
-                              <div className="p-3 rounded-xl bg-white border border-orange-200">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Activity className="w-4 h-4 text-gray-500" />
-                                  <p className="text-xs font-semibold text-gray-600">Activité</p>
-                                </div>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {identification.activite}
-                                </p>
-                              </div>
-
-                              {/* Bouton continuer */}
-                              <motion.button
-                                onClick={() => {
-                                  speak('Continuer le dossier');
-                                  toast('Reprise du dossier en cours...');
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-600 text-white font-semibold"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <Edit3 className="w-4 h-4" />
-                                Continuer le dossier
-                              </motion.button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                        {/* Chevron */}
+                        <motion.div
+                          className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${roleColor}12` }}
+                          animate={{ x: [0, 3, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                        >
+                          <ChevronRight className="w-5 h-5" style={{ color: roleColor }} />
+                        </motion.div>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -742,7 +624,6 @@ export function Identifications() {
               <AnimatePresence mode="popLayout">
                 {soumissions.map((identification, index) => {
                   const roleColor = getRoleColor(identification.role);
-                  const isExpanded = selectedIdentification === identification.id;
                   const isCooperative = identification.role === 'cooperative';
 
                   return (
@@ -753,139 +634,54 @@ export function Identifications() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.03 }}
-                      className="bg-white rounded-2xl border-2 border-green-200 overflow-hidden"
+                      className="bg-white rounded-3xl border-2 border-green-200 overflow-hidden cursor-pointer shadow-sm"
+                      onClick={() => handleIdentificationClick(identification)}
+                      whileHover={{ scale: 1.01, y: -2, boxShadow: '0 8px 24px rgba(22,163,74,0.12)' }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      {/* Card principale */}
-                      <motion.div
-                        className="p-4"
-                        onClick={() => handleIdentificationClick(identification.id)}
-                        whileHover={{ backgroundColor: '#FAFAFA' }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Avatar */}
-                          <div
-                            className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 border-2"
-                            style={{
-                              backgroundColor: `${roleColor}15`,
-                              borderColor: roleColor,
-                            }}
-                          >
-                            {isCooperative
-                              ? <Building2 className="w-7 h-7" style={{ color: roleColor }} />
-                              : <User className="w-7 h-7" style={{ color: roleColor }} />
-                            }
+                      <div className="p-4 flex items-center gap-3">
+                        {/* Avatar */}
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 border-2 shadow-sm"
+                          style={{ backgroundColor: `${roleColor}15`, borderColor: `${roleColor}40` }}
+                        >
+                          {isCooperative
+                            ? <Building2 className="w-7 h-7" style={{ color: roleColor }} />
+                            : <User className="w-7 h-7" style={{ color: roleColor }} />
+                          }
+                        </div>
+
+                        {/* Infos */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-gray-900 text-base truncate mb-1">
+                            {identification.prenoms} {identification.nom}
+                          </h3>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold"
+                              style={{ backgroundColor: `${roleColor}15`, color: roleColor }}>
+                              {identification.role.charAt(0).toUpperCase() + identification.role.slice(1)}
+                            </span>
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 border border-green-300 text-xs font-bold text-green-700">
+                              <CheckCircle className="w-3 h-3" />
+                              Soumis
+                            </span>
                           </div>
-
-                          {/* Infos principales */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-gray-900 text-base truncate">
-                                  {identification.prenoms} {identification.nom}
-                                </h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <div
-                                    className="px-2 py-0.5 rounded-full text-xs font-bold"
-                                    style={{
-                                      backgroundColor: `${roleColor}15`,
-                                      color: roleColor,
-                                    }}
-                                  >
-                                    {identification.role.charAt(0).toUpperCase() +
-                                      identification.role.slice(1)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border bg-green-100 border-green-300">
-                                    <CheckCircle className="w-3 h-3 text-green-700" />
-                                    <span className="text-xs font-bold text-green-700">
-                                      Soumis
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Infos rapides */}
-                            <div className="space-y-1 mt-2 text-xs text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                <span>{identification.telephone}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                <span className="truncate">
-                                  {identification.marche} - {identification.commune}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                <span>
-                                  Soumis le {new Date(identification.dateModification).toLocaleDateString(
-                                    'fr-FR',
-                                    {
-                                      day: '2-digit',
-                                      month: 'short',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    }
-                                  )}
-                                </span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{identification.telephone}</span>
+                            <span className="flex items-center gap-1 truncate"><MapPin className="w-3 h-3" />{identification.commune}</span>
                           </div>
                         </div>
-                      </motion.div>
 
-                      {/* Détails étendus */}
-                      <AnimatePresence>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t-2 border-green-200 overflow-hidden"
-                          >
-                            <div className="p-4 space-y-3 bg-green-50/30">
-                              <div className="p-3 rounded-xl bg-white border border-green-200">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Activity className="w-4 h-4 text-gray-500" />
-                                  <p className="text-xs font-semibold text-gray-600">Activité</p>
-                                </div>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {identification.activite}
-                                </p>
-                              </div>
-
-                              {/* Statut actuel */}
-                              <div className="p-3 rounded-xl bg-white border border-green-200">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Clock className="w-4 h-4 text-gray-500" />
-                                  <p className="text-xs font-semibold text-gray-600">Statut actuel</p>
-                                </div>
-                                <p className="text-sm font-bold text-green-700">
-                                  Transmis au BO-Admin
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  En attente de validation par l'équipe d'administration
-                                </p>
-                              </div>
-
-                              {/* Bouton voir détails */}
-                              <motion.button
-                                onClick={() => {
-                                  speak('Voir les détails complets');
-                                  toast('Affichage des détails...');
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#9F8170] text-white font-semibold"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <Eye className="w-4 h-4" />
-                                Voir les détails (lecture seule)
-                              </motion.button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                        {/* Chevron */}
+                        <motion.div
+                          className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${roleColor}12` }}
+                          animate={{ x: [0, 3, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                        >
+                          <ChevronRight className="w-5 h-5" style={{ color: roleColor }} />
+                        </motion.div>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -911,6 +707,20 @@ export function Identifications() {
       </div>
 
       <Navigation role="identificateur" />
+
+      {/* Modal fiche acteur */}
+      {ficheActeur && (
+        <FicheActeurDetailModal
+          acteur={{
+            ...ficheActeur,
+            role: ficheActeur.role,
+            statut: ficheActeur.statut,
+            activite: ficheActeur.activite,
+          }}
+          onClose={() => setFicheActeur(null)}
+          contextRole="identificateur"
+        />
+      )}
     </>
   );
 }

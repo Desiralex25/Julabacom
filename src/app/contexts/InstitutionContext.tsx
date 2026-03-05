@@ -103,6 +103,9 @@ export function InstitutionProvider({ children }: { children: ReactNode }) {
 
   // ========== CALCULS KPIs NATIONAUX ==========
   const getKPINationaux = (): KPINational => {
+    // ✅ NETTOYAGE PHASE 2 : Calculs basés uniquement sur données réelles des contexts
+    // TODO: Récupérer les données agrégées depuis Supabase
+    
     // Volume total FCFA (ventes marchands + transactions coopératives)
     const volumeMarchands = caisse?.ventes?.reduce((sum, v) => sum + v.montant, 0) || 0;
     const volumeCooperatives = cooperative?.tresorerie
@@ -115,19 +118,15 @@ export function InstitutionProvider({ children }: { children: ReactNode }) {
     const nombreTransactionsCooperatives = cooperative?.tresorerie?.filter(t => t.statut === 'validee').length || 0;
     const nombreTransactions = nombreVentesMarchands + nombreTransactionsCooperatives;
 
-    // Nombre total d'acteurs (mock pour l'instant)
-    const nombreMarchands = 1247;
-    const nombreProducteurs = 3589;
-    const nombreCooperatives = 156;
-    const nombreIdentificateurs = 42;
-    const nombreActeurs = nombreMarchands + nombreProducteurs + nombreCooperatives + nombreIdentificateurs;
+    // TODO: Charger depuis Supabase - Nombre total d'acteurs
+    const nombreActeurs = 0;
 
-    // Taux d'activité (mock)
-    const tauxActivite = 78.5;
+    // TODO: Charger depuis Supabase - Taux d'activité
+    const tauxActivite = 0;
 
-    // Croissance (mock - devrait être calculé sur historique)
-    const croissanceVolume = 12.3;
-    const croissanceActeurs = 8.7;
+    // TODO: Charger depuis Supabase - Croissance
+    const croissanceVolume = 0;
+    const croissanceActeurs = 0;
 
     return {
       volumeTotalFCFA,
@@ -141,12 +140,15 @@ export function InstitutionProvider({ children }: { children: ReactNode }) {
 
   // ========== STATISTIQUES PAR RÔLE ==========
   const getStatistiquesParRole = (): StatistiquesParRole => {
-    // Marchands
+    // ✅ NETTOYAGE PHASE 2 : Calculs basés uniquement sur données réelles
+    // TODO: Récupérer les statistiques agrégées depuis Supabase
+    
+    // Marchands - Données réelles disponibles
     const volumeVentesMarchands = caisse?.ventes?.reduce((sum, v) => sum + v.montant, 0) || 0;
     const nombreVentesMarchands = caisse?.ventes?.length || 0;
     const panierMoyen = nombreVentesMarchands > 0 ? volumeVentesMarchands / nombreVentesMarchands : 0;
 
-    // Producteurs
+    // Producteurs - Données réelles disponibles
     const recoltes = recolte?.recoltes || [];
     const volumeRecoltes = recoltes.reduce((sum, r) => sum + r.quantite, 0);
     const nombreRecoltes = recoltes.length;
@@ -154,44 +156,45 @@ export function InstitutionProvider({ children }: { children: ReactNode }) {
       ? recoltes.reduce((sum, r) => sum + r.prixUnitaire, 0) / nombreRecoltes 
       : 0;
 
-    // Coopératives
+    // Coopératives - Données réelles disponibles
     const membresTotal = cooperative?.membres?.length || 0;
     const tresorerieTotal = cooperative?.soldeActuel || 0;
     const commandesGroupees = cooperative?.commandesGroupees?.filter(c => c.statut === 'en_cours').length || 0;
 
     return {
       marchands: {
-        total: 1247,
-        actifs: 982,
+        total: 0, // TODO: Charger depuis Supabase
+        actifs: 0, // TODO: Charger depuis Supabase
         volumeVentes: volumeVentesMarchands,
         nombreVentes: nombreVentesMarchands,
         panierMoyen,
       },
       producteurs: {
-        total: 3589,
-        actifs: 2845,
+        total: 0, // TODO: Charger depuis Supabase
+        actifs: 0, // TODO: Charger depuis Supabase
         volumeRecoltes,
         nombreRecoltes,
         prixMoyenKg,
       },
       cooperatives: {
-        total: 156,
-        actives: 124,
+        total: 0, // TODO: Charger depuis Supabase
+        actives: 0, // TODO: Charger depuis Supabase
         membresTotal,
         tresorerieTotal,
         commandesGroupees,
       },
       identificateurs: {
-        total: 42,
-        actifs: 38,
-        identificationsEffectuees: 1247,
-        tauxValidation: 94.2,
+        total: 0, // TODO: Charger depuis Supabase
+        actifs: 0, // TODO: Charger depuis Supabase
+        identificationsEffectuees: 0, // TODO: Charger depuis Supabase
+        tauxValidation: 0, // TODO: Charger depuis Supabase
       },
     };
   };
 
   // ========== TOP PRODUITS ==========
   const getTopProduits = (limit: number = 10): TopProduit[] => {
+    // ✅ NETTOYAGE PHASE 2 : Calcul basé sur données réelles uniquement
     // Agréger les produits des ventes marchands
     const produitsMap = new Map<string, { volumeVentes: number; nombreVentes: number; totalPrix: number; categorie: string }>();
 
@@ -231,79 +234,21 @@ export function InstitutionProvider({ children }: { children: ReactNode }) {
 
   // ========== DONNÉES GRAPHIQUE ==========
   const getDonneesGraphique = (jours: number = 30): DonneesGraphique[] => {
-    // Générer des données mock pour les 30 derniers jours
-    const donnees: DonneesGraphique[] = [];
-    const aujourdhui = new Date();
-
-    for (let i = jours - 1; i >= 0; i--) {
-      const date = new Date(aujourdhui);
-      date.setDate(date.getDate() - i);
-
-      // Générer des valeurs réalistes avec tendance croissante et variations
-      const baseVolume = 5000000 + (jours - i) * 150000;
-      const variation = Math.random() * 1000000 - 500000;
-      const volumeFCFA = Math.max(0, baseVolume + variation);
-
-      const baseTransactions = 450 + (jours - i) * 15;
-      const variationTrans = Math.random() * 100 - 50;
-      const nombreTransactions = Math.max(0, Math.round(baseTransactions + variationTrans));
-
-      const nouveauxActeurs = Math.round(Math.random() * 50 + 10);
-
-      donnees.push({
-        date: date.toISOString().split('T')[0],
-        volumeFCFA,
-        nombreTransactions,
-        nouveauxActeurs,
-      });
-    }
-
-    return donnees;
+    // ✅ NETTOYAGE PHASE 2 : Suppression des données mock aléatoires
+    // TODO: Charger l'historique réel depuis Supabase
+    // Pour l'instant, retourne un tableau vide
+    return [];
   };
 
   // ========== ALERTES SYSTÈME ==========
   const getAlertes = (): AlerteSysteme[] => {
-    const alertes: AlerteSysteme[] = [
-      {
-        id: '1',
-        type: 'success',
-        titre: 'Objectif mensuel atteint',
-        message: 'Le volume de transactions a dépassé 150M FCFA ce mois-ci',
-        timestamp: new Date().toISOString(),
-        lue: false,
-      },
-      {
-        id: '2',
-        type: 'info',
-        titre: 'Nouvelle coopérative enregistrée',
-        message: 'La coopérative "Union des Producteurs de Yamoussoukro" a rejoint JULABA',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        lue: false,
-      },
-      {
-        id: '3',
-        type: 'warning',
-        titre: 'Anomalie détectée',
-        message: 'Volume de ventes anormalement bas dans la région de Korhogo',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        lue: true,
-      },
-      {
-        id: '4',
-        type: 'info',
-        titre: 'Rapport hebdomadaire disponible',
-        message: 'Le rapport d\'activité de la semaine dernière est prêt à être consulté',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        lue: true,
-      },
-    ];
-
-    return alertes;
+    // ✅ NETTOYAGE PHASE 2 : Suppression des alertes mock hardcodées
+    // TODO: Charger les alertes réelles depuis Supabase
+    return [];
   };
 
   const marquerAlerteLue = (id: string) => {
-    // Dans une vraie app, ceci mettrait à jour le backend
-    console.log(`Alerte ${id} marquée comme lue`);
+    // TODO: Mettre à jour dans Supabase
   };
 
   // ========== HISTORIQUE COMPLET ==========

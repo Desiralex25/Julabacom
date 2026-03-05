@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router';
 import { AppProvider } from './contexts/AppContext';
+import { ModalProvider } from './contexts/ModalContext';
 import { CaisseProvider } from './contexts/CaisseContext';
 import { UserProvider } from './contexts/UserContext';
 import { StockProvider } from './contexts/StockContext';
@@ -15,52 +16,62 @@ import { IdentificateurProvider } from './contexts/IdentificateurContext';
 import { ProducteurProvider } from './contexts/ProducteurContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import { InstitutionAccessProvider } from './contexts/InstitutionAccessContext';
+import { BackOfficeProvider } from './contexts/BackOfficeContext';
+import { SupportConfigProvider } from './contexts/SupportConfigContext';
+import { TicketsProvider } from './contexts/TicketsContext';
 import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
 
-// Reset localStorage pour forcer le chargement des mocks de négociation
-const CACHE_VERSION = 'v2-nego';
+// ✅ Cache version UI (acceptable - préférence cosmétique)
+const CACHE_VERSION = 'v3-clean';
 if (localStorage.getItem('julaba_cache_version') !== CACHE_VERSION) {
-  localStorage.removeItem('julaba_commandes');
   localStorage.setItem('julaba_cache_version', CACHE_VERSION);
 }
 
 export default function App() {
   return (
-    <AppProvider>
-      <UserProvider>
-        {/* NotificationsProvider remonté ici — accessible par tous les contextes enfants */}
-        <NotificationsProvider>
-          <ZoneProvider>
-            <AuditProvider>
-              <WalletProvider>
-                <ScoreProvider>
-                  <RecolteProvider>
-                    <CommandeProvider>
-                      <StockProvider>
-                        <CaisseProvider>
-                          <CooperativeProvider>
-                            <InstitutionProvider>
-                              <InstitutionAccessProvider>
-                                <IdentificateurProvider>
-                                  <ProducteurProvider>
-                                    <RouterProvider router={router} />
-                                    <Toaster />
-                                  </ProducteurProvider>
-                                </IdentificateurProvider>
-                              </InstitutionAccessProvider>
-                            </InstitutionProvider>
-                          </CooperativeProvider>
-                        </CaisseProvider>
-                      </StockProvider>
-                    </CommandeProvider>
-                  </RecolteProvider>
-                </ScoreProvider>
-              </WalletProvider>
-            </AuditProvider>
-          </ZoneProvider>
-        </NotificationsProvider>
-      </UserProvider>
-    </AppProvider>
+    <ModalProvider>
+      <AppProvider>
+        <UserProvider>
+          {/* NotificationsProvider remonté ici — accessible par tous les contextes enfants */}
+          <NotificationsProvider>
+            <ZoneProvider>
+              <AuditProvider>
+                <WalletProvider>
+                  <ScoreProvider>
+                    <RecolteProvider>
+                      <CommandeProvider>
+                        <StockProvider>
+                          <CaisseProvider>
+                            <CooperativeProvider>
+                              <InstitutionProvider>
+                                <BackOfficeProvider>
+                                  <SupportConfigProvider>
+                                    <TicketsProvider>
+                                      <InstitutionAccessProvider>
+                                        <IdentificateurProvider>
+                                          <ProducteurProvider>
+                                            <RouterProvider router={router} />
+                                            <Toaster />
+                                          </ProducteurProvider>
+                                        </IdentificateurProvider>
+                                      </InstitutionAccessProvider>
+                                    </TicketsProvider>
+                                  </SupportConfigProvider>
+                                </BackOfficeProvider>
+                              </InstitutionProvider>
+                            </CooperativeProvider>
+                          </CaisseProvider>
+                        </StockProvider>
+                      </CommandeProvider>
+                    </RecolteProvider>
+                  </ScoreProvider>
+                </WalletProvider>
+              </AuditProvider>
+            </ZoneProvider>
+          </NotificationsProvider>
+        </UserProvider>
+      </AppProvider>
+    </ModalProvider>
   );
 }

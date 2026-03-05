@@ -150,112 +150,29 @@ const COMMISSIONS_KEY = 'julaba_commissions';
 const MISSIONS_KEY = 'julaba_missions';
 const DEMANDES_KEY = 'julaba_demandes_mutation';
 
-// Données mock
-const MOCK_IDENTIFICATIONS: Identification[] = [
-  {
-    id: '1',
-    identificateurId: 'ID001',
-    identificateurNom: 'Konan Serge',
-    typeActeur: 'marchand',
-    nom: 'BAMBA',
-    prenoms: 'Fatou',
-    telephone: '+225 07 12 34 56 78',
-    dateNaissance: '12/05/1982',
-    zone: 'Marché de Cocody',
-    zoneId: '1',
-    activite: 'Vente de légumes',
-    marche: 'Marché de Cocody',
-    cni: 'CI202401234567',
-    statut: 'valide',
-    dateIdentification: '2026-02-15',
-    dateValidation: '2026-02-16',
-    commission: 2000,
-    commissionPayee: true,
-    dateCommission: '2026-02-16',
-    validePar: 'INST001',
-  },
-  {
-    id: '2',
-    identificateurId: 'ID001',
-    identificateurNom: 'Konan Serge',
-    typeActeur: 'producteur',
-    nom: 'YAO',
-    prenoms: 'Michel',
-    telephone: '+225 05 98 76 54 32',
-    zone: 'Marché de Cocody',
-    zoneId: '1',
-    activite: 'Production de manioc',
-    village: 'Village proche Cocody',
-    statut: 'en_cours',
-    dateIdentification: '2026-02-28',
-    commission: 2500,
-    commissionPayee: false,
-  },
-];
-
-const MOCK_MISSIONS: MissionIdentification[] = [
-  {
-    id: 'M1',
-    institutionId: 'INST001',
-    zoneId: '1',
-    zoneNom: 'Marché de Cocody',
-    typeActeur: 'marchand',
-    objectif: 20,
-    recompense: 50000,
-    dateDebut: '2026-03-01',
-    dateFin: '2026-03-31',
-    statut: 'active',
-    description: 'Identification de 20 nouveaux marchands à Cocody - Prime de 50 000 FCFA',
-  },
-];
+// ✅ MOCK DATA SUPPRIMÉS - Migration Supabase
 
 export function IdentificateurProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const { getZoneById } = useZones();
 
-  const [identifications, setIdentifications] = useState<Identification[]>(() => {
-    const saved = localStorage.getItem(IDENTIFICATIONS_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return MOCK_IDENTIFICATIONS;
-      }
-    }
-    return MOCK_IDENTIFICATIONS;
-  });
+  const [identifications, setIdentifications] = useState<Identification[]>([]);
+  
+  // TODO: Charger depuis Supabase au mount
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data } = await supabase.from('identifications').select('*');
+  //     setIdentifications(data || []);
+  //   };
+  //   loadData();
+  // }, []);
 
-  const [commissions, setCommissions] = useState<Commission[]>(() => {
-    const saved = localStorage.getItem(COMMISSIONS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [commissions, setCommissions] = useState<Commission[]>([]);
+  const [missions, setMissions] = useState<MissionIdentification[]>([]);
+  const [demandes, setDemandes] = useState<DemandeMutation[]>([]);
 
-  const [missions, setMissions] = useState<MissionIdentification[]>(() => {
-    const saved = localStorage.getItem(MISSIONS_KEY);
-    return saved ? JSON.parse(saved) : MOCK_MISSIONS;
-  });
-
-  const [demandes, setDemandes] = useState<DemandeMutation[]>(() => {
-    const saved = localStorage.getItem(DEMANDES_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Auto-save
-  React.useEffect(() => {
-    localStorage.setItem(IDENTIFICATIONS_KEY, JSON.stringify(identifications));
-  }, [identifications]);
-
-  React.useEffect(() => {
-    localStorage.setItem(COMMISSIONS_KEY, JSON.stringify(commissions));
-  }, [commissions]);
-
-  React.useEffect(() => {
-    localStorage.setItem(MISSIONS_KEY, JSON.stringify(missions));
-  }, [missions]);
-
-  React.useEffect(() => {
-    localStorage.setItem(DEMANDES_KEY, JSON.stringify(demandes));
-  }, [demandes]);
+  // TODO: Auto-save vers Supabase
+  // ✅ localStorage SUPPRIMÉ
 
   const addIdentification = (data: Omit<Identification, 'id' | 'dateIdentification' | 'statut' | 'commissionPayee'>) => {
     const newIdentification: Identification = {

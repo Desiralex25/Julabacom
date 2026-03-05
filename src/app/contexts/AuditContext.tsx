@@ -31,20 +31,15 @@ const AuditContext = createContext<AuditContextType | undefined>(undefined);
 export function AuditProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<AuditEvent[]>([]);
 
-  // Charger depuis localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('julaba_audit_trail');
-    if (stored) {
-      setEvents(JSON.parse(stored));
-    }
-  }, []);
-
-  // Sauvegarder automatiquement (avec limite de taille)
-  useEffect(() => {
-    // Garder seulement les 1000 derniers événements en local
-    const eventsToStore = events.slice(0, 1000);
-    localStorage.setItem('julaba_audit_trail', JSON.stringify(eventsToStore));
-  }, [events]);
+  // TODO: Charger depuis Supabase
+  // ✅ localStorage SUPPRIMÉ
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data } = await supabase.from('audit_trail').select('*').limit(1000);
+  //     setEvents(data || []);
+  //   };
+  //   loadData();
+  // }, []);
 
   // 📝 Logger un événement
   const logEvent = (
@@ -78,8 +73,7 @@ export function AuditProvider({ children }: { children: ReactNode }) {
 
     setEvents([event, ...events]);
     
-    // Log console pour debug
-    console.log(`🔍 AUDIT: ${action} | ${entityType}:${entityId} | by ${userName}`);
+
   };
 
   // Récupération par utilisateur

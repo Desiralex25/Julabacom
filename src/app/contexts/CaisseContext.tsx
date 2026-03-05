@@ -96,16 +96,16 @@ const CMU_RATE = 0.02; // 2% pour CMU
 
 // Produits par défaut pour la Côte d'Ivoire
 const DEFAULT_PRODUCTS: Product[] = [
-  { id: '1', name: 'Riz local', category: 'Cereales', price: 650, unit: 'kg', stock: 150, image: 'https://images.unsplash.com/photo-1743674452796-ad8d0cf38005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGl0ZSUyMHJpY2UlMjBncmFpbnMlMjBib3dsfGVufDF8fHx8MTc3MjM2Njg2OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '2', name: 'Tomates', category: 'Legumes', price: 350, unit: 'kg', stock: 45, image: 'https://images.unsplash.com/photo-1443131612988-32b6d97cc5da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHJlZCUyMHRvbWF0b2VzfGVufDF8fHx8MTc3MjI4OTM3NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '3', name: 'Oignons', category: 'Legumes', price: 400, unit: 'kg', stock: 80, image: 'https://images.unsplash.com/photo-1756361946737-6a1a2784928c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbmlvbnMlMjBidWxiJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjM2Njg2OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '4', name: 'Huile', category: 'Epices', price: 1500, unit: 'L', stock: 25, image: 'https://images.unsplash.com/photo-1757801333069-f7b3cabaec4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb29raW5nJTIwb2lsJTIwYm90dGxlfGVufDF8fHx8MTc3MjI5NjQ0NHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '5', name: 'Ignames', category: 'Tubercules', price: 400, unit: 'kg', stock: 120, image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5YW0lMjB0dWJlciUyMHZlZ2V0YWJsZSUyMGZyZXNofGVufDF8fHx8MTc3MjM2Njg2OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '6', name: 'Plantain', category: 'Fruits', price: 300, unit: 'régimes', stock: 15, image: 'https://images.unsplash.com/photo-1635013973792-2d1595bfa0b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNofGVufDF8fHx8MTc3MjM2Njg3MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '7', name: 'Piment', category: 'Epices', price: 200, unit: 'tas', stock: 8, image: 'https://images.unsplash.com/photo-1761669411746-8f401c29e9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjBjaGlsaSUyMHBlcHBlciUyMGZyZXNofGVufDF8fHx8MTc3MjM2Njg3MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '8', name: 'Gombo', category: 'Legumes', price: 150, unit: 'tas', stock: 30, image: 'https://images.unsplash.com/photo-1654786733145-78fa33b56de0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ3JlZW4lMjB2ZWdldGFibGV8ZW58MXx8fHwxNzcyMzY2ODcxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '9', name: 'Maïs', category: 'Cereales', price: 500, unit: 'kg', stock: 100, image: 'https://images.unsplash.com/photo-1651667343153-6dc318e27e41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnN8ZW58MXx8fHwxNzcyMzY2ODcxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
-  { id: '10', name: 'Aubergines', category: 'Legumes', price: 800, unit: 'kg', stock: 35, image: 'https://images.unsplash.com/photo-1659260180173-8d58b38648f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZ2dwbGFudCUyMGF1YmVyZ2luZSUyMHB1cnBsZXxlbnwxfHx8fDE3NzIzNjY4NzF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral' },
+  { id: '1', name: 'Riz local', category: 'Cereales', price: 650, unit: 'kg', stock: 150, image: '/images/produit-riz.svg' },
+  { id: '2', name: 'Tomates', category: 'Legumes', price: 350, unit: 'kg', stock: 45, image: '/images/produit-tomate.svg' },
+  { id: '3', name: 'Oignons', category: 'Legumes', price: 400, unit: 'kg', stock: 80, image: '/images/produit-oignon.svg' },
+  { id: '4', name: 'Huile', category: 'Epices', price: 1500, unit: 'L', stock: 25, image: '/images/produit-huile.svg' },
+  { id: '5', name: 'Ignames', category: 'Tubercules', price: 400, unit: 'kg', stock: 120, image: '/images/produit-igname.svg' },
+  { id: '6', name: 'Plantain', category: 'Fruits', price: 300, unit: 'régimes', stock: 15, image: '/images/produit-plantain.svg' },
+  { id: '7', name: 'Piment', category: 'Epices', price: 200, unit: 'tas', stock: 8, image: '/images/produit-piment.svg' },
+  { id: '8', name: 'Gombo', category: 'Legumes', price: 150, unit: 'tas', stock: 30, image: '/images/produit-gombo.svg' },
+  { id: '9', name: 'Maïs', category: 'Cereales', price: 500, unit: 'kg', stock: 100, image: '/images/produit-mais.svg' },
+  { id: '10', name: 'Aubergines', category: 'Legumes', price: 800, unit: 'kg', stock: 35, image: '/images/produit-aubergine.svg' },
 ];
 
 export function CaisseProvider({ children }: { children: ReactNode }) {
@@ -115,61 +115,22 @@ export function CaisseProvider({ children }: { children: ReactNode }) {
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setTransactions(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load transactions:', e);
-      }
-    }
+  // TODO: Load from Supabase on mount
+  // ✅ localStorage SUPPRIMÉ
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data: txs } = await supabase.from('caisse_transactions').select('*');
+  //     const { data: prods } = await supabase.from('caisse_products').select('*');
+  //     const { data: moves } = await supabase.from('stock_movements').select('*');
+  //     setTransactions(txs || []);
+  //     setProducts(prods || []);
+  //     setStockMovements(moves || []);
+  //   };
+  //   loadData();
+  // }, []);
 
-    const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-    if (savedProducts) {
-      try {
-        const loadedProducts = JSON.parse(savedProducts);
-        // Merge avec les images des DEFAULT_PRODUCTS
-        const updatedProducts = loadedProducts.map((product: Product) => {
-          const defaultProduct = DEFAULT_PRODUCTS.find(p => p.id === product.id);
-          return {
-            ...product,
-            image: defaultProduct?.image || product.image,
-          };
-        });
-        setProducts(updatedProducts);
-      } catch (e) {
-        console.error('Failed to load products:', e);
-        setProducts(DEFAULT_PRODUCTS);
-      }
-    } else {
-      // Si aucun produit en localStorage, utiliser DEFAULT_PRODUCTS
-      setProducts(DEFAULT_PRODUCTS);
-    }
-
-    const savedStockMovements = localStorage.getItem(STOCK_MOVEMENTS_STORAGE_KEY);
-    if (savedStockMovements) {
-      try {
-        setStockMovements(JSON.parse(savedStockMovements));
-      } catch (e) {
-        console.error('Failed to load stock movements:', e);
-      }
-    }
-  }, []);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem(STOCK_MOVEMENTS_STORAGE_KEY, JSON.stringify(stockMovements));
-  }, [stockMovements]);
+  // TODO: Save to Supabase on change
+  // ✅ localStorage SUPPRIMÉ
 
   // Monitor online/offline status
   useEffect(() => {

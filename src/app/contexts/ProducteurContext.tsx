@@ -136,8 +136,8 @@ interface ProducteurContextType {
 
 const ProducteurContext = createContext<ProducteurContextType | undefined>(undefined);
 
-// Données mock initiales
-const MOCK_CYCLES: CycleAgricole[] = [
+// ✅ MOCK DATA SUPPRIMÉS - Migration Supabase
+/* const MOCK_CYCLES: CycleAgricole[] = [
   {
     id: '1',
     culture: 'Tomate',
@@ -227,7 +227,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 4800,
     qualite: 'A',
     prixUnitaire: 350,
-    photos: ['https://images.unsplash.com/photo-1443131612988-32b6d97cc5da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-tomate.svg'],
     status: 'published',
     stockDisponible: 3200,
     stockReserve: 800,
@@ -241,7 +241,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 2900,
     qualite: 'A',
     prixUnitaire: 400,
-    photos: ['https://images.unsplash.com/photo-1631897691819-eede2bfac0ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-aubergine.svg'],
     status: 'draft',
     stockDisponible: 2900,
     stockReserve: 0,
@@ -254,7 +254,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 1850,
     qualite: 'A',
     prixUnitaire: 600,
-    photos: ['https://images.unsplash.com/photo-1693664132282-29467c147940?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-piment.svg'],
     status: 'draft',
     stockDisponible: 1850,
     stockReserve: 0,
@@ -267,7 +267,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 3400,
     qualite: 'B',
     prixUnitaire: 300,
-    photos: ['https://images.unsplash.com/photo-1728463527183-7401df450cb7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-gombo.svg'],
     status: 'draft',
     stockDisponible: 3400,
     stockReserve: 0,
@@ -280,7 +280,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 7800,
     qualite: 'A',
     prixUnitaire: 200,
-    photos: ['https://images.unsplash.com/photo-1757283961570-682154747d9c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-manioc.svg'],
     status: 'draft',
     stockDisponible: 7800,
     stockReserve: 0,
@@ -293,7 +293,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 5900,
     qualite: 'A',
     prixUnitaire: 250,
-    photos: ['https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-igname.svg'],
     status: 'draft',
     stockDisponible: 5900,
     stockReserve: 0,
@@ -306,7 +306,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 9500,
     qualite: 'B',
     prixUnitaire: 180,
-    photos: ['https://images.unsplash.com/photo-1633345817529-cca176575d34?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-mais.svg'],
     status: 'draft',
     stockDisponible: 9500,
     stockReserve: 0,
@@ -319,7 +319,7 @@ const MOCK_RECOLTES: Recolte[] = [
     quantiteReelle: 3300,
     qualite: 'A',
     prixUnitaire: 450,
-    photos: ['https://images.unsplash.com/photo-1741517481122-51d958803203?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400'],
+    photos: ['/images/produit-oignon.svg'],
     status: 'draft',
     stockDisponible: 3300,
     stockReserve: 0,
@@ -417,12 +417,12 @@ const MOCK_COMMANDES: Commande[] = [
       dateProposition: new Date('2026-02-26T14:00:00'),
     },
   },
-];
+]; */
 
 export function ProducteurProvider({ children }: { children: ReactNode }) {
-  const [cycles, setCycles] = useState<CycleAgricole[]>(MOCK_CYCLES);
-  const [recoltes, setRecoltes] = useState<Recolte[]>(MOCK_RECOLTES);
-  const [commandes, setCommandes] = useState<Commande[]>(MOCK_COMMANDES);
+  const [cycles, setCycles] = useState<CycleAgricole[]>([]);
+  const [recoltes, setRecoltes] = useState<Recolte[]>([]);
+  const [commandes, setCommandes] = useState<Commande[]>([]);
   const [publications, setPublications] = useState<PublicationOffre[]>([]);
   const [stats, setStats] = useState<ProducteurStats>({
     productionTotale: 4800,

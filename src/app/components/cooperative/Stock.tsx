@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
 import {
   Search,
   Package,
@@ -29,6 +31,9 @@ import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../hooks/useToast';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { NotificationButton } from '../marchand/NotificationButton';
+import { Montant } from '../shared/Montant';
+import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 
 interface Stock {
   id: string;
@@ -54,143 +59,23 @@ const categories = [
 ];
 
 const mockStocks: Stock[] = [
-  { 
-    id: '1', 
-    name: 'Riz local', 
-    image: 'https://images.unsplash.com/photo-1743674452796-ad8d0cf38005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 850, 
-    unit: 'kg', 
-    purchasePrice: 600, 
-    salePrice: 700, 
-    threshold: 200, 
-    category: 'cereales',
-    collectedFrom: 'Kouassi Jean',
-    lastCollection: '25 Fév 2026'
-  },
-  { 
-    id: '2', 
-    name: 'Tomates', 
-    image: 'https://images.unsplash.com/photo-1443131612988-32b6d97cc5da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 120, 
-    unit: 'kg', 
-    purchasePrice: 300, 
-    salePrice: 400, 
-    threshold: 150, 
-    category: 'legumes',
-    collectedFrom: 'Yao Akissi',
-    lastCollection: '26 Fév 2026'
-  },
-  { 
-    id: '3', 
-    name: 'Oignons', 
-    image: 'https://images.unsplash.com/photo-1756361946737-6a1a2784928c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 450, 
-    unit: 'kg', 
-    purchasePrice: 350, 
-    salePrice: 450, 
-    threshold: 100, 
-    category: 'legumes',
-    collectedFrom: 'Traoré Marie',
-    lastCollection: '24 Fév 2026'
-  },
-  { 
-    id: '4', 
-    name: 'Ignames', 
-    image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-    quantity: 680, 
-    unit: 'kg', 
-    purchasePrice: 350, 
-    salePrice: 450, 
-    threshold: 300, 
-    category: 'tubercules',
-    collectedFrom: 'Koné Ibrahim',
-    lastCollection: '23 Fév 2026'
-  },
-  { 
-    id: '5', 
-    name: 'Plantain', 
-    image: 'https://images.unsplash.com/photo-1635013973792-2d1595bfa0b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 75, 
-    unit: 'régimes', 
-    purchasePrice: 250, 
-    salePrice: 350, 
-    threshold: 100, 
-    category: 'fruits',
-    collectedFrom: 'Diabaté Fatou',
-    lastCollection: '26 Fév 2026'
-  },
-  { 
-    id: '6', 
-    name: 'Piment', 
-    image: 'https://images.unsplash.com/photo-1761669411746-8f401c29e9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 30, 
-    unit: 'kg', 
-    purchasePrice: 2000, 
-    salePrice: 2800, 
-    threshold: 50, 
-    category: 'epices',
-    collectedFrom: 'Ouattara Aminata',
-    lastCollection: '25 Fév 2026'
-  },
-  { 
-    id: '7', 
-    name: 'Gombo', 
-    image: 'https://images.unsplash.com/photo-1654786733145-78fa33b56de0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 180, 
-    unit: 'kg', 
-    purchasePrice: 1200, 
-    salePrice: 1600, 
-    threshold: 80, 
-    category: 'legumes',
-    collectedFrom: 'Bamba Karim',
-    lastCollection: '27 Fév 2026'
-  },
-  { 
-    id: '8', 
-    name: 'Maïs', 
-    image: 'https://images.unsplash.com/photo-1651667343153-6dc318e27e41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 520, 
-    unit: 'kg', 
-    purchasePrice: 400, 
-    salePrice: 550, 
-    threshold: 200, 
-    category: 'cereales',
-    collectedFrom: 'Coulibaly Jean',
-    lastCollection: '24 Fév 2026'
-  },
-  { 
-    id: '9', 
-    name: 'Aubergines', 
-    image: 'https://images.unsplash.com/photo-1659260180173-8d58b38648f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    quantity: 220, 
-    unit: 'kg', 
-    purchasePrice: 650, 
-    salePrice: 850, 
-    threshold: 100, 
-    category: 'legumes',
-    collectedFrom: 'Yao Akissi',
-    lastCollection: '26 Fév 2026'
-  },
-  { 
-    id: '10', 
-    name: 'Manioc', 
-    image: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400',
-    quantity: 750, 
-    unit: 'kg', 
-    purchasePrice: 300, 
-    salePrice: 420, 
-    threshold: 400, 
-    category: 'tubercules',
-    collectedFrom: 'Traoré Ibrahim',
-    lastCollection: '23 Fév 2026'
-  },
+  { id: '1', name: 'Riz local', image: '/images/produit-riz.svg', quantity: 850, unit: 'kg', purchasePrice: 600, salePrice: 700, threshold: 200, category: 'cereales', collectedFrom: 'Kouassi Jean', lastCollection: '25 Fév 2026' },
+  { id: '2', name: 'Tomates', image: '/images/produit-tomate.svg', quantity: 120, unit: 'kg', purchasePrice: 300, salePrice: 400, threshold: 150, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
+  { id: '3', name: 'Oignons', image: '/images/produit-oignon.svg', quantity: 450, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 100, category: 'legumes', collectedFrom: 'Traoré Marie', lastCollection: '24 Fév 2026' },
+  { id: '4', name: 'Ignames', image: '/images/produit-igname.svg', quantity: 680, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 300, category: 'tubercules', collectedFrom: 'Koné Ibrahim', lastCollection: '23 Fév 2026' },
+  { id: '5', name: 'Plantain', image: '/images/produit-plantain.svg', quantity: 75, unit: 'régimes', purchasePrice: 250, salePrice: 350, threshold: 100, category: 'fruits', collectedFrom: 'Diabaté Fatou', lastCollection: '26 Fév 2026' },
+  { id: '6', name: 'Piment', image: '/images/produit-piment.svg', quantity: 30, unit: 'kg', purchasePrice: 2000, salePrice: 2800, threshold: 50, category: 'epices', collectedFrom: 'Ouattara Aminata', lastCollection: '25 Fév 2026' },
+  { id: '7', name: 'Gombo', image: '/images/produit-gombo.svg', quantity: 180, unit: 'kg', purchasePrice: 1200, salePrice: 1600, threshold: 80, category: 'legumes', collectedFrom: 'Bamba Karim', lastCollection: '27 Fév 2026' },
+  { id: '8', name: 'Maïs', image: '/images/produit-mais.svg', quantity: 520, unit: 'kg', purchasePrice: 400, salePrice: 550, threshold: 200, category: 'cereales', collectedFrom: 'Coulibaly Jean', lastCollection: '24 Fév 2026' },
+  { id: '9', name: 'Aubergines', image: '/images/produit-aubergine.svg', quantity: 220, unit: 'kg', purchasePrice: 650, salePrice: 850, threshold: 100, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
+  { id: '10', name: 'Manioc', image: '/images/produit-manioc.svg', quantity: 750, unit: 'kg', purchasePrice: 300, salePrice: 420, threshold: 400, category: 'tubercules', collectedFrom: 'Traoré Ibrahim', lastCollection: '23 Fév 2026' },
 ];
 
 export function Stock() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { showToast, ToastContainer } = useToast();
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
 
   const [stocks, setStocks] = useState<Stock[]>(mockStocks);
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,11 +89,8 @@ export function Stock() {
   const [isListening, setIsListening] = useState(false);
   const hasWelcomed = useRef(false);
 
-  // Gérer l'affichage de la bottom bar selon l'état des modals
-  React.useEffect(() => {
-    const isAnyModalOpen = showAddModal || showEditModal || showCollectionModal || showDistributionModal;
-    setIsModalOpen(isAnyModalOpen);
-  }, [showAddModal, showEditModal, showCollectionModal, showDistributionModal, setIsModalOpen]);
+  // Sync ModalContext
+  useModalRegister(showAddModal || showEditModal || showCollectionModal || showDistributionModal);
 
   const [newStock, setNewStock] = useState({
     name: '',
@@ -288,7 +170,7 @@ export function Stock() {
     const newProduct: Stock = { 
       ...newStock, 
       id: newId,
-      image: '📦',
+      image: newStock.image || '',
       lastCollection: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
     };
     setStocks([...stocks, newProduct]);
@@ -467,22 +349,22 @@ export function Stock() {
         >
           <motion.button
             onClick={() => setShowCollectionModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Truck className="w-5 h-5 text-[#2072AF]" />
+            <Truck className="w-5 h-5 text-[#2072AF] flex-shrink-0" />
             <span className="font-semibold text-gray-700">Collectes</span>
           </motion.button>
 
           <motion.button
             onClick={() => setShowDistributionModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Send className="w-5 h-5 text-[#2072AF]" />
-            <span className="font-semibold text-gray-700">Redistribution</span>
+            <Send className="w-5 h-5 text-[#2072AF] flex-shrink-0" />
+            <span className="font-semibold text-gray-700">Distribution</span>
           </motion.button>
         </motion.div>
 
@@ -516,12 +398,12 @@ export function Stock() {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <motion.button
             onClick={() => setShowAddModal(true)}
-            className="py-4 rounded-2xl bg-white border-2 border-[#2072AF] text-[#2072AF] font-bold flex items-center justify-center gap-2"
+            className="py-4 px-3 rounded-2xl bg-white border-2 border-[#2072AF] text-[#2072AF] font-bold flex items-center justify-center gap-2 whitespace-nowrap"
             whileTap={{ scale: 0.98 }}
             whileHover={{ scale: 1.02 }}
           >
-            <Plus className="w-5 h-5" strokeWidth={3} />
-            Ajouter collecte
+            <Plus className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+            Ajouter
           </motion.button>
 
           <motion.button
@@ -598,11 +480,11 @@ export function Stock() {
                   <div className="grid grid-cols-2 gap-1.5 text-xs">
                     <div className="bg-red-50 rounded-lg p-1.5 text-center">
                       <p className="text-red-600 font-semibold mb-0.5">Achat</p>
-                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.purchasePrice.toLocaleString('fr-FR')} FCFA</p>
+                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.purchasePrice.toLocaleString('fr-FR')} <span className="text-[9px] opacity-60">FCFA</span></p>
                     </div>
                     <div className="bg-green-50 rounded-lg p-1.5 text-center">
                       <p className="text-green-600 font-semibold mb-0.5">Vente</p>
-                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.salePrice.toLocaleString('fr-FR')} FCFA</p>
+                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.salePrice.toLocaleString('fr-FR')} <span className="text-[9px] opacity-60">FCFA</span></p>
                     </div>
                   </div>
 
@@ -630,7 +512,7 @@ export function Stock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
@@ -654,6 +536,16 @@ export function Stock() {
               </div>
 
               <div className="p-6 space-y-4">
+                {/* Photo du produit collecté */}
+                <ImagePickerField
+                  label="Photo du produit"
+                  value={(newStock as any).image?.startsWith('data:') || (newStock as any).image?.startsWith('http') ? (newStock as any).image : ''}
+                  onChange={(url) => setNewStock({ ...newStock, image: url } as any)}
+                  primaryColor="#2072AF"
+                  shape="rect"
+                  size={96}
+                />
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Produit collecté</label>
                   <input
@@ -686,20 +578,14 @@ export function Stock() {
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2072AF] focus:outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unité</label>
-                    <select
-                      value={newStock.unit}
-                      onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2072AF] focus:outline-none"
-                    >
-                      <option value="kg">kg</option>
-                      <option value="L">L</option>
-                      <option value="tas">tas</option>
-                      <option value="régimes">régimes</option>
-                      <option value="sac">sac</option>
-                    </select>
-                  </div>
+                  <SelectWithAutre
+                    label="Unité"
+                    value={newStock.unit}
+                    onChange={(v) => setNewStock({ ...newStock, unit: v })}
+                    options={['kg', 'L', 'tas', 'régimes', 'sac', 'tonne', 'carton']}
+                    primaryColor="#2072AF"
+                    placeholder="Ex: caisse, panier..."
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -723,18 +609,14 @@ export function Stock() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Catégorie</label>
-                  <select
-                    value={newStock.category}
-                    onChange={(e) => setNewStock({ ...newStock, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2072AF] focus:outline-none"
-                  >
-                    {categories.filter(c => c.id !== 'tous').map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
-                    ))}
-                  </select>
-                </div>
+                <SelectWithAutre
+                  label="Catégorie"
+                  value={newStock.category}
+                  onChange={(v) => setNewStock({ ...newStock, category: v })}
+                  options={categories.filter(c => c.id !== 'tous').map(cat => cat.id)}
+                  primaryColor="#2072AF"
+                  placeholder="Ex: épices, fleurs..."
+                />
 
                 <motion.button
                   onClick={addStock}
@@ -757,7 +639,7 @@ export function Stock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowEditModal(false)}
           >
             <motion.div
@@ -831,16 +713,16 @@ export function Stock() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Prix achat membre</span>
-                    <span className="font-bold text-gray-900">{selectedStock.purchasePrice.toLocaleString()} FCFA/{selectedStock.unit}</span>
+                    <span className="font-bold text-gray-900"><Montant value={selectedStock.purchasePrice} unit={selectedStock.unit} size="sm" color="#1f2937" /></span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Prix de revente</span>
-                    <span className="font-bold text-green-600">{selectedStock.salePrice.toLocaleString()} FCFA/{selectedStock.unit}</span>
+                    <span className="font-bold text-green-600"><Montant value={selectedStock.salePrice} unit={selectedStock.unit} size="sm" color="#16a34a" /></span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Marge unitaire</span>
                     <span className="font-bold text-[#2072AF]">
-                      {(selectedStock.salePrice - selectedStock.purchasePrice).toLocaleString()} FCFA 
+                      {(selectedStock.salePrice - selectedStock.purchasePrice).toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span> 
                       <span className="text-xs ml-1">
                         (+{(((selectedStock.salePrice - selectedStock.purchasePrice) / selectedStock.purchasePrice) * 100).toFixed(0)}%)
                       </span>
@@ -849,7 +731,7 @@ export function Stock() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Valeur totale</span>
                     <span className="font-bold text-lg text-[#2072AF]">
-                      {(selectedStock.quantity * selectedStock.salePrice).toLocaleString()} FCFA
+                      {(selectedStock.quantity * selectedStock.salePrice).toLocaleString()} <span className="text-xs opacity-60">FCFA</span>
                     </span>
                   </div>
                 </div>
@@ -876,7 +758,7 @@ export function Stock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowCollectionModal(false)}
           >
             <motion.div
@@ -934,7 +816,7 @@ export function Stock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowDistributionModal(false)}
           >
             <motion.div

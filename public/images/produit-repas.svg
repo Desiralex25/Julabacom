@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFF3E0"/>
+  <!-- Assiette -->
+  <circle cx="200" cy="220" r="130" fill="#E0E0E0"/>
+  <circle cx="200" cy="220" r="120" fill="#F5F5F5"/>
+  <circle cx="200" cy="220" r="100" fill="#FFF8F0"/>
+  <!-- Riz -->
+  <ellipse cx="200" cy="225" rx="75" ry="60" fill="#FFF9E6"/>
+  <!-- Sauce tomate -->
+  <ellipse cx="200" cy="215" rx="45" ry="38" fill="#E53935" opacity="0.85"/>
+  <!-- Légumes -->
+  <circle cx="175" cy="210" r="10" fill="#43A047"/>
+  <circle cx="225" cy="210" r="10" fill="#43A047"/>
+  <circle cx="190" cy="230" r="9" fill="#F9A825"/>
+  <circle cx="210" cy="228" r="9" fill="#E53935"/>
+  <!-- Fourchette et couteau -->
+  <line x1="340" y1="130" x2="340" y2="310" stroke="#9E9E9E" stroke-width="6" stroke-linecap="round"/>
+  <line x1="325" y1="150" x2="325" y2="200" stroke="#9E9E9E" stroke-width="2"/>
+  <line x1="335" y1="150" x2="335" y2="200" stroke="#9E9E9E" stroke-width="2"/>
+  <line x1="60" y1="130" x2="60" y2="310" stroke="#9E9E9E" stroke-width="6" stroke-linecap="round"/>
+  <path d="M52 130 Q52 175 60 185 Q68 175 68 130Z" fill="#9E9E9E"/>
+  <text x="200" y="375" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#E65100">Repas</text>
+</svg>

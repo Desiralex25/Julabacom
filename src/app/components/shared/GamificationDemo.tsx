@@ -48,8 +48,7 @@ export function GamificationDemo({ role }: GamificationDemoProps) {
     setShowQuiz(true);
   };
 
-  const handleQuizComplete = (result: any) => {
-    console.log('Quiz Result:', result);
+  const handleQuizComplete = (_result: any) => {
     setShowQuiz(false);
     // Ici on pourrait sauvegarder le résultat, mettre à jour le score, débloquer des badges, etc.
   };

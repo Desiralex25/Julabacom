@@ -88,7 +88,7 @@ export function MarchandProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1635231152740-dcfba853f33d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpZGVudGl0eSUyMGNhcmQlMjBkb2N1bWVudHxlbnwxfHx8fDE3NzIzNzQ1NjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-cni.svg',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -108,7 +108,7 @@ export function MarchandProfil() {
       type: 'certification-julaba',
       title: 'Certification JULABA',
       status: 'rejected' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1637763723578-79a4ca9225f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNlcnRpZmljYXRlJTIwZG9jdW1lbnR8ZW58MXx8fHwxNzcyMzc0NTY4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-certificat.svg',
       uploadedAt: '2024-02-20T08:00:00Z',
       verifiedAt: null,
       verifiedBy: null,
@@ -206,7 +206,7 @@ export function MarchandProfil() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-orange-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-orange-50 to-white">
         
         {/* 🎴 MA CARTE PROFESSIONNELLE - Style Moderne avec Flip */}
         <motion.div
@@ -216,20 +216,31 @@ export function MarchandProfil() {
           className="mb-4"
         >
           {/* Header avec boutons actions */}
-          <div className="flex items-center justify-center mb-3">
-            {/* Bouton Afficher/Masquer */}
+          <div className="flex items-center gap-3 mb-3">
+            {/* Bouton Afficher/Masquer carte */}
             <motion.button
               onClick={() => {
                 setShowProfessionalCard(!showProfessionalCard);
                 speak(showProfessionalCard ? 'Carte masquée' : 'Carte affichée');
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
               style={{ backgroundColor: '#C46210' }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <CreditCard className="w-4 h-4" />
-              {showProfessionalCard ? 'Masquer ma carte professionnelle' : 'Afficher ma carte professionnelle'}
+              {showProfessionalCard ? 'Masquer ma carte' : 'Afficher ma carte'}
+            </motion.button>
+            {/* Bouton Réglages */}
+            <motion.button
+              onClick={() => navigate('/marchand/parametres')}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-sm border-2"
+              style={{ borderColor: '#C46210', color: '#C46210', backgroundColor: 'rgba(196,98,16,0.06)' }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              Réglages
             </motion.button>
           </div>
 
@@ -581,23 +592,7 @@ export function MarchandProfil() {
             statut={(user.statutIdentification as any) || 'valide'}
             raisonsRejet={user.raisonsRejetIdentification}
             accentColor="#C46210"
-          />
-        </motion.div>
-
-        {/* Ancienne fiche d'identification (modale) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06, type: 'spring', stiffness: 200 }}
-          className="mb-4"
-        >
-          <DocumentCard
-            icon={FileText}
-            label="Ma fiche complète d'identification"
-            status="Voir le détail"
-            statusColor="orange"
-            date={new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            onClick={() => {
+            onVoirFiche={() => {
               setShowFicheIdentification(true);
               speak('Ouverture de la fiche d\'identification');
             }}
@@ -1161,7 +1156,7 @@ function SettingsModal({ onClose, speak, onShowLangue, onShowPIN, onShowConfiden
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
       onClick={onClose}
     >
       <motion.div
@@ -1357,7 +1352,7 @@ function DocumentsModal({ onClose, speak }: DocumentsModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
       onClick={onClose}
     >
       <motion.div
@@ -1477,7 +1472,7 @@ function LangueModal({ onClose, speak }: LangueModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
       onClick={onClose}
     >
       <motion.div
@@ -1538,18 +1533,10 @@ function PINModal({ onClose, speak }: PINModalProps) {
       speak('Veuillez entrer votre ancien mot de passe');
       return;
     }
-
-    // Validation de l'ancien mot de passe (ici on simule avec '1234' comme ancien mot de passe)
-    if (oldPassword !== '1234') {
-      setError('L\'ancien mot de passe est incorrect');
-      speak('L\'ancien mot de passe est incorrect');
-      return;
-    }
-
-    // Succès - passer à l'étape suivante
+    // Validation différée côté Supabase Auth — passage direct en attendant l'intégration backend
     setError('');
     setStep('change');
-    speak('Ancien mot de passe validé, vous pouvez maintenant entrer votre nouveau mot de passe');
+    speak('Vous pouvez maintenant entrer votre nouveau mot de passe');
   };
 
   const handleSaveNewPassword = () => {
@@ -1582,7 +1569,7 @@ function PINModal({ onClose, speak }: PINModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
       onClick={onClose}
     >
       <motion.div
@@ -1773,7 +1760,7 @@ function ConfidentialiteModal({ onClose, speak }: ConfidentialiteModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
       onClick={onClose}
     >
       <motion.div

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, ShoppingCart, Mic, Package, User, ShoppingBag, Warehouse, TrendingUp, UserCircle, UserCheck, BarChart3, Users, UserPlus, Truck, Store, Wallet } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useModal } from '../../contexts/ModalContext';
 import { TantieSagesseModal } from '../assistant/TantieSagesseModal';
 import { getRoleConfig, getRoleColor } from '../../config/roleConfig';
 import { useWallet } from '../../contexts/WalletContext';
@@ -10,11 +11,11 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import { useUser } from '../../contexts/UserContext';
 
 // Import des images Tantie Sagesse
-import tantieSagesseIcon from 'figma:asset/eada83dd0866d60fe27b7763b60aab0af2017c57.png';
-import tantieSagesseCooperativeIcon from 'figma:asset/41b92fac963891d143c08b39664bce7342b10a05.png';
-import tantieSagesseProducteurIcon from 'figma:asset/446359144b84ee1f679d973dae614dacdd487919.png';
-import tantieSagesseInstitutionIcon from 'figma:asset/4f11fa5a013f2ebb2c989930fff2e8c3dae4b16e.png';
-import tantieSagesseIdentificateurIcon from 'figma:asset/261ed5db87103937dbc16a509a9655358175074d.png';
+const tantieSagesseIcon = '/images/tantie-sagesse-icon.svg';
+const tantieSagesseCooperativeIcon = '/images/tantie-sagesse-icon-cooperative.svg';
+const tantieSagesseProducteurIcon = '/images/tantie-sagesse-icon-producteur.svg';
+const tantieSagesseInstitutionIcon = '/images/tantie-sagesse-icon-institution.svg';
+const tantieSagesseIdentificateurIcon = '/images/tantie-sagesse-icon-identificateur.svg';
 
 interface BottomBarProps {
   role: 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
@@ -39,7 +40,8 @@ const ICON_MAP: Record<string, any> = {
 export function BottomBar({ role, onMicClick }: BottomBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { speak, isModalOpen: isGlobalModalOpen } = useApp();
+  const { speak, isModalOpen: isLegacyModalOpen } = useApp();
+  const { isAnyModalOpen } = useModal();
   const { user } = useUser();
   const { getAvailableBalance } = useWallet();
   const { getUnreadCount } = useNotifications();
@@ -102,6 +104,9 @@ export function BottomBar({ role, onMicClick }: BottomBarProps) {
   // Masquer la bottom bar sur la page Wallet
   if (location.pathname.endsWith('/wallet')) return null;
 
+  // Masquer dès qu'un modal est ouvert (ModalContext OU AppContext legacy)
+  if (isAnyModalOpen || isLegacyModalOpen) return null;
+
   // Sélectionner l'image Tantie Sagesse selon le rôle
   const tantieSagesseImage = 
     role === 'cooperative' ? tantieSagesseCooperativeIcon :
@@ -114,7 +119,7 @@ export function BottomBar({ role, onMicClick }: BottomBarProps) {
     <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe lg:hidden bottom-bar-container">
       {/* Glassmorphism Background */}
       <AnimatePresence>
-        {!isGlobalModalOpen && (
+        {!isAnyModalOpen && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

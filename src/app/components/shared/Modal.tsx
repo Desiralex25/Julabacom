@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { MOTION, Z_INDEX } from '../../styles/design-tokens';
 import { cn } from '../ui/utils';
+import { ModalPortal } from './ModalPortal';
 
 export interface SharedModalProps {
   /** État d'ouverture */
@@ -66,34 +67,9 @@ export function SharedModal({
   cardStyle,
   fullHeight = false,
 }: SharedModalProps) {
-  // Bloquer le scroll du body quand le modal est ouvert
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      // Cacher la bottom bar
-      const bottomBar = document.querySelector('.bottom-bar-container');
-      if (bottomBar) {
-        (bottomBar as HTMLElement).style.display = 'none';
-      }
-    } else {
-      document.body.style.overflow = 'unset';
-      // Réafficher la bottom bar
-      const bottomBar = document.querySelector('.bottom-bar-container');
-      if (bottomBar) {
-        (bottomBar as HTMLElement).style.display = 'block';
-      }
-    }
-    
-    return () => {
-      document.body.style.overflow = 'unset';
-      // Réafficher la bottom bar au cleanup
-      const bottomBar = document.querySelector('.bottom-bar-container');
-      if (bottomBar) {
-        (bottomBar as HTMLElement).style.display = 'block';
-      }
-    };
-  }, [isOpen]);
-  
+  // ModalPortal gère le scroll lock et l'enregistrement dans ModalContext
+  // Plus besoin de manipuler le DOM manuellement ici
+
   // Classes de taille
   const sizeClasses = {
     sm: 'max-w-md',
@@ -104,91 +80,93 @@ export function SharedModal({
   }[size];
   
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            style={{ zIndex: Z_INDEX.modalBackdrop }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => !disableBackdropClick && onClose()}
-          />
-          
-          {/* Modal Container */}
-          <div
-            className={cn(
-              'fixed inset-0 flex items-center justify-center overflow-y-auto',
-              fullHeight ? 'p-2' : 'p-4'
-            )}
-            style={{ zIndex: Z_INDEX.modal }}
-          >
+    <ModalPortal isOpen={isOpen}>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
             <motion.div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              style={{ zIndex: Z_INDEX.modalBackdrop }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !disableBackdropClick && onClose()}
+            />
+            
+            {/* Modal Container */}
+            <div
               className={cn(
-                'bg-white rounded-3xl shadow-2xl',
-                'w-full',
-                sizeClasses,
-                fullHeight && 'flex flex-col',
-                className
+                'fixed inset-0 flex items-center justify-center overflow-y-auto',
+                fullHeight ? 'p-2' : 'p-4'
               )}
-              style={{
-                ...(fullHeight ? { height: 'calc(100dvh - 192px)' } : {}),
-                ...cardStyle,
-              }}
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={MOTION.spring}
-              onClick={(e) => e.stopPropagation()}
+              style={{ zIndex: Z_INDEX.modal }}
             >
-              {/* Header */}
-              {(title || !hideCloseButton) && (
-                <div className="flex items-start justify-between p-6 border-b border-gray-200 flex-shrink-0">
-                  <div className="flex-1">
-                    {title && (
-                      <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                        {title}
-                      </h2>
-                    )}
-                    {description && (
-                      <p className="text-sm text-gray-600">
-                        {description}
-                      </p>
+              <motion.div
+                className={cn(
+                  'bg-white rounded-3xl shadow-2xl',
+                  'w-full',
+                  sizeClasses,
+                  fullHeight && 'flex flex-col',
+                  className
+                )}
+                style={{
+                  ...(fullHeight ? { height: 'calc(100dvh - 192px)' } : {}),
+                  ...cardStyle,
+                }}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={MOTION.spring}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                {(title || !hideCloseButton) && (
+                  <div className="flex items-start justify-between p-6 border-b border-gray-200 flex-shrink-0">
+                    <div className="flex-1">
+                      {title && (
+                        <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                          {title}
+                        </h2>
+                      )}
+                      {description && (
+                        <p className="text-sm text-gray-600">
+                          {description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {!hideCloseButton && (
+                      <motion.button
+                        onClick={onClose}
+                        className="ml-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <X className="w-6 h-6 text-gray-500" />
+                      </motion.button>
                     )}
                   </div>
-                  
-                  {!hideCloseButton && (
-                    <motion.button
-                      onClick={onClose}
-                      className="ml-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <X className="w-6 h-6 text-gray-500" />
-                    </motion.button>
-                  )}
+                )}
+                
+                {/* Body */}
+                <div className={cn(
+                  fullHeight ? 'flex-1 overflow-hidden' : 'p-6 max-h-[60vh] overflow-y-auto'
+                )}>
+                  {children}
                 </div>
-              )}
-              
-              {/* Body */}
-              <div className={cn(
-                fullHeight ? 'flex-1 overflow-hidden' : 'p-6 max-h-[60vh] overflow-y-auto'
-              )}>
-                {children}
-              </div>
-              
-              {/* Footer */}
-              {footer && (
-                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex-shrink-0">
-                  {footer}
-                </div>
-              )}
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+                
+                {/* Footer */}
+                {footer && (
+                  <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-3xl flex-shrink-0">
+                    {footer}
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+    </ModalPortal>
   );
 }

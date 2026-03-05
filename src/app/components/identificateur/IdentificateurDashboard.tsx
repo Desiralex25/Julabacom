@@ -47,7 +47,7 @@ export function IdentificateurDashboard() {
             </div>
           </div>
           <motion.button
-            onClick={() => navigate('/identificateur/identification')}
+            onClick={() => navigate('/identificateur/fiche-identification')}
             className="px-5 py-3 rounded-3xl text-white font-bold shadow-lg flex items-center gap-2 border-2"
             style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
             whileTap={{ scale: 0.95 }}
@@ -149,8 +149,8 @@ export function IdentificateurDashboard() {
         {/* CTA Principal - Nouveau dossier */}
         <motion.div
           onClick={() => {
-            speak('Nouveau dossier');
-            navigate('/identificateur/identification');
+            speak('Nouveau dossier. Choisis le type d\'acteur');
+            navigate('/identificateur/fiche-identification');
           }}
           className="mb-6 bg-gradient-to-r from-[#9F8170] via-[#B39485] to-[#9F8170] rounded-3xl p-6 shadow-2xl border-2 border-[#9F8170] cursor-pointer overflow-hidden relative"
           whileHover={{ scale: 1.02, y: -4 }}
@@ -328,7 +328,7 @@ export function IdentificateurDashboard() {
                 <p className="text-gray-600 font-bold text-lg">Aucune identification</p>
                 <p className="text-sm text-gray-500 mt-2 mb-6">Commencez par identifier un nouveau membre</p>
                 <motion.button
-                  onClick={() => navigate('/identificateur/identification')}
+                  onClick={() => navigate('/identificateur/fiche-identification')}
                   className="px-6 py-3 rounded-3xl text-white font-bold shadow-lg border-2"
                   style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
                   whileHover={{ scale: 1.05 }}

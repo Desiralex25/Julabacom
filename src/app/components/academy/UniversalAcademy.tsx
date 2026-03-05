@@ -28,7 +28,7 @@ import {
   getQuestionsForChapter,
 } from './academyQuestions';
 import { ROLE_COLORS } from './academyConfig';
-import tantieSagesseImg from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 // ── Icon registry ────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {

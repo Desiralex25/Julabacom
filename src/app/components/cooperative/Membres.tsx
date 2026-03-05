@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
 
@@ -200,7 +201,7 @@ function BadgeStatut({ statut }: { statut: StatutMembre }) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export function Membres() {
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
 
   // ── États généraux ───────────────────────────────────────────────────────
   const [tab, setTab] = useState<TabType>('actifs');
@@ -238,19 +239,11 @@ export function Membres() {
   const [membres, setMembres] = useState<Membre[]>(mockMembres);
 
   // ── Synchronisation Bottom Bar ──────────────────────────────────────────
-  useEffect(() => {
-    const anyModalOpen =
-      selectedMembre !== null ||
-      showAddModal ||
-      showSuspendModal ||
-      showExcludeModal ||
-      showPromoteModal;
-    setIsModalOpen(anyModalOpen);
-  }, [selectedMembre, showAddModal, showSuspendModal, showExcludeModal,
-      showPromoteModal, setIsModalOpen]);
-
-  // Nettoyage à la destruction du composant
-  useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
+  // Sync ModalContext
+  useModalRegister(
+    selectedMembre !== null || showAddModal || showSuspendModal ||
+    showExcludeModal || showPromoteModal
+  );
 
   // ─── Communes dynamiques selon région ───────────────────────────────────
   const communesDisponibles = useMemo(
@@ -447,6 +440,7 @@ export function Membres() {
         <motion.div
           className="p-4"
           onClick={() => { setSelectedMembre(m); setDrawerTab('performances'); }}
+          style={{ backgroundColor: '#ffffff' }}
           whileHover={{ backgroundColor: '#FAFAFA' }}
         >
           <div className="flex items-start gap-3">
@@ -550,7 +544,7 @@ export function Membres() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
           onClick={() => setSelectedMembre(null)}
         >
           <motion.div
@@ -661,7 +655,7 @@ export function Membres() {
                       <Banknote className="w-5 h-5 text-green-600 flex-shrink-0" />
                       <div>
                         <p className="text-xs text-gray-500">Volume FCFA</p>
-                        <p className="font-bold text-green-700">{vol.toLocaleString('fr-FR')} FCFA</p>
+                        <p className="font-bold text-green-700">{vol.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span></p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -725,7 +719,7 @@ export function Membres() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between">
-                              <p className="text-xs font-bold text-gray-900">{montant.toLocaleString('fr-FR')} FCFA</p>
+                              <p className="text-xs font-bold text-gray-900">{montant.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span></p>
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${s === 'Livré' ? 'bg-green-100 text-green-700' : s === 'En cours' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>{s}</span>
                             </div>
                             <p className="text-[10px] text-gray-500 mt-0.5">{kg} kg — {date.toLocaleDateString('fr-FR')}</p>
@@ -837,7 +831,7 @@ export function Membres() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
           onClick={() => { setShowAddModal(false); setAddSearchQuery(''); setAddFilterActivite(''); setAddFilterRegion(''); }}
         >
           <motion.div
@@ -1105,7 +1099,7 @@ export function Membres() {
                     {addPrix && (
                       <div className="flex justify-between text-xs">
                         <span className="text-gray-500">Prix négocié</span>
-                        <span className="font-bold text-gray-900">{parseInt(addPrix).toLocaleString('fr-FR')} FCFA/kg</span>
+                        <span className="font-bold text-gray-900">{parseInt(addPrix).toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span>/kg</span>
                       </div>
                     )}
                     {addProduits.length > 0 && (
@@ -1171,7 +1165,7 @@ export function Membres() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -1247,7 +1241,7 @@ export function Membres() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -1308,7 +1302,7 @@ export function Membres() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -1479,20 +1473,20 @@ export function Membres() {
         <motion.div className="grid grid-cols-2 gap-3 mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <motion.button
             onClick={() => speak('Liste des membres de la coopérative')}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2072AF] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
           >
-            <Users className="w-5 h-5" style={{ color: C }} />
+            <Users className="w-5 h-5 flex-shrink-0" style={{ color: C }} />
             <span className="font-semibold text-gray-700">Membres</span>
           </motion.button>
           <motion.button
             onClick={() => { setShowAddModal(true); speak('Ajouter un nouveau producteur partenaire'); }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl text-white border-2"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl text-white border-2 whitespace-nowrap"
             style={{ background: `linear-gradient(135deg, ${C}, ${C_DARK})`, borderColor: C }}
             whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
           >
-            <Plus className="w-5 h-5" />
-            <span className="font-semibold">Ajouter membre</span>
+            <Plus className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold">Ajouter</span>
           </motion.button>
         </motion.div>
 

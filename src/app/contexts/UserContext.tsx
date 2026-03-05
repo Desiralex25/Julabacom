@@ -71,27 +71,18 @@ const DEFAULT_USER: UserData = {
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<UserData | null>(null);
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setUserState(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load user data:', e);
-        setUserState(DEFAULT_USER);
-      }
-    } else {
-      setUserState(DEFAULT_USER);
-    }
-  }, []);
-
-  // Save user to localStorage on change
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    }
-  }, [user]);
+  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
+  // TODO: Charger le profil utilisateur depuis Supabase au démarrage
+  // useEffect(() => {
+  //   const loadUser = async () => {
+  //     const { data: session } = await supabase.auth.getSession();
+  //     if (session?.user) {
+  //       const { data } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+  //       if (data) setUserState(data);
+  //     }
+  //   };
+  //   loadUser();
+  // }, []);
 
   const setUser = (userData: UserData | User | null) => {
     // Handle null (logout case)
@@ -131,7 +122,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
+    // TODO: Déconnexion via Supabase Auth
+    // await supabase.auth.signOut();
     setUserState(null);
   };
 

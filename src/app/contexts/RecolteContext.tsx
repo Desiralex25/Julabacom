@@ -28,29 +28,21 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
   const [recoltes, setRecoltes] = useState<Recolte[]>([]);
   let recolteCounter = 1;
 
-  // Charger depuis localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('julaba_recoltes');
-    if (stored) {
-      setRecoltes(JSON.parse(stored));
-      
-      const storedCounter = localStorage.getItem('julaba_recolte_counter');
-      if (storedCounter) {
-        recolteCounter = parseInt(storedCounter, 10);
-      }
-    }
-  }, []);
-
-  // Sauvegarder automatiquement
-  useEffect(() => {
-    localStorage.setItem('julaba_recoltes', JSON.stringify(recoltes));
-  }, [recoltes]);
+  // TODO: Charger depuis Supabase
+  // ✅ localStorage SUPPRIMÉ
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data } = await supabase.from('recoltes').select('*');
+  //     setRecoltes(data || []);
+  //   };
+  //   loadData();
+  // }, []);
 
   // Générer numéro récolte
   const generateNumeroRecolte = (): string => {
     const numero = `REC-2024-${String(recolteCounter).padStart(4, '0')}`;
     recolteCounter++;
-    localStorage.setItem('julaba_recolte_counter', String(recolteCounter));
+    // TODO: Gérer le compteur via Supabase sequence
     return numero;
   };
 
@@ -97,7 +89,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes([recolte, ...recoltes]);
-    console.log(`🌾 Récolte créée (DRAFT) : ${recolte.numeroRecolte}`);
     
     return recolte;
   };
@@ -121,7 +112,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes(recoltes.map(r => r.id === recolteId ? updated : r));
-    console.log(`📢 Récolte ${recolte.numeroRecolte} publiée sur le marché`);
   };
 
   // ✏️ Modifier une récolte
@@ -146,7 +136,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes(recoltes.map(r => r.id === recolteId ? updated : r));
-    console.log(`✏️ Récolte ${recolte.numeroRecolte} modifiée`);
   };
 
   // 🗑️ Retirer une récolte du marché
@@ -163,7 +152,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes(recoltes.map(r => r.id === recolteId ? updated : r));
-    console.log(`🗑️ Récolte ${recolte.numeroRecolte} retirée du marché`);
   };
 
   // 📉 Décrémenter stock (après vente)
@@ -192,12 +180,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes(recoltes.map(r => r.id === recolteId ? updated : r));
-    
-    if (nouveauStatus === RecolteStatus.SOLD_OUT) {
-      console.log(`🎉 Récolte ${recolte.numeroRecolte} épuisée (SOLD OUT)`);
-    } else {
-      console.log(`📉 Stock décrémenter : ${nouveauStock} kg restants`);
-    }
   };
 
   // 📈 Incrémenter stock (ajout nouvelle récolte)
@@ -224,7 +206,6 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
     };
 
     setRecoltes(recoltes.map(r => r.id === recolteId ? updated : r));
-    console.log(`📈 Stock augmenté : +${nouvelleQuantite} kg → Total ${nouveauStock} kg`);
   };
 
   // 📊 Calculer taux de conversion (commandes / vues)

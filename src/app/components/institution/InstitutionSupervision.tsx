@@ -28,9 +28,10 @@ import {
   Shield,
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { Navigation } from '../layout/Navigation';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
+import { matchesSearch } from '../../utils/searchUtils';
+import { useBackOffice } from '../../contexts/BackOfficeContext';
 
 const C = '#712864';
 const C_LIGHT = '#F9F5F8';
@@ -38,39 +39,8 @@ const C_LIGHT = '#F9F5F8';
 // ── Types ─────────────────────────────────────────────────────────────────────
 type PeriodType = 'mois' | 'annuel' | 'historique';
 type TabType = 'valides' | 'en_attente' | 'rejetes';
-type StatutTx = 'valide' | 'en_attente' | 'rejete';
 
-interface Transaction {
-  id: string;
-  ref: string;
-  acteur: string;
-  initiales: string;
-  type: 'marchand' | 'producteur' | 'cooperative' | 'identificateur';
-  region: string;
-  commune: string;
-  telephone: string;
-  montant: { mois: number; annuel: number; historique: number };
-  statut: StatutTx;
-  date: string;
-  heure: string;
-  motifRejet?: string;
-}
-
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: '1', ref: 'TXN-20260303-0421', acteur: 'Aminata Kouassi', initiales: 'AK', type: 'marchand', region: 'Abidjan', commune: 'Abobo', telephone: '+225 07 01 02 03 04', montant: { mois: 45000, annuel: 540000, historique: 1200000 }, statut: 'valide', date: '2026-03-03', heure: '09:45' },
-  { id: '2', ref: 'TXN-20260303-0398', acteur: 'Kouadio Yao', initiales: 'KY', type: 'producteur', region: 'Gbèkè', commune: 'Bouaké', telephone: '+225 05 12 34 56 78', montant: { mois: 128500, annuel: 1542000, historique: 3420000 }, statut: 'valide', date: '2026-03-03', heure: '09:12' },
-  { id: '3', ref: 'TXN-20260303-0385', acteur: 'Ibrahim Touré', initiales: 'IT', type: 'marchand', region: 'Abidjan', commune: 'Abobo', telephone: '+225 01 45 67 89 12', montant: { mois: 22000, annuel: 264000, historique: 580000 }, statut: 'en_attente', date: '2026-03-03', heure: '08:55' },
-  { id: '4', ref: 'TXN-20260302-1142', acteur: 'Marie Diabaté', initiales: 'MD', type: 'producteur', region: 'Hambol', commune: 'Korhogo', telephone: '+225 05 98 76 54 32', montant: { mois: 310000, annuel: 3720000, historique: 8200000 }, statut: 'valide', date: '2026-03-02', heure: '16:30' },
-  { id: '5', ref: 'TXN-20260302-1099', acteur: 'Coop. Agro-Femmes de Bouaké', initiales: 'CA', type: 'cooperative', region: 'Gbèkè', commune: 'Bouaké', telephone: '+225 07 11 22 33 44', montant: { mois: 850000, annuel: 10200000, historique: 22000000 }, statut: 'rejete', date: '2026-03-02', heure: '14:15', motifRejet: 'Documents justificatifs manquants — Relance envoyée' },
-  { id: '6', ref: 'TXN-20260302-1055', acteur: 'Awa Bamba', initiales: 'AB', type: 'producteur', region: 'Haut-Sassandra', commune: 'Daloa', telephone: '+225 05 67 89 12 34', montant: { mois: 62000, annuel: 744000, historique: 1650000 }, statut: 'valide', date: '2026-03-02', heure: '11:40' },
-  { id: '7', ref: 'TXN-20260302-0980', acteur: 'Seydou Coulibaly', initiales: 'SC', type: 'identificateur', region: 'Abidjan', commune: 'Plateau', telephone: '+225 07 88 99 00 11', montant: { mois: 15000, annuel: 180000, historique: 400000 }, statut: 'en_attente', date: '2026-03-02', heure: '10:05' },
-  { id: '8', ref: 'TXN-20260301-0882', acteur: 'Adjoua Koffi', initiales: 'AK', type: 'marchand', region: 'Abidjan', commune: 'Treichville', telephone: '+225 07 34 56 78 90', montant: { mois: 18500, annuel: 222000, historique: 490000 }, statut: 'valide', date: '2026-03-01', heure: '15:20' },
-  { id: '9', ref: 'TXN-20260301-0811', acteur: 'Mariam Ouattara', initiales: 'MO', type: 'marchand', region: 'Woroba', commune: 'Séguéla', telephone: '+225 01 22 33 44 55', montant: { mois: 33000, annuel: 396000, historique: 870000 }, statut: 'valide', date: '2026-03-01', heure: '11:00' },
-  { id: '10', ref: 'TXN-20260301-0755', acteur: 'Union Cacao Soubré', initiales: 'UC', type: 'cooperative', region: 'Nawa', commune: 'Soubré', telephone: '+225 05 44 55 66 77', montant: { mois: 1200000, annuel: 14400000, historique: 32000000 }, statut: 'rejete', date: '2026-03-01', heure: '09:30', motifRejet: 'Anomalie montant détectée — Enquête en cours' },
-  { id: '11', ref: 'TXN-20260228-0650', acteur: 'Fatou Traoré', initiales: 'FT', type: 'marchand', region: 'Abidjan', commune: 'Cocody', telephone: '+225 07 23 45 67 89', montant: { mois: 41000, annuel: 492000, historique: 1080000 }, statut: 'valide', date: '2026-02-28', heure: '14:50' },
-  { id: '12', ref: 'TXN-20260228-0590', acteur: 'Gaoussou Soro', initiales: 'GS', type: 'cooperative', region: 'Poro', commune: 'Korhogo', telephone: '+225 05 33 44 55 66', montant: { mois: 520000, annuel: 6240000, historique: 14000000 }, statut: 'en_attente', date: '2026-02-28', heure: '10:20' },
-];
+// ✅ NETTOYAGE PHASE 2 : MOCK_TRANSACTIONS supprimé - utilise BackOfficeContext
 
 const AUDIT_LOG = [
   { action: 'Suspension acteur', utilisateur: 'Brice Koné — Admin CNPS', acteurConcerne: 'Awa Bamba (A007)', date: '2026-03-03 10:22', ip: '196.10.44.21', statut: 'success' },
@@ -148,6 +118,7 @@ function BadgeStatut({ statut }: { statut: StatutTx }) {
 // ── Composant principal ──────────────────────────────────────────────────────
 export function InstitutionSupervision() {
   const { speak, setIsModalOpen } = useApp();
+  const { transactions } = useBackOffice(); // ✅ Utilise BackOfficeContext
 
   const [tab, setTab] = useState<TabType>('valides');
   const [periode, setPeriode] = useState<PeriodType>('mois');
@@ -156,40 +127,38 @@ export function InstitutionSupervision() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterRegion, setFilterRegion] = useState<string>('all');
-  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [selectedTx, setSelectedTx] = useState<any | null>(null);
   const [activeView, setActiveView] = useState<'transactions' | 'audit' | 'export'>('transactions');
   const [showAuditInline, setShowAuditInline] = useState(false);
   const [showExportInline, setShowExportInline] = useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setIsModalOpen(selectedTx !== null);
   }, [selectedTx, setIsModalOpen]);
-  useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
+  React.useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
 
-  // KPIs
+  // ✅ KPIs basés sur données réelles BackOfficeContext
   const kpis = useMemo(() => ({
-    total: MOCK_TRANSACTIONS.length,
-    enAttente: MOCK_TRANSACTIONS.filter(t => t.statut === 'en_attente').length,
-    rejetes: MOCK_TRANSACTIONS.filter(t => t.statut === 'rejete').length,
-    valides: MOCK_TRANSACTIONS.filter(t => t.statut === 'valide').length,
-    volumeMois: MOCK_TRANSACTIONS.filter(t => t.statut === 'valide').reduce((s, t) => s + t.montant.mois, 0),
-  }), []);
+    total: transactions.length,
+    enAttente: transactions.filter(t => t.statut === 'en_cours').length,
+    rejetes: transactions.filter(t => t.statut === 'annulee').length,
+    valides: transactions.filter(t => t.statut === 'validee').length,
+    volumeMois: transactions.filter(t => t.statut === 'validee').reduce((s, t) => s + t.montant, 0),
+  }), [transactions]);
 
-  // Filtrage
+  // ✅ Filtrage sur données réelles
   const filtrees = useMemo(() => {
-    return MOCK_TRANSACTIONS.filter(tx => {
-      if (tab === 'valides' && tx.statut !== 'valide') return false;
-      if (tab === 'en_attente' && tx.statut !== 'en_attente') return false;
-      if (tab === 'rejetes' && tx.statut !== 'rejete') return false;
+    return transactions.filter(tx => {
+      const statutMap = { valides: 'validee', en_attente: 'en_cours', rejetes: 'annulee' };
+      if (tab && tx.statut !== statutMap[tab]) return false;
       if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        if (!tx.acteur.toLowerCase().includes(q) && !tx.telephone.includes(q) && !tx.commune.toLowerCase().includes(q) && !tx.ref.toLowerCase().includes(q)) return false;
+        if (!matchesSearch(searchQuery, tx.acteurNom, tx.acteurType, tx.produit, tx.id)) return false;
       }
-      if (filterType !== 'all' && tx.type !== filterType) return false;
+      if (filterType !== 'all' && tx.acteurType.toLowerCase() !== filterType) return false;
       if (filterRegion !== 'all' && tx.region !== filterRegion) return false;
       return true;
     });
-  }, [tab, searchQuery, filterType, filterRegion]);
+  }, [transactions, tab, searchQuery, filterType, filterRegion]);
 
   const startVoiceSearch = useCallback(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -568,7 +537,7 @@ export function InstitutionSupervision() {
               }`}>{filtrees.length}</span>
             </motion.div>
 
-            {/* ── Liste transactions — clone exact cartes Membres ─────────── */}
+            {/* ── Liste transactions  clone exact cartes Membres ─────────── */}
             <div className="space-y-3">
               <AnimatePresence mode="popLayout">
                 {filtrees.map((tx, index) => {
@@ -591,8 +560,8 @@ export function InstitutionSupervision() {
                       <motion.div
                         className="p-4"
                         onClick={() => setSelectedTx(tx)}
+                        style={{ cursor: 'pointer', backgroundColor: '#ffffff' }}
                         whileHover={{ backgroundColor: '#FAFAFA' }}
-                        style={{ cursor: 'pointer' }}
                       >
                         <div className="flex items-center gap-3">
                           {/* Avatar initiales — clone exact Membres */}
@@ -874,8 +843,6 @@ export function InstitutionSupervision() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <Navigation role="institution" />
     </>
   );
 }

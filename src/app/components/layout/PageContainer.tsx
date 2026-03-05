@@ -23,7 +23,7 @@ export function PageContainer({
   };
 
   return (
-    <div className={`pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] ${maxWidthClasses[maxWidth]} mx-auto min-h-screen ${backgroundColor} ${className}`}>
+    <div className={`pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] ${maxWidthClasses[maxWidth]} mx-auto min-h-screen ${backgroundColor} ${className}`}>
       {children}
     </div>
   );

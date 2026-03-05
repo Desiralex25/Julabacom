@@ -3,7 +3,13 @@
  * Structure identique pixel-perfect à GestionStock du Marchand
  * Couleur primaire : #2E8B57 (vert producteur)
  */
-import React, { useState, useEffect, useRef } from 'react';
+/**
+ * CommandesProducteurPage — Menu "Commandes" du Producteur
+ */
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { matchesSearch } from '../../utils/searchUtils';
+import { SearchBar } from '../shared/SearchBar';
+import { ImagePickerField } from '../shared/ImagePickerField';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingBag,
@@ -32,6 +38,7 @@ import {
   Banknote,
   Info,
 } from 'lucide-react';
+import { Montant } from '../shared/Montant';
 import { Navigation } from '../layout/Navigation';
 import { useUser } from '../../contexts/UserContext';
 import { useApp } from '../../contexts/AppContext';
@@ -40,34 +47,23 @@ import { CommandeStatus } from '../../types/julaba.types';
 import type { Commande as CtxCommande } from '../../types/julaba.types';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { NotificationButton } from '../marchand/NotificationButton';
-import imgTomate    from 'figma:asset/3f404bf155a6eee4cc2737b6af97a7c631b87222.png';
-import imgAubergine from 'figma:asset/6ce6df54809849e879a06eaf7918a55ca163820f.png';
-import imgPiment    from 'figma:asset/d54203781be4a457752de89ea0db6890f85d988e.png';
-import imgGombo     from 'figma:asset/95307b3732ef40ca9d8bd6624da7c522d9948462.png';
-import imgManioc    from 'figma:asset/a8dd641535ef5323445a866d2e4bd615e27fc174.png';
-import imgIgname    from 'figma:asset/3455362570027e36c9a85017824295c213e28df6.png';
-import imgMais      from 'figma:asset/e1a0b089a99b00606487505dfc216319053c9041.png';
-import imgRiz       from 'figma:asset/56b3634c65cdeb27356c50771cd1f9dcc7896111.png';
-import imgBanane    from 'figma:asset/92dc960457fec2eabe1d823033adf5fa3c460d5a.png';
-import imgOignon    from 'figma:asset/c3ae45cebe4fdb00d42876b5d0ceefb1dc8f4f6a.png';
-import imgAvocat    from 'figma:asset/4d72e34496aa54e4e0690caf465e524ccfaba086.png';
-import imgAutre     from 'figma:asset/258632942d5c4b19368d2b4708d1d8028773eb5e.png';
+
 
 const COLOR = '#2E8B57';
 
-const PRODUITS_ICONS = [
-  { id: 'Tomate',          img: imgTomate    },
-  { id: 'Aubergine',       img: imgAubergine },
-  { id: 'Piment',          img: imgPiment    },
-  { id: 'Gombo',           img: imgGombo     },
-  { id: 'Manioc',          img: imgManioc    },
-  { id: 'Igname',          img: imgIgname    },
-  { id: 'Maïs',            img: imgMais      },
-  { id: 'Riz',             img: imgRiz       },
-  { id: 'Banane plantain', img: imgBanane    },
-  { id: 'Oignon',          img: imgOignon    },
-  { id: 'Avocat',          img: imgAvocat    },
-  { id: 'Autre',           img: imgAutre     },
+const PRODUITS_ICONS: { id: string; img: string }[] = [
+  { id: 'Tomate',          img: '/images/produit-tomate.svg'    },
+  { id: 'Aubergine',       img: '/images/produit-aubergine.svg' },
+  { id: 'Piment',          img: '/images/produit-piment.svg'    },
+  { id: 'Gombo',           img: '/images/produit-gombo.svg'     },
+  { id: 'Manioc',          img: '/images/produit-manioc.svg'    },
+  { id: 'Igname',          img: '/images/produit-igname.svg'    },
+  { id: 'Maïs',            img: '/images/produit-mais.svg'      },
+  { id: 'Riz',             img: '/images/produit-riz.svg'       },
+  { id: 'Banane plantain', img: '/images/produit-plantain.svg'  },
+  { id: 'Oignon',          img: '/images/produit-oignon.svg'    },
+  { id: 'Avocat',          img: '/images/produit-avocat.svg'    },
+  { id: 'Autre',           img: '/images/produit-autre.svg'     },
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -137,7 +133,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-001',
     produit: 'Riz local',
-    image: 'https://images.unsplash.com/photo-1763537351442-f377a4878d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwZ3JhaW4lMjBoYXJ2ZXN0JTIwZmFybXxlbnwxfHx8fDE3NzI1NTUzMjF8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-riz.svg',
     acheteur: 'Koffi Marchand',
     telephone: '07 00 11 22',
     localite: 'Abidjan',
@@ -155,7 +151,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-002',
     produit: 'Plantain',
-    image: 'https://images.unsplash.com/photo-1750601455197-a7ba46fb1544?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNoJTIwaGFydmVzdHxlbnwxfHx8fDE3NzI1NTUzMTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-plantain.svg',
     acheteur: 'Aminata Coop.',
     telephone: '05 44 55 66',
     localite: 'Yamoussoukro',
@@ -173,7 +169,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-003',
     produit: 'Tomates',
-    image: 'https://images.unsplash.com/photo-1734255026082-82fdc81991f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b21hdG8lMjB2ZWdldGFibGVzJTIwZnJlc2glMjBtYXJrZXQlMjBhZnJpY2F8ZW58MXx8fHwxNzcyNTU1MzIyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-tomate.svg',
     acheteur: 'Ibrahim Grossiste',
     telephone: '01 33 44 55',
     localite: 'Bouaké',
@@ -191,7 +187,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-004',
     produit: 'Maïs',
-    image: 'https://images.unsplash.com/photo-1649251037465-72c9d378acb6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjBmaWVsZCUyMGhhcnZlc3R8ZW58MXx8fHwxNzcyNTU1MzIyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-mais.svg',
     acheteur: 'Fatoumata SARL',
     telephone: '07 77 88 99',
     localite: 'San-Pédro',
@@ -209,7 +205,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-005',
     produit: 'Gombo',
-    image: 'https://images.unsplash.com/photo-1662318183265-5bbe6578d1b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ29tYm8lMjB2ZWdldGFibGUlMjBncmVlbiUyMGZyZXNofGVufDF8fHx8MTc3MjU1NTMyNnww&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-gombo.svg',
     acheteur: 'Moussa Restaurant',
     telephone: '05 22 33 44',
     localite: 'Abidjan',
@@ -227,7 +223,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-006',
     produit: 'Mangue',
-    image: 'https://images.unsplash.com/photo-1734163075572-8948e799e42c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW5nbyUyMHRyb3BpY2FsJTIwZnJ1aXQlMjBmcmVzaHxlbnwxfHx8fDE3NzI1NTUzMjN8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-mangue.svg',
     acheteur: 'Yao Export',
     telephone: '01 66 77 88',
     localite: 'Korhogo',
@@ -245,7 +241,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-007',
     produit: 'Ananas',
-    image: 'https://images.unsplash.com/photo-1765052450765-a0043208e1be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaW5lYXBwbGUlMjB0cm9waWNhbCUyMGhhcnZlc3QlMjBmYXJtfGVufDF8fHx8MTc3MjU1NTMyNnww&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-ananas.svg',
     acheteur: 'Diabaté Coop.',
     telephone: '07 11 22 33',
     localite: 'Abengourou',
@@ -263,7 +259,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-008',
     produit: 'Oignons',
-    image: 'https://images.unsplash.com/photo-1624295886828-c4b77b618e5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbmlvbiUyMGhhcnZlc3QlMjBmYXJtJTIwYnVsYnxlbnwxfHx8fDE3NzI1NTUzMjd8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-oignon.svg',
     acheteur: 'Soro Épicerie',
     telephone: '05 55 66 77',
     localite: 'Man',
@@ -281,7 +277,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-009',
     produit: 'Ignames',
-    image: 'figma:asset/7b5929e307a7d1715c5a7dbb4b6c0658a539777f.png',
+    image: '/images/produit-igname.svg',
     acheteur: 'Koné Grossiste',
     telephone: '01 44 55 66',
     localite: 'Daloa',
@@ -299,7 +295,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-010',
     produit: 'Riz local',
-    image: 'https://images.unsplash.com/photo-1763537351442-f377a4878d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwZ3JhaW4lMjBoYXJ2ZXN0JTIwZmFybXxlbnwxfHx8fDE3NzI1NTUzMjF8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: '/images/produit-riz.svg',
     acheteur: 'Touré Import',
     telephone: '07 88 99 00',
     localite: 'Abidjan',
@@ -356,6 +352,7 @@ export function ProducteurCommandes() {
   const [showRevenusModal, setShowRevenusModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'urgentes' | 'livrees'>('all');
   const [newForm, setNewForm] = useState(emptyForm);
+  const [newProduitImage, setNewProduitImage] = useState('');
 
   // ── États pour les demandes reçues (CommandeContext) ──────────────────────
   const [selectedDemande, setSelectedDemande] = useState<CtxCommande | null>(null);
@@ -521,7 +518,7 @@ export function ProducteurCommandes() {
       return {
         id: c.id,
         produit: c.productName,
-        image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80',
+        image: '/images/produit-autre.svg',
         acheteur: c.buyerName,
         telephone: '',
         localite: '',
@@ -550,9 +547,7 @@ export function ProducteurCommandes() {
     .filter(c => {
       const matchCat = selectedCategorie === 'tous' || c.categorie === selectedCategorie;
       const matchStat = selectedStatut === 'tous' || c.statut === selectedStatut;
-      const matchSearch =
-        c.produit.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.acheteur.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchSearch = matchesSearch(searchQuery, c.produit, c.acheteur);
       const matchActive =
         activeFilter === 'all' ? true :
         activeFilter === 'urgentes' ? (c.statut === 'nouvelle' || c.statut === 'litige') :
@@ -594,7 +589,7 @@ export function ProducteurCommandes() {
     const nouvelle: Commande = {
       id: `CMD-${Date.now()}`,
       produit: newForm.produit,
-      image: 'https://images.unsplash.com/photo-1763537351442-f377a4878d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
+      image: newProduitImage || '/images/produit-autre.svg',
       acheteur: newForm.acheteur,
       telephone: newForm.telephone,
       localite: newForm.localite,
@@ -770,7 +765,7 @@ export function ProducteurCommandes() {
               </motion.div>
             </div>
             <p className="text-base font-bold text-green-600 leading-tight">
-              {totalRevenus.toLocaleString('fr-FR')} FCFA
+              <Montant value={totalRevenus} size="sm" color="#16a34a" />
             </p>
             {showRevenusModal && (
               <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-green-500" />
@@ -813,28 +808,14 @@ export function ProducteurCommandes() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher une commande ou un acheteur..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-white border-2 border-gray-200 focus:outline-none"
-              style={{ borderColor: searchQuery ? COLOR : undefined }}
-            />
-            <motion.button
-              onClick={startVoice}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              {isListening
-                ? <MicOff className="w-5 h-5" style={{ color: COLOR }} />
-                : <Mic className="w-5 h-5 text-gray-300" />
-              }
-            </motion.button>
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={(val) => setSearchQuery(val)}
+            placeholder="Rechercher une commande ou un acheteur..."
+            primaryColor={COLOR}
+            isListening={isListening}
+            onVoiceResult={(t) => { setSearchQuery(t); }}
+          />
         </motion.div>
 
         {/* ── Bouton d'action ── */}
@@ -1146,7 +1127,7 @@ export function ProducteurCommandes() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setShowAddModal(false); setNewForm(emptyForm); }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
             />
 
             {/* Modal centré — style CreerCycleModal */}
@@ -1155,7 +1136,7 @@ export function ProducteurCommandes() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 30 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[101] overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden"
               style={{ maxHeight: '90vh' }}
             >
               {/* ── Header gradient vert */}
@@ -1178,6 +1159,16 @@ export function ProducteurCommandes() {
               {/* ── Contenu scrollable */}
               <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 100px)' }}>
                 <div className="p-5 space-y-6 bg-white">
+
+                  {/* ── Photo du produit */}
+                  <ImagePickerField
+                    label="Photo du produit (facultatif)"
+                    value={newProduitImage}
+                    onChange={setNewProduitImage}
+                    primaryColor={COLOR}
+                    shape="rect"
+                    size={88}
+                  />
 
                   {/* ── Produit — grille d'icônes */}
                   <div>
@@ -1308,7 +1299,34 @@ export function ProducteurCommandes() {
                             {u}
                           </motion.button>
                         ))}
+                        {/* Bouton "Autre" */}
+                        <motion.button
+                          onClick={() => setNewForm({ ...newForm, unite: '__autre__' })}
+                          className={`py-2 rounded-xl font-bold text-xs border-2 transition-all ${
+                            !['kg','tas','sac','L','régimes','unité'].includes(newForm.unite) && newForm.unite !== ''
+                              ? 'text-white border-transparent shadow-md'
+                              : 'bg-white border-dashed border-gray-300 text-gray-400'
+                          }`}
+                          style={!['kg','tas','sac','L','régimes','unité'].includes(newForm.unite) && newForm.unite !== '' ? { backgroundColor: COLOR } : {}}
+                          whileTap={{ scale: 0.93 }}
+                        >
+                          Autre
+                        </motion.button>
                       </div>
+                      {/* Champ saisie libre */}
+                      {(newForm.unite === '__autre__' || (!['kg','tas','sac','L','régimes','unité',''].includes(newForm.unite))) && (
+                        <motion.input
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          type="text"
+                          placeholder="Ex: barrique, caisse, panier..."
+                          value={newForm.unite === '__autre__' ? '' : newForm.unite}
+                          onChange={e => setNewForm({ ...newForm, unite: e.target.value })}
+                          className="mt-2 w-full px-4 py-3 rounded-2xl border-2 font-semibold text-sm focus:outline-none"
+                          style={{ borderColor: COLOR }}
+                          autoFocus
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -1363,7 +1381,7 @@ export function ProducteurCommandes() {
                       >
                         <p className="text-sm text-gray-600 font-semibold">Montant total estimé</p>
                         <p className="text-2xl font-black mt-1" style={{ color: COLOR }}>
-                          {(newForm.quantite * newForm.prixUnitaire).toLocaleString('fr-FR')} FCFA
+                          <Montant value={newForm.quantite * newForm.prixUnitaire} size="xl" color={COLOR} />
                         </p>
                       </motion.div>
                     )}
@@ -1407,7 +1425,7 @@ export function ProducteurCommandes() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
               onClick={() => setShowDetailModal(false)}
             >
               <motion.div
@@ -1490,7 +1508,7 @@ export function ProducteurCommandes() {
                     <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Prix unitaire</span>
-                        <span className="font-bold">{selectedCmd.prixUnitaire.toLocaleString('fr-FR')} FCFA</span>
+                        <Montant value={selectedCmd.prixUnitaire} unit={selectedCmd.unite} size="sm" color="#1f2937" />
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Quantité</span>
@@ -1499,7 +1517,7 @@ export function ProducteurCommandes() {
                       <div className="flex justify-between border-t pt-3">
                         <span className="text-sm text-gray-600">Montant total</span>
                         <span className="text-base font-bold" style={{ color: COLOR }}>
-                          {selectedCmd.prixTotal.toLocaleString('fr-FR')} FCFA
+                          <Montant value={selectedCmd.prixTotal} size="md" color={COLOR} />
                         </span>
                       </div>
                     </div>
@@ -1601,7 +1619,7 @@ export function ProducteurCommandes() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowFilterModal(false)}
           >
             <motion.div
@@ -1722,7 +1740,7 @@ export function ProducteurCommandes() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
               onClick={() => setShowRevenusModal(false)}
             >
               <motion.div
@@ -1768,7 +1786,7 @@ export function ProducteurCommandes() {
                         <p className="text-xs font-semibold text-gray-700">En attente</p>
                       </div>
                       <p className="text-xl font-bold text-orange-600">
-                        {revEnAttente.toLocaleString('fr-FR')} FCFA
+                        <Montant value={revEnAttente} size="lg" color="#d97706" />
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{enAttente.length} commande{enAttente.length > 1 ? 's' : ''}</p>
                     </motion.div>
@@ -1786,7 +1804,7 @@ export function ProducteurCommandes() {
                         <p className="text-xs font-semibold text-gray-700">Encaissé</p>
                       </div>
                       <p className="text-xl font-bold text-green-600">
-                        {revEncaisse.toLocaleString('fr-FR')} FCFA
+                        <Montant value={revEncaisse} size="lg" color="#16a34a" />
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{encaisse.length} commande{encaisse.length > 1 ? 's' : ''}</p>
                     </motion.div>
@@ -1805,7 +1823,7 @@ export function ProducteurCommandes() {
                         <p className="text-xs font-semibold text-gray-700">Portefeuille total</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: COLOR }}>
-                        {revTotal.toLocaleString('fr-FR')} FCFA
+                        <Montant value={revTotal} size="xl" color={COLOR} />
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{commandes.length} commandes au total</p>
                     </motion.div>
@@ -1835,7 +1853,7 @@ export function ProducteurCommandes() {
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-sm font-semibold text-gray-700">{cat.label}</span>
                             <span className="text-xs font-bold text-blue-600">
-                              {cat.val.toLocaleString('fr-FR')} FCFA
+                              {cat.val.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60 font-bold">FCFA</span>
                             </span>
                           </div>
                           <div className="h-2.5 bg-white rounded-full overflow-hidden">
@@ -1886,7 +1904,7 @@ export function ProducteurCommandes() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-sm" style={{ color: COLOR }}>
-                              {cmd.prixTotal.toLocaleString('fr-FR')} FCFA
+                              <Montant value={cmd.prixTotal} size="xs" color={COLOR} />
                             </p>
                             <p className="text-xs text-gray-500">{cmd.quantite} {cmd.unite}</p>
                           </div>
@@ -1916,14 +1934,14 @@ export function ProducteurCommandes() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowDemandeDetailModal(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
               />
               <motion.div
                 initial={{ opacity: 0, scale: 0.93, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.93, y: 30 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[101] overflow-hidden"
+                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden"
                 style={{ maxHeight: '90vh' }}
               >
                 {/* Header */}
@@ -2131,14 +2149,14 @@ export function ProducteurCommandes() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowContrePropoModal(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.93, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 30 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm bg-white rounded-3xl shadow-2xl z-[111] overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden"
             >
               {/* Header */}
               <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-5 flex items-start justify-between">
@@ -2256,14 +2274,14 @@ export function ProducteurCommandes() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowRefusModal(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.93, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 30 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm bg-white rounded-3xl shadow-2xl z-[111] overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-sm bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden"
             >
               {/* Header */}
               <div className="bg-gradient-to-r from-red-600 to-red-500 px-6 py-5 flex items-start justify-between">

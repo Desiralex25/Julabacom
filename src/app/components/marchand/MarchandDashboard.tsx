@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-import tantieSagesseImg from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 import { getPageClasses, RESPONSIVE_IMAGES, RESPONSIVE_GRIDS } from '../../config/responsive';
+import { Montant, MontantCard } from '../shared/Montant';
 
 interface MarchandDashboardProps {
   user: any;
@@ -76,12 +77,8 @@ export function MarchandDashboard({
     speak(message);
   };
 
-  // DEBUG : Vérifier l'état de la session
-  console.log('🔍 DEBUG currentSession:', currentSession);
-  console.log('🔍 opened?', currentSession?.opened);
-
   return (
-    <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 md:px-6 lg:pl-[280px] xl:pl-[320px] max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-orange-50 to-white">
+    <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 md:px-6 lg:pl-[280px] xl:pl-[320px] max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-orange-50 to-white">
       
       {/* Card Tantie Sagesse */}
       <motion.div
@@ -107,7 +104,7 @@ export function MarchandDashboard({
           </motion.div>
 
           {/* Card contenu à droite - HAUTEUR FIXE */}
-          <Card className="flex-1 px-8 py-6 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: '#C46210' }}>
+          <Card className="flex-1 px-5 py-5 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: '#C46210' }}>
             {/* Fond animé */}
             <motion.div
               className="absolute inset-0 opacity-5"
@@ -116,62 +113,64 @@ export function MarchandDashboard({
               transition={{ duration: 3, repeat: Infinity }}
             />
             
-            <div className="relative z-10 w-full h-full">
-              <motion.h3 
-                className="font-bold text-2xl text-gray-900 mb-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                key={currentSession?.opened ? 'opened' : 'closed'}
-              >
-                Tantie Sagesse
-              </motion.h3>
-              <motion.p 
-                className="text-gray-600 leading-relaxed pr-4"
-                style={{
-                  fontSize: (currentSession?.opened && currentSession.opened === true)
-                    ? (stats.caisse.toLocaleString().length > 10 ? '0.875rem' : '1rem')
-                    : (user?.firstName && user.firstName.length > 15 ? '0.875rem' : '1rem')
-                }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                key={`message-${currentSession?.opened}-${stats.caisse}-${stats.ventes}-${stats.depenses}`}
-              >
-                {(currentSession?.opened && currentSession.opened === true) ? (
-                  <>
-                    {stats.ventes > 0 && stats.depenses === 0 && (
-                      `Bravo ! Tu as ${stats.ventes.toLocaleString()} FCFA de ventes. Ta caisse est à ${stats.caisse.toLocaleString()} FCFA`
-                    )}
-                    {stats.ventes > 0 && stats.depenses > 0 && (
-                      `Ta caisse actuelle est de ${stats.caisse.toLocaleString()} FCFA. Continue comme ça !`
-                    )}
-                    {stats.ventes === 0 && stats.depenses > 0 && (
-                      `Attention, tu as ${stats.depenses.toLocaleString()} FCFA de dépenses. Ta caisse est à ${stats.caisse.toLocaleString()} FCFA`
-                    )}
-                    {stats.ventes === 0 && stats.depenses === 0 && (
-                      `Ta caisse est prête avec ${stats.caisse.toLocaleString()} FCFA. Commence à vendre !`
-                    )}
-                  </>
-                ) : (
-                  `Bonjour ${user?.firstName} ! Ouvre ta journée pour commencer`
-                )}
-              </motion.p>
+            <div className="relative z-10 flex flex-col h-full gap-3">
+              <div>
+                <motion.h3 
+                  className="font-bold text-2xl text-gray-900 mb-1"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  key={currentSession?.opened ? 'opened' : 'closed'}
+                >
+                  Tantie Sagesse
+                </motion.h3>
+                <motion.p 
+                  className="text-gray-600 leading-relaxed text-sm"
+                  style={{
+                    fontSize: (currentSession?.opened && currentSession.opened === true)
+                      ? (stats.caisse.toLocaleString().length > 10 ? '0.75rem' : '0.875rem')
+                      : (user?.firstName && user.firstName.length > 15 ? '0.75rem' : '0.875rem')
+                  }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  key={`message-${currentSession?.opened}-${stats.caisse}-${stats.ventes}-${stats.depenses}`}
+                >
+                  {(currentSession?.opened && currentSession.opened === true) ? (
+                    <>
+                      {stats.ventes > 0 && stats.depenses === 0 && (
+                        `Bravo ! Tu as ${stats.ventes.toLocaleString()} FCFA de ventes. Ta caisse est à ${stats.caisse.toLocaleString()} FCFA`
+                      )}
+                      {stats.ventes > 0 && stats.depenses > 0 && (
+                        `Ta caisse actuelle est de ${stats.caisse.toLocaleString()} FCFA. Continue comme ça !`
+                      )}
+                      {stats.ventes === 0 && stats.depenses > 0 && (
+                        `Attention, tu as ${stats.depenses.toLocaleString()} FCFA de dépenses. Ta caisse est à ${stats.caisse.toLocaleString()} FCFA`
+                      )}
+                      {stats.ventes === 0 && stats.depenses === 0 && (
+                        `Ta caisse est prête avec ${stats.caisse.toLocaleString()} FCFA. Commence à vendre !`
+                      )}
+                    </>
+                  ) : (
+                    `Bonjour ${user?.firstName} ! Ouvre ta journée pour commencer`
+                  )}
+                </motion.p>
+              </div>
+              <div className="flex justify-end">
+                <motion.button
+                  onClick={handleListenMessage}
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md flex-shrink-0"
+                  style={{ backgroundColor: '#C46210' }}
+                  whileHover={{ scale: 1.1, boxShadow: '0 8px 20px rgba(196, 98, 16, 0.35)' }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Volume2 className="w-5 h-5" />
+                </motion.button>
+              </div>
             </div>
-            
-            <motion.button
-              onClick={handleListenMessage}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-base font-semibold text-white shadow-md absolute bottom-5 left-8 z-20"
-              style={{ backgroundColor: '#C46210' }}
-              whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(196, 98, 16, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Volume2 className="w-5 h-5" />
-              couter
-            </motion.button>
           </Card>
         </div>
       </motion.div>
@@ -302,7 +301,6 @@ export function MarchandDashboard({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('BOUTON CLIQUÉ - Ouvrir journée');
                     speak('Combien tu as en caisse ce matin ?');
                     setShowOpenDayModal(true);
                   }}
@@ -655,15 +653,7 @@ export function MarchandDashboard({
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <p className="font-medium text-gray-600 mb-0.5 font-bold text-sm md:text-base">Ventes du jour</p>
-                  <motion.p 
-                    className="text-3xl font-bold text-green-700"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {stats.ventes.toLocaleString()}
-                  </motion.p>
-                  <p className="text-xs text-gray-600">FCFA</p>
+                  <Montant value={stats.ventes} size="xl" color="#15803d" />
                 </div>
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
@@ -696,15 +686,7 @@ export function MarchandDashboard({
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <p className="font-medium text-gray-600 mb-0.5 font-bold text-sm md:text-base">Marge du jour</p>
-                  <motion.p 
-                    className={`text-3xl font-bold ${marge >= 0 ? 'text-green-700' : 'text-red-700'}`}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                  >
-                    {marge >= 0 ? '+' : ''}{marge.toLocaleString()}
-                  </motion.p>
-                  <p className="text-xs text-gray-600">FCFA</p>
+                  <Montant value={marge} size="xl" color={marge >= 0 ? '#15803d' : '#dc2626'} showPlus />
                 </div>
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
@@ -863,7 +845,7 @@ export function MarchandDashboard({
                   <p className="text-xs font-medium text-gray-700">Ventes du jour</p>
                 </div>
                 <p className="text-sm font-bold text-green-700">
-                  {stats.ventes.toLocaleString()} FCFA
+                  <Montant value={stats.ventes} size="xs" color="#15803d" />
                 </p>
               </div>
 
@@ -874,7 +856,7 @@ export function MarchandDashboard({
                   <p className="text-xs font-medium text-gray-700">Dépenses du jour</p>
                 </div>
                 <p className="text-sm font-bold text-red-700">
-                  {stats.depenses.toLocaleString()} FCFA
+                  <Montant value={stats.depenses} size="xs" color="#b91c1c" />
                 </p>
               </div>
 
@@ -885,7 +867,7 @@ export function MarchandDashboard({
                   <p className="text-xs font-medium text-gray-700">Caisse théorique</p>
                 </div>
                 <p className="text-sm font-bold" style={{ color: '#C46210' }}>
-                  {stats.caisse.toLocaleString()} FCFA
+                  <Montant value={stats.caisse} size="xs" color="#C46210" />
                 </p>
               </div>
             </div>
@@ -903,11 +885,11 @@ export function MarchandDashboard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onDismissCoachMark}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
             />
             
             {/* Coach Mark Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1002,11 +984,11 @@ export function MarchandDashboard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDisabledModal(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
             />
             
             {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}

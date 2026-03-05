@@ -32,7 +32,7 @@ export function KpiMoisModal({ show, onClose, onDownload, onShare }: KpiModalPro
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+    <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
       {/* Backdrop */}
       <motion.div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -251,7 +251,7 @@ export function KpiObjectifModal({ show, onClose, onDownload, onShare }: KpiModa
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+    <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
       <motion.div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         initial={{ opacity: 0 }}
@@ -482,7 +482,7 @@ export function KpiMoyenneModal({ show, onClose, onDownload, onShare }: KpiModal
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end lg:items-center justify-center p-0 lg:p-4">
+    <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-4">
       <motion.div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         initial={{ opacity: 0 }}

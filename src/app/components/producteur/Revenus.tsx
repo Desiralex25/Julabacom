@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
+import { Montant, MontantCard } from '../shared/Montant';
+
 // Données mock
 const donneesGraphique = [
   { jour: 1, montant: 450000 },
@@ -217,7 +219,7 @@ export function Revenus() {
             }}
           >
             {revenuTotal.toLocaleString()}
-            <span className="text-2xl ml-2 font-semibold">FCFA</span>
+            <span className="text-2xl ml-2 font-semibold opacity-70">FCFA</span>
           </motion.h1>
 
           {/* Badge croissance avec animation */}
@@ -254,7 +256,7 @@ export function Revenus() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={80}>
               <LineChart data={donneesGraphique}>
                 <Line 
                   type="monotone" 

@@ -492,7 +492,7 @@ export function SuiviIdentifications() {
       <AnimatePresence>
         {showRapports && (
           <motion.div
-            className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center p-0 lg:p-6"
+            className="fixed inset-0 bg-black/50 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -617,7 +617,7 @@ export function SuiviIdentifications() {
       <AnimatePresence>
         {selectedIdentification && (
           <motion.div
-            className="fixed inset-0 bg-black/50 z-50 flex items-end lg:items-center justify-center p-0 lg:p-6"
+            className="fixed inset-0 bg-black/50 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

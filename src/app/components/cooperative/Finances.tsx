@@ -242,7 +242,7 @@ export function Finances() {
             }}
           >
             {stats.soldeTotal.toLocaleString()}
-            <span className="text-2xl ml-2 font-semibold">FCFA</span>
+            <span className="text-2xl ml-2 font-semibold opacity-70">FCFA</span>
           </motion.h1>
 
           <motion.div 
@@ -272,7 +272,8 @@ export function Finances() {
             icon: TrendingUp, 
             color: 'green',
             bg: 'from-green-50 via-white to-green-50',
-            border: 'border-green-200'
+            border: 'border-green-200',
+            trend: '+12%'
           },
           { 
             label: 'Cotisations', 
@@ -280,7 +281,8 @@ export function Finances() {
             icon: CreditCard, 
             color: 'blue',
             bg: 'from-blue-50 via-white to-blue-50',
-            border: 'border-blue-200'
+            border: 'border-blue-200',
+            trend: '+8%'
           },
           { 
             label: 'Paiements', 
@@ -288,7 +290,8 @@ export function Finances() {
             icon: DollarSign, 
             color: 'orange',
             bg: 'from-orange-50 via-white to-orange-50',
-            border: 'border-orange-200'
+            border: 'border-orange-200',
+            trend: '-2%'
           },
         ].map((stat, index) => (
           <motion.div
@@ -375,7 +378,7 @@ export function Finances() {
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4">Évolution des transactions (7j)</h2>
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={192}>
             <LineChart data={transactionsData}>
               <Line 
                 type="monotone" 
@@ -409,7 +412,7 @@ export function Finances() {
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4">Commissions mensuelles</h2>
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={192}>
             <BarChart data={commissionsData}>
               <Bar 
                 dataKey="montant" 

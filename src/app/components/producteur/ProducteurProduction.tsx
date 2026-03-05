@@ -26,18 +26,19 @@ import { ModifierPublicationModal } from './ModifierPublicationModal';
 import { CreerCycleModal } from './CreerCycleModal';
 import { RecolteDetailModal } from './RecolteDetailModal';
 import { ProductionKPIBar } from './ProductionKPIBar';
-import imgTomate    from 'figma:asset/3f404bf155a6eee4cc2737b6af97a7c631b87222.png';
-import imgAubergine from 'figma:asset/6ce6df54809849e879a06eaf7918a55ca163820f.png';
-import imgPiment    from 'figma:asset/d54203781be4a457752de89ea0db6890f85d988e.png';
-import imgGombo     from 'figma:asset/95307b3732ef40ca9d8bd6624da7c522d9948462.png';
-import imgManioc    from 'figma:asset/a8dd641535ef5323445a866d2e4bd615e27fc174.png';
-import imgIgname    from 'figma:asset/3455362570027e36c9a85017824295c213e28df6.png';
-import imgMais      from 'figma:asset/e1a0b089a99b00606487505dfc216319053c9041.png';
-import imgRiz       from 'figma:asset/56b3634c65cdeb27356c50771cd1f9dcc7896111.png';
-import imgBanane    from 'figma:asset/92dc960457fec2eabe1d823033adf5fa3c460d5a.png';
-import imgOignon    from 'figma:asset/c3ae45cebe4fdb00d42876b5d0ceefb1dc8f4f6a.png';
-import imgAvocat    from 'figma:asset/4d72e34496aa54e4e0690caf465e524ccfaba086.png';
-import imgAutre     from 'figma:asset/258632942d5c4b19368d2b4708d1d8028773eb5e.png';
+import { PlantationDetailModal } from './PlantationDetailModal';
+const imgTomate    = '/images/produit-tomate.svg';
+const imgAubergine = '/images/produit-aubergine.svg';
+const imgPiment    = '/images/produit-piment.svg';
+const imgGombo     = '/images/produit-gombo.svg';
+const imgManioc    = '/images/produit-manioc.svg';
+const imgIgname    = '/images/produit-igname.svg';
+const imgMais      = '/images/produit-mais.svg';
+const imgRiz       = '/images/produit-riz.svg';
+const imgBanane    = '/images/produit-banane.svg';
+const imgOignon    = '/images/produit-oignon.svg';
+const imgAvocat    = '/images/produit-avocat.svg';
+const imgAutre     = '/images/produit-autre.svg';
 
 const PRIMARY_COLOR = '#2E8B57';
 
@@ -99,7 +100,7 @@ export function ProducteurProduction() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gray-50">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gray-50">
         
         {/* 1. Header */}
         <div className="flex items-center justify-between mb-5">
@@ -248,14 +249,14 @@ export function ProducteurProduction() {
                   setActiveTab('cycles');
                   speak('Ma Plantation');
                 }}
-                className={`relative px-4 py-4 rounded-xl font-bold transition-all ${
+                className={`relative flex items-center justify-center text-center px-2 py-4 rounded-xl font-bold transition-all ${
                   activeTab === 'cycles'
                     ? 'bg-gradient-to-r from-[#2E8B57] to-[#3BA869] text-white shadow-md'
                     : 'bg-transparent text-gray-600 hover:bg-gray-50'
                 }`}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-[16px]">Ma Plantation</span>
+                <span className="text-[13px] leading-tight">Ma Plantation</span>
                 {activeTab === 'cycles' && (
                   <motion.div
                     className="absolute inset-0 bg-white/20 rounded-xl"
@@ -271,14 +272,14 @@ export function ProducteurProduction() {
                   setActiveTab('recoltes');
                   speak('Mes récoltes');
                 }}
-                className={`relative px-4 py-4 rounded-xl font-bold transition-all ${
+                className={`relative flex items-center justify-center text-center px-2 py-4 rounded-xl font-bold transition-all ${
                   activeTab === 'recoltes'
                     ? 'bg-gradient-to-r from-[#2E8B57] to-[#3BA869] text-white shadow-md'
                     : 'bg-transparent text-gray-600 hover:bg-gray-50'
                 }`}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-[16px]">Mes Récoltes</span>
+                <span className="text-[13px] leading-tight">Mes Récoltes</span>
                 {activeTab === 'recoltes' && (
                   <motion.div
                     className="absolute inset-0 bg-white/20 rounded-xl"
@@ -294,14 +295,14 @@ export function ProducteurProduction() {
                   setActiveTab('publications');
                   speak('Mon Marché');
                 }}
-                className={`relative px-4 py-4 rounded-xl font-bold transition-all ${
+                className={`relative flex items-center justify-center text-center px-2 py-4 rounded-xl font-bold transition-all ${
                   activeTab === 'publications'
                     ? 'bg-gradient-to-r from-[#2E8B57] to-[#3BA869] text-white shadow-md'
                     : 'bg-transparent text-gray-600 hover:bg-gray-50'
                 }`}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-[16px]">Mon Marché</span>
+                <span className="text-[13px] leading-tight">Mon Marché</span>
                 {activeTab === 'publications' && (
                   <motion.div
                     className="absolute inset-0 bg-white/20 rounded-xl"
@@ -315,16 +316,16 @@ export function ProducteurProduction() {
               <motion.button
                 onClick={() => {
                   setActiveTab('historique');
-                  speak('Historique de mes ventes');
+                  speak('Mon Historique de ventes');
                 }}
-                className={`relative px-4 py-4 rounded-xl font-bold transition-all ${
+                className={`relative flex items-center justify-center text-center px-2 py-4 rounded-xl font-bold transition-all ${
                   activeTab === 'historique'
                     ? 'bg-gradient-to-r from-[#2E8B57] to-[#3BA869] text-white shadow-md'
                     : 'bg-transparent text-gray-600 hover:bg-gray-50'
                 }`}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-[16px]">Historique</span>
+                <span className="text-[13px] leading-tight">Mon Historique</span>
                 {activeTab === 'historique' && (
                   <motion.div
                     className="absolute inset-0 bg-white/20 rounded-xl"
@@ -398,6 +399,7 @@ export function ProducteurProduction() {
 function CyclesView({ cycles }: { cycles: any[] }) {
   const { speak } = useApp();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedCycle, setSelectedCycle] = useState<any | null>(null);
 
   return (
     <motion.div
@@ -451,6 +453,10 @@ function CyclesView({ cycles }: { cycles: any[] }) {
                 className="bg-gradient-to-br from-green-50 via-white to-green-50 rounded-3xl p-5 shadow-lg border-2 border-green-200 cursor-pointer"
                 whileHover={{ scale: 1.01, y: -4, boxShadow: '0 12px 30px rgba(46, 139, 87, 0.2)' }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setSelectedCycle(cycle);
+                  speak(`Détails de ta plantation de ${cycle.culture}`);
+                }}
               >
                 {/* Header avec icône et statut */}
                 <div className="flex items-start justify-between mb-4">
@@ -541,6 +547,14 @@ function CyclesView({ cycles }: { cycles: any[] }) {
         <CreerCycleModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
+      {/* Modal détail plantation */}
+      {selectedCycle && (
+        <PlantationDetailModal
+          cycle={selectedCycle}
+          onClose={() => setSelectedCycle(null)}
         />
       )}
     </motion.div>
@@ -836,7 +850,7 @@ function PublicationsView({ publications }: PublicationsViewProps) {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Edit3 className="w-4 h-4" />
-                      Modifier le prix
+                      Modifier
                     </motion.button>
                   </div>
                 </motion.div>

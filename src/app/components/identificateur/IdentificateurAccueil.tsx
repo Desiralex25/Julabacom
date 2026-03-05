@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Search, Users, Clock, CheckCircle, XCircle, MapPin, TrendingUp, Target, Phone } from 'lucide-react';
+import { Users, Clock, CheckCircle, XCircle, MapPin, TrendingUp, Target, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUser } from '../../contexts/UserContext';
 import { useIdentificateur } from '../../contexts/IdentificateurContext';
 import { useZones } from '../../contexts/ZoneContext';
-import { TantieSagesseCard } from '../voice/TantieSagesseCard';
 import { useApp } from '../../contexts/AppContext';
+import { SearchBar } from '../shared/SearchBar';
+import { filterBySearch } from '../../utils/searchUtils';
+import { ACTEURS_DATA } from '../../data/acteursData';
 
 const PRIMARY_COLOR = '#9F8170';
-
-// Mock data pour les acteurs identifiés (à remplacer par vraies données)
-const MOCK_ACTEURS = [
-  { numero: '0722456789', nom: 'KOUASSI Jean', type: 'Marchand', zone: 'Marché de Cocody', statut: 'approved' },
-  { numero: '0722334455', nom: 'KOFFI Marie', type: 'Producteur', zone: 'Marché de Cocody', statut: 'submitted' },
-  { numero: '0722112233', nom: 'YAO Pierre', type: 'Marchand', zone: 'Marché de Cocody', statut: 'draft' },
-  { numero: '0555123456', nom: 'TOURE Awa', type: 'Producteur', zone: 'Village Adzopé', statut: 'approved' },
-  { numero: '0777889900', nom: 'BAMBA Koffi', type: 'Marchand', zone: 'Marché de Cocody', statut: 'rejected' },
-];
 
 export function IdentificateurAccueil() {
   const navigate = useNavigate();
@@ -39,14 +32,14 @@ export function IdentificateurAccueil() {
   const countApproved = mesIdentifications.filter(i => i.statut === 'valide').length;
   const countRejected = mesIdentifications.filter(i => i.statut === 'rejete').length;
 
-  // Filtrer les résultats de recherche
-  const filteredActeurs = searchQuery.length > 0 
-    ? MOCK_ACTEURS.filter(acteur => acteur.numero.startsWith(searchQuery))
-    : [];
+  // Filtrer via la fonction unifiée — recherche sur numero, nom, prenoms, marche, commune
+  const filteredActeurs = filterBySearch(searchQuery, ACTEURS_DATA, (a) => [
+    a.numero, a.nom, a.prenoms, a.marche, a.commune, a.telephone,
+  ]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setShowSearchResults(e.target.value.length > 0);
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setShowSearchResults(val.length > 0);
   };
 
   const handleActeurClick = (numero: string) => {
@@ -59,40 +52,23 @@ export function IdentificateurAccueil() {
     navigate('/identificateur/suivi', { state: { filter } });
   };
 
-  const handleTantieSagesseClick = () => {
-    speak('Bonjour ! Je suis Tantie Sagesse. Comment puis-je vous aider avec les identifications aujourd\'hui ?');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#9F8170]/5 via-white to-gray-50 pb-24 lg:pl-[320px]">
-      {/* Tantie Sagesse - Fixe en haut */}
-      <div className="p-4 bg-white/80 backdrop-blur-sm border-b-2 border-gray-100 sticky top-0 z-10">
-        <TantieSagesseCard 
-          onClick={handleTantieSagesseClick}
-          role="identificateur"
-        />
-      </div>
-
       <div className="p-6">
         {/* Grande barre de recherche */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="mb-6 relative"
         >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
-            <motion.input
-              type="tel"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
-              placeholder="Rechercher un numéro..."
-              className="w-full pl-14 pr-4 py-5 rounded-3xl border-2 border-gray-200 focus:border-[#9F8170] focus:outline-none text-lg bg-white shadow-lg transition-all"
-              whileFocus={{ scale: 1.01 }}
-            />
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Rechercher par nom, numéro, marché..."
+            primaryColor={PRIMARY_COLOR}
+            onVoiceResult={(t) => { speak(`Recherche pour ${t}`); setShowSearchResults(true); }}
+          />
 
           {/* Résultats de recherche */}
           <AnimatePresence>
@@ -115,24 +91,24 @@ export function IdentificateurAccueil() {
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#9F8170] to-[#7a6558] flex items-center justify-center text-white font-bold shadow-md">
-                      {acteur.nom.charAt(0)}
+                      {acteur.prenoms.charAt(0)}
                     </div>
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-[#9F8170]" />
-                        <p className="font-bold text-gray-900">{acteur.numero}</p>
+                        <p className="font-bold text-gray-900">{acteur.telephone}</p>
                       </div>
-                      <p className="text-sm text-gray-900 font-semibold mt-0.5">{acteur.nom}</p>
-                      <p className="text-xs text-gray-600">{acteur.type} - {acteur.zone}</p>
+                      <p className="text-sm text-gray-900 font-semibold mt-0.5">{acteur.prenoms} {acteur.nom}</p>
+                      <p className="text-xs text-gray-600 capitalize">{acteur.role} — {acteur.marche}</p>
                     </div>
                     <div className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
                       acteur.statut === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                      acteur.statut === 'submitted' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                      acteur.statut === 'soumis' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                       acteur.statut === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
                       'bg-gray-50 text-gray-700 border-gray-200'
                     }`}>
                       {acteur.statut === 'approved' ? 'Validé' :
-                       acteur.statut === 'submitted' ? 'En cours' :
+                       acteur.statut === 'soumis' ? 'En cours' :
                        acteur.statut === 'rejected' ? 'Rejeté' : 'Brouillon'}
                     </div>
                   </motion.button>
@@ -154,7 +130,7 @@ export function IdentificateurAccueil() {
         </motion.div>
 
         {/* Compteurs cliquables */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -242,7 +218,7 @@ export function IdentificateurAccueil() {
         </motion.div>
 
         {/* Section Mon Territoire */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -260,7 +236,7 @@ export function IdentificateurAccueil() {
           </div>
 
           {/* Badge Zone */}
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-white rounded-3xl p-4 mb-5 inline-block shadow-md border-2 border-[#9F8170]/20"
           >
@@ -277,7 +253,7 @@ export function IdentificateurAccueil() {
 
           {/* Stats locales */}
           <div className="grid grid-cols-3 gap-4 mt-5">
-            <motion.div 
+            <motion.div
               whileHover={{ y: -4 }}
               className="bg-white rounded-3xl p-5 text-center shadow-md border-2 border-blue-100"
             >
@@ -290,7 +266,7 @@ export function IdentificateurAccueil() {
               <p className="text-2xl font-bold text-gray-900">{stats.totalIdentifications}</p>
               <p className="text-xs text-gray-600 mt-1 font-semibold">Acteurs enrôlés</p>
             </motion.div>
-            <motion.div 
+            <motion.div
               whileHover={{ y: -4 }}
               className="bg-white rounded-3xl p-5 text-center shadow-md border-2 border-green-100"
             >
@@ -303,7 +279,7 @@ export function IdentificateurAccueil() {
               <p className="text-2xl font-bold text-gray-900">{stats.tauxValidation.toFixed(0)}%</p>
               <p className="text-xs text-gray-600 mt-1 font-semibold">Taux validation</p>
             </motion.div>
-            <motion.div 
+            <motion.div
               whileHover={{ y: -4 }}
               className="bg-white rounded-3xl p-5 text-center shadow-md border-2 border-orange-100"
             >
@@ -319,7 +295,7 @@ export function IdentificateurAccueil() {
           </div>
 
           {/* Missions en cours */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -329,7 +305,7 @@ export function IdentificateurAccueil() {
               <Target className="w-5 h-5 text-orange-600" />
               <h3 className="text-sm font-bold text-gray-900">Missions en cours</h3>
             </div>
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.01 }}
               className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 rounded-3xl p-5 border-2 border-orange-200 shadow-md"
             >

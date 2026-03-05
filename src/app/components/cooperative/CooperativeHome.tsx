@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { useCooperative } from '../../contexts/CooperativeContext';
 import { Navigation } from '../layout/Navigation';
 import { RoleDashboard } from '../shared/RoleDashboard';
 import { getRoleConfig } from '../../config/roleConfig';
 import { buildAlertesCooperative } from '../shared/AlertesBanner';
-import { TantieSagesse } from '../assistant/TantieSagesse';
 import {
   VolumeModal,
   TransactionsModal,
@@ -15,11 +15,11 @@ import {
   AchatsGroupesModal,
   VentesGroupeesModal,
 } from './CooperativeModals';
-import tantieSagesseImgCooperative from 'figma:asset/121e6ffbfa2da9c30fe3d5ebdc24e581704d8241.png';
+const tantieSagesseImgCooperative = '/images/tantie-sagesse-cooperative.svg';
 
 export function CooperativeHome() {
   const navigate = useNavigate();
-  const { user, speak, setIsModalOpen } = useApp();
+  const { user, speak } = useApp();
   const { stats, getMembresActifs, membres, soldeActuel, getCommandesEnCours } = useCooperative();
   
   // Construire alertes dynamiques coopérative
@@ -38,18 +38,14 @@ export function CooperativeHome() {
   const [showTransactionsModal, setShowTransactionsModal] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
-  const [showTantieSagesseModal, setShowTantieSagesseModal] = useState(false);
   const [showAchatsGroupesModal, setShowAchatsGroupesModal] = useState(false);
   const [showVentesGroupeesModal, setShowVentesGroupeesModal] = useState(false);
 
   // Gérer l'affichage de la bottom bar selon l'état des modals
-  useEffect(() => {
-    const isAnyModalOpen = showVolumeModal || showTransactionsModal || showScoreModal || 
-                          showResumeModal || showTantieSagesseModal || showAchatsGroupesModal || 
-                          showVentesGroupeesModal;
-    setIsModalOpen(isAnyModalOpen);
-  }, [showVolumeModal, showTransactionsModal, showScoreModal, showResumeModal, 
-      showTantieSagesseModal, showAchatsGroupesModal, showVentesGroupeesModal, setIsModalOpen]);
+  useModalRegister(
+    showVolumeModal || showTransactionsModal || showScoreModal ||
+    showResumeModal || showAchatsGroupesModal || showVentesGroupeesModal
+  );
 
   // Configuration du rôle Coopérative
   const roleConfig = getRoleConfig('cooperative');
@@ -65,11 +61,6 @@ export function CooperativeHome() {
   const handleListenMessage = () => {
     const message = `Bonjour ${user?.firstName} ! Votre coopérative compte ${getMembresActifs()} membres actifs avec ${dashboardStats.kpi1Value.toLocaleString()} kilogrammes groupés et ${dashboardStats.kpi2Value.toLocaleString()} francs CFA en trésorerie`;
     speak(message);
-  };
-
-  const handleTantieSagesseClick = () => {
-    setShowTantieSagesseModal(true);
-    speak('Bonjour ! Comment puis-je aider votre coopérative aujourd\'hui ?');
   };
 
   // Greeting personnalisé
@@ -120,7 +111,7 @@ export function CooperativeHome() {
         alertes={alertesCooperative}
       />
 
-      <Navigation role="cooperative" onMicClick={handleTantieSagesseClick} />
+      <Navigation role="cooperative" />
 
       {/* Modals KPIs */}
       <VolumeModal 
@@ -149,14 +140,6 @@ export function CooperativeHome() {
         isOpen={showVentesGroupeesModal} 
         onClose={() => setShowVentesGroupeesModal(false)}
       />
-
-      {/* Tantie Sagesse modal */}
-      {showTantieSagesseModal && (
-        <TantieSagesse
-          isOpen={showTantieSagesseModal}
-          onClose={() => setShowTantieSagesseModal(false)}
-        />
-      )}
     </>
   );
 }

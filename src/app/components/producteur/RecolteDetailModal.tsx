@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Sprout, Package, TrendingUp, TrendingDown, MapPin,
   Calendar, Star, ShoppingBag, CheckCircle, Clock, AlertTriangle,
-  BarChart3, Banknote, Tag, Layers
+  BarChart3, Banknote, Tag, Layers, Edit3
 } from 'lucide-react';
 import { useProducteur, type Recolte, type CycleAgricole } from '../../contexts/ProducteurContext';
 import { useApp } from '../../contexts/AppContext';
+import { Montant, MontantCard } from '../shared/Montant';
+import { ModifierPublicationModal } from './ModifierPublicationModal';
 
 const COLOR = '#2E8B57';
 
@@ -33,6 +35,7 @@ interface Props {
 export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props) {
   const { commandes } = useProducteur();
   const { speak } = useApp();
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const commandesLiees = commandes.filter(c => c.recolteId === recolte.id);
   const commandesEnCours = commandesLiees.filter(c => ['new', 'accepted', 'preparing'].includes(c.status));
@@ -57,7 +60,7 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
       />
 
       <motion.div
@@ -66,7 +69,7 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-        className="fixed bottom-0 left-0 right-0 z-[301] bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 z-[210] bg-white rounded-t-3xl shadow-2xl overflow-hidden"
         style={{ maxHeight: '95dvh' }}
       >
         {/* Header avec image */}
@@ -134,16 +137,11 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
             <div className="flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border-2 border-green-200">
               <div>
                 <p className="text-xs text-gray-500 font-semibold mb-0.5">Prix unitaire</p>
-                <p className="text-3xl font-black" style={{ color: COLOR }}>
-                  {recolte.prixUnitaire.toLocaleString()}
-                  <span className="text-base font-bold text-gray-500 ml-1">FCFA/kg</span>
-                </p>
+                <Montant value={recolte.prixUnitaire} unit="kg" size="xl" color={COLOR} />
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 font-semibold mb-0.5">Valeur totale estimée</p>
-                <p className="text-xl font-black text-gray-800">
-                  {valeurTotal.toLocaleString()} FCFA
-                </p>
+                <Montant value={valeurTotal} size="lg" color="#1f2937" />
               </div>
             </div>
 
@@ -202,16 +200,14 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
                   <Banknote className="w-4 h-4 text-green-600" strokeWidth={2.5} />
                   <p className="text-xs font-bold text-gray-600">Revenus encaissés</p>
                 </div>
-                <p className="text-xl font-black text-green-700">{revenuActuel.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">FCFA</p>
+                <Montant value={revenuActuel} size="lg" color="#15803d" />
               </div>
               <div className="bg-white rounded-2xl border-2 border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Tag className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
                   <p className="text-xs font-bold text-gray-600">Valeur en stock</p>
                 </div>
-                <p className="text-xl font-black text-blue-700">{valeurStock.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">FCFA</p>
+                <Montant value={valeurStock} size="lg" color="#1d4ed8" />
               </div>
             </div>
 
@@ -304,6 +300,16 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
               >
                 Fermer
               </motion.button>
+              <motion.button
+                onClick={() => { setShowEditModal(true); speak('Modifier la récolte'); }}
+                className="flex-1 py-4 rounded-2xl font-bold text-white shadow-lg text-base flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg, #C46210, #D97706)' }}
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <Edit3 className="w-5 h-5" strokeWidth={2.5} />
+                Modifier
+              </motion.button>
               {recolte.status === 'draft' && (
                 <motion.button
                   onClick={() => { onPublish(); onClose(); speak('Publication sur le marché'); }}
@@ -321,6 +327,16 @@ export function RecolteDetailModal({ recolte, cycle, onClose, onPublish }: Props
           </div>
         </div>
       </motion.div>
+
+      {/* Modal de modification */}
+      {showEditModal && cycle && (
+        <ModifierPublicationModal
+          publication={recolte as any}
+          cycle={cycle}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </AnimatePresence>
   );
 }

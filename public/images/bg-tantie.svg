@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <defs>
+    <linearGradient id="bgt" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFF8E1"/><stop offset="100%" stop-color="#FFE0B2"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bgt)"/>
+  <!-- Ondes audio stylisées -->
+  <path d="M50 300 Q100 250 150 300 Q200 350 250 300" stroke="#FFB300" stroke-width="4" fill="none" opacity="0.4"/>
+  <path d="M30 300 Q100 220 170 300 Q240 380 310 300" stroke="#FFA000" stroke-width="3" fill="none" opacity="0.3"/>
+  <path d="M10 300 Q100 190 190 300 Q280 410 370 300" stroke="#FF8F00" stroke-width="2" fill="none" opacity="0.2"/>
+  <!-- Tantie Sagesse centrale (simplifiée) -->
+  <circle cx="400" cy="250" r="150" fill="#FFE0B2" opacity="0.5"/>
+  <circle cx="400" cy="240" r="100" fill="#FFCCBC"/>
+  <ellipse cx="400" cy="180" rx="70" ry="45" fill="#E8771A"/>
+  <circle cx="400" cy="240" r="75" fill="#8D5524"/>
+  <ellipse cx="378" cy="228" rx="9" ry="11" fill="white"/>
+  <ellipse cx="422" cy="228" rx="9" ry="11" fill="white"/>
+  <circle cx="380" cy="230" r="5" fill="#1A1A1A"/>
+  <circle cx="424" cy="230" r="5" fill="#1A1A1A"/>
+  <path d="M375 255 Q400 272 425 255" stroke="white" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <!-- Bulles de conversation -->
+  <rect x="560" y="120" width="200" height="80" rx="20" fill="white" stroke="#E8771A" stroke-width="2"/>
+  <path d="M560 160 L535 155 L555 145Z" fill="white" stroke="#E8771A" stroke-width="2"/>
+  <rect x="570" y="135" width="100" height="8" rx="4" fill="#E0E0E0"/>
+  <rect x="570" y="150" width="140" height="8" rx="4" fill="#E0E0E0"/>
+  <rect x="570" y="165" width="120" height="8" rx="4" fill="#E0E0E0"/>
+  <!-- Ondes à droite -->
+  <path d="M750 300 Q700 250 650 300 Q600 350 550 300" stroke="#FFB300" stroke-width="4" fill="none" opacity="0.4"/>
+  <path d="M770 300 Q700 220 630 300 Q560 380 490 300" stroke="#FFA000" stroke-width="3" fill="none" opacity="0.3"/>
+  <!-- Micro -->
+  <rect x="388" y="350" width="24" height="40" rx="12" fill="#E8771A"/>
+  <rect x="394" y="388" width="12" height="18" fill="#CC5500"/>
+  <rect x="383" y="405" width="34" height="6" rx="3" fill="#CC5500"/>
+  <!-- Étoiles IA -->
+  <circle cx="120" cy="100" r="10" fill="#FFB300" opacity="0.6"/>
+  <circle cx="680" cy="100" r="14" fill="#FFB300" opacity="0.4"/>
+  <circle cx="700" cy="420" r="8" fill="#FFB300" opacity="0.5"/>
+  <circle cx="100" cy="440" r="12" fill="#FFB300" opacity="0.4"/>
+</svg>

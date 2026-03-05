@@ -86,7 +86,7 @@ export function Sidebar({ role, onMicClick }: SidebarProps) {
   };
 
   return (
-    <div className="hidden lg:flex fixed left-0 top-0 bottom-0 z-[100] lg:w-[280px] xl:w-[320px]">
+    <div className="hidden lg:flex fixed left-0 top-0 bottom-0 z-[45] lg:w-[280px] xl:w-[320px]">
       {/* Glassmorphism Background */}
       <div 
         className="relative mx-4 my-4 rounded-[2rem] overflow-hidden flex flex-col w-full"

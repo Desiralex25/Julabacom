@@ -81,7 +81,7 @@ function UserThread({ ticket, activeColor, onClose, onLu }: UserThreadProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-0 z-50 flex flex-col bg-white"
+      className="fixed inset-0 z-[200] flex flex-col bg-white"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b-2 border-gray-100 pt-safe"
@@ -577,7 +577,7 @@ export function SupportContact({ role, userName = 'Utilisateur' }: SupportContac
       <AnimatePresence>
         {showForm && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-end justify-center"
+            className="fixed inset-0 z-[200] flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

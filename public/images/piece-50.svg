@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#B0B0B0" stroke="#888" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <text x="60" y="55" text-anchor="middle" font-family="serif" font-size="26" font-weight="bold" fill="white">50</text>
+  <text x="60" y="74" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="rgba(255,255,255,0.8)">FCFA</text>
+</svg>

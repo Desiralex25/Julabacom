@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { useUser } from '../../contexts/UserContext';
 import { Navigation } from '../layout/Navigation';
 import { Button } from '../ui/button';
@@ -54,6 +55,8 @@ import { InfoPersonnellesModalUniversal } from '../shared/InfoPersonnellesModalU
 import { DocumentsCertificationsModalUniversal } from '../shared/DocumentsCertificationsModalUniversal';
 import { SupportCardProfil } from '../shared/SupportCardProfil';
 import { DocumentModal } from '../marchand/DocumentModal';
+import { IdentificationInfoBadge } from '../shared/IdentificationInfoBadge';
+import { FicheIdentificationModal } from '../marchand/FicheIdentificationModal';
 import { DocumentData, DocumentStatus, getStatusColor, getStatusLabel } from '../../types/document';
 import QRCode from 'qrcode';
 import { PartenairesLogos } from '../shared/PartenairesLogos';
@@ -61,7 +64,7 @@ import { PartenairesLogos } from '../shared/PartenairesLogos';
 
 export function CooperativeProfil() {
   const navigate = useNavigate();
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
   const { user, updateUser, logout: userLogout } = useUser();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -90,7 +93,7 @@ export function CooperativeProfil() {
       dateEmission: '12 Jan 2024',
       status: 'valide' as const,
       delivrePar: 'Ministère du Commerce, Abidjan',
-      imageUrl: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80',
+      imageUrl: '/images/doc-paper.svg',
     },
     {
       id: 'statuts',
@@ -99,7 +102,7 @@ export function CooperativeProfil() {
       dateEmission: '10 Jan 2024',
       status: 'valide' as const,
       delivrePar: 'Notaire Kouassi Jean - Abidjan',
-      imageUrl: 'https://images.unsplash.com/photo-1568992688065-536aad8a12f6?w=800&q=80',
+      imageUrl: '/images/doc-paper.svg',
     },
     {
       id: 'agrement',
@@ -128,7 +131,7 @@ export function CooperativeProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1635231152740-dcfba853f33d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpZGVudGl0eSUyMGNhcmQlMjBkb2N1bWVudHxlbnwxfHx8fDE3NzIzNzQ1NjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-cni.svg',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -148,7 +151,7 @@ export function CooperativeProfil() {
       type: 'certification-julaba',
       title: 'Certification JULABA Coopérative',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1637763723578-79a4ca9225f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNlcnRpZmljYXRlJTIwZG9jdW1lbnR8ZW58MXx8fHwxNzcyMzc0NTY4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-certificat.svg',
       uploadedAt: '2024-02-20T08:00:00Z',
       verifiedAt: '2024-02-20T14:00:00Z',
       verifiedBy: 'Aminata Touré - JULABA',
@@ -217,17 +220,12 @@ export function CooperativeProfil() {
     if (user) generateQR();
   }, [user]);
 
-  // Gérer l'affichage de la bottom bar selon l'état des modals
-  React.useEffect(() => {
-    const isAnyModalOpen = showSettings || showDocuments || showLangue || 
-                           showSecurityCode || showConfidentialite || 
-                           showFicheIdentification ||
-                           showInfoPersonnelles || showDocumentsCertifications ||
-                           showDocumentModal !== null || showLegalDocModal !== null;
-    setIsModalOpen(isAnyModalOpen);
-  }, [showSettings, showDocuments, showLangue, showSecurityCode, showConfidentialite,
-      showFicheIdentification, showInfoPersonnelles, showDocumentsCertifications,
-      showDocumentModal, showLegalDocModal, setIsModalOpen]);
+  // Sync ModalContext
+  useModalRegister(
+    showSettings || showDocuments || showLangue || showSecurityCode ||
+    showConfidentialite || showFicheIdentification || showInfoPersonnelles ||
+    showDocumentsCertifications || showDocumentModal !== null || showLegalDocModal !== null
+  );
 
   const handleLogout = () => {
     speak('Déconnexion en cours');
@@ -241,7 +239,7 @@ export function CooperativeProfil() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-blue-50 to-white">
         
         {/* 🎴 MA CARTE PROFESSIONNELLE - Style Moderne avec Flip */}
         <motion.div
@@ -251,20 +249,31 @@ export function CooperativeProfil() {
           className="mb-4"
         >
           {/* Header avec boutons actions */}
-          <div className="flex items-center justify-center mb-3">
-            {/* Bouton Afficher/Masquer */}
+          <div className="flex items-center gap-3 mb-3">
+            {/* Bouton Afficher/Masquer carte */}
             <motion.button
               onClick={() => {
                 setShowProfessionalCard(!showProfessionalCard);
                 speak(showProfessionalCard ? 'Carte masquée' : 'Carte affichée');
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
               style={{ backgroundColor: roleColor }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <CreditCard className="w-4 h-4" />
-              {showProfessionalCard ? 'Masquer ma carte professionnelle' : 'Afficher ma carte professionnelle'}
+              {showProfessionalCard ? 'Masquer ma carte' : 'Afficher ma carte'}
+            </motion.button>
+            {/* Bouton Réglages */}
+            <motion.button
+              onClick={() => navigate('/cooperative/parametres')}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-sm border-2"
+              style={{ borderColor: roleColor, color: roleColor, backgroundColor: `${roleColor}0f` }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              Réglages
             </motion.button>
           </div>
 
@@ -592,24 +601,25 @@ export function CooperativeProfil() {
           </motion.button>
         </motion.div>
 
-        {/* Fiche d'identification - Juste sous la carte */}
+        {/* Fiche d'identification - Badge unifié */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, type: 'spring', stiffness: 200 }}
           className="mb-4"
         >
-          <DocumentCard
-            icon={FileText}
-            label="Fiche d'identification JULABA"
-            status="Complété"
-            statusColor="green"
-            date={new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            onClick={() => {
+          <IdentificationInfoBadge
+            numeroFiche={(user as any).numeroCooperative || 'COOP-2026-0001'}
+            nomAgent={(user as any).nomAgent || 'BAMBA'}
+            prenomAgent={(user as any).prenomAgent || 'Issa'}
+            dateIdentification={(user as any).dateIdentification || '2026-02-10T09:30:00Z'}
+            statut={((user as any).statutIdentification as any) || 'valide'}
+            raisonsRejet={(user as any).raisonsRejetIdentification}
+            accentColor={roleColor}
+            onVoirFiche={() => {
               setShowFicheIdentification(true);
               speak('Ouverture de la fiche d\'identification');
             }}
-            roleColor={roleColor}
           />
         </motion.div>
 
@@ -989,6 +999,18 @@ export function CooperativeProfil() {
 
       <Navigation role="cooperative" />
 
+      {/* Modal Fiche d'Identification */}
+      <AnimatePresence>
+        {showFicheIdentification && (
+          <FicheIdentificationModal
+            onClose={() => setShowFicheIdentification(false)}
+            speak={speak}
+            user={user}
+            onSave={(updatedUser) => updateUser(updatedUser)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Modal Info Personnelles */}
       <AnimatePresence>
         {showInfoPersonnelles && (
@@ -1083,7 +1105,7 @@ export function CooperativeProfil() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end justify-center"
+              className="fixed inset-0 z-[200] flex items-end justify-center"
               style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
               onClick={() => setShowLegalDocModal(null)}
             >
@@ -1240,9 +1262,9 @@ function InfoField({ icon: Icon, label, value }: InfoFieldProps) {
     <div className="p-3 rounded-[16px] bg-white/60 border-2 border-gray-200">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3 h-3 text-gray-500" />
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">{label}</p>
       </div>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
     </div>
   );
 }

@@ -26,6 +26,86 @@ import { SharedModal } from './Modal';
 import { RoleType } from '../../config/roleConfig';
 import { useScoreJULABA, SCORE_LEVELS } from '../../hooks/useScoreJULABA';
 
+// ─── TEXTES PAR RÔLE ──────────────────────────────────────────────────────────
+const ROLE_TEXTS: Record<string, {
+  step1Sub1: string;
+  step1Sub2: string;
+  step3Title: string;
+  step3Encouragement: string;
+  step4Title: string;
+  step4Tip: string;
+  step5Title: string;
+  step5Sub: string;
+}> = {
+  marchand: {
+    step1Sub1: "C'est ta note de confiance en tant que marchand dans Jùlaba",
+    step1Sub2: "Plus tu enregistres tes ventes, plus ton score monte",
+    step3Title: "Ce que tu gagnes",
+    step3Encouragement: "Vend plus pour débloquer des avantages",
+    step4Title: "Comment monter ton score",
+    step4Tip: "Enregistre tes ventes tous les jours pour monter vite",
+    step5Title: "Prêt à vendre plus ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+  producteur: {
+    step1Sub1: "C'est ta note de fiabilité en tant que producteur dans Jùlaba",
+    step1Sub2: "Plus tu déclares tes récoltes, plus ton score monte",
+    step3Title: "Ce que tu débloques",
+    step3Encouragement: "Déclare tes récoltes pour gagner des avantages",
+    step4Title: "Comment améliorer ton score",
+    step4Tip: "Déclare chaque récolte dans Jùlaba pour monter vite",
+    step5Title: "Prêt à déclarer tes récoltes ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+  grossiste: {
+    step1Sub1: "C'est ta note de confiance en tant que grossiste dans Jùlaba",
+    step1Sub2: "Plus tu passes des commandes, plus ton score monte",
+    step3Title: "Tes avantages grossiste",
+    step3Encouragement: "Commande plus pour débloquer des remises",
+    step4Title: "Comment monter ton score grossiste",
+    step4Tip: "Passe des commandes régulières pour monter vite",
+    step5Title: "Prêt à commander ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+  transporteur: {
+    step1Sub1: "C'est ta note de fiabilité en tant que transporteur dans Jùlaba",
+    step1Sub2: "Plus tu effectues des livraisons, plus ton score monte",
+    step3Title: "Tes avantages transporteur",
+    step3Encouragement: "Livre plus pour débloquer des bonifications",
+    step4Title: "Comment monter ton score transporteur",
+    step4Tip: "Effectue des livraisons régulières pour monter vite",
+    step5Title: "Prêt à livrer ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+  collecteur: {
+    step1Sub1: "C'est ta note de fiabilité en tant que collecteur dans Jùlaba",
+    step1Sub2: "Plus tu collectes, plus ton score monte",
+    step3Title: "Tes avantages collecteur",
+    step3Encouragement: "Collecte plus pour débloquer des primes",
+    step4Title: "Comment monter ton score collecteur",
+    step4Tip: "Collecte régulièrement pour monter vite",
+    step5Title: "Prêt à collecter ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+  cooperative: {
+    step1Sub1: "C'est la note de fiabilité de ta coopérative dans Jùlaba",
+    step1Sub2: "Plus tu gères bien tes membres, plus le score monte",
+    step3Title: "Les avantages de ta coopérative",
+    step3Encouragement: "Gérez plus pour débloquer des avantages collectifs",
+    step4Title: "Comment monter le score",
+    step4Tip: "Gérez vos membres régulièrement pour monter vite",
+    step5Title: "Prêt à gérer ta coopérative ?",
+    step5Sub: "Commence par ces 3 actions simples",
+  },
+};
+
+const DEFAULT_TEXTS = ROLE_TEXTS.marchand;
+
+function getRoleTexts(role: string) {
+  return ROLE_TEXTS[role] ?? DEFAULT_TEXTS;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface ScoreOnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -171,7 +251,7 @@ export function ScoreOnboardingModal({
                 >
                   {/* Étape 1 : Introduction */}
                   {currentStep === 1 && (
-                    <Step1 primaryColor={primaryColor} />
+                    <Step1 primaryColor={primaryColor} role={role} />
                   )}
 
                   {/* Étape 2 : Niveau actuel */}
@@ -187,7 +267,8 @@ export function ScoreOnboardingModal({
                   {currentStep === 3 && (
                     <Step3 
                       scoreData={scoreData} 
-                      primaryColor={primaryColor} 
+                      primaryColor={primaryColor}
+                      role={role}
                     />
                   )}
 
@@ -195,7 +276,8 @@ export function ScoreOnboardingModal({
                   {currentStep === 4 && (
                     <Step4 
                       scoreData={scoreData}
-                      primaryColor={primaryColor} 
+                      primaryColor={primaryColor}
+                      role={role}
                     />
                   )}
 
@@ -203,7 +285,8 @@ export function ScoreOnboardingModal({
                   {currentStep === 5 && (
                     <Step5 
                       scoreData={scoreData} 
-                      primaryColor={primaryColor} 
+                      primaryColor={primaryColor}
+                      role={role}
                     />
                   )}
                 </motion.div>
@@ -270,7 +353,8 @@ export function ScoreOnboardingModal({
 /* ========================================
    ÉTAPE 1 : INTRODUCTION
 ======================================== */
-function Step1({ primaryColor }: { primaryColor: string }) {
+function Step1({ primaryColor, role }: { primaryColor: string; role: string }) {
+  const texts = getRoleTexts(role);
   return (
     <div className="space-y-8 text-center">
       {/* Icône animée */}
@@ -315,10 +399,10 @@ function Step1({ primaryColor }: { primaryColor: string }) {
         transition={{ delay: 0.4 }}
       >
         <p className="text-base text-gray-700 leading-relaxed">
-          C'est ta note de confiance dans <span style={{ fontFamily: 'Calisga, serif', fontWeight: 700 }}>Jùlaba</span>
+          {texts.step1Sub1}
         </p>
         <p className="text-base text-gray-700 leading-relaxed">
-          Plus tu utilises bien l'application, plus ton score monte
+          {texts.step1Sub2}
         </p>
       </motion.div>
     </div>
@@ -444,11 +528,14 @@ function Step2({
 ======================================== */
 function Step3({ 
   scoreData, 
-  primaryColor 
+  primaryColor,
+  role,
 }: { 
   scoreData: any; 
   primaryColor: string;
+  role: string;
 }) {
+  const texts = getRoleTexts(role);
   return (
     <div className="space-y-6 w-full">
       {/* Icône */}
@@ -469,7 +556,7 @@ function Step3({
 
       {/* Titre */}
       <h2 className="text-2xl font-black text-gray-900 text-center">
-        Ce que ca te donne
+        {texts.step3Title}
       </h2>
 
       {/* Liste des bénéfices */}
@@ -518,7 +605,7 @@ function Step3({
         animate={{ opacity: 1 }}
         transition={{ delay: scoreData.benefits.length * 0.1 + 0.3 }}
       >
-        Debloque plus en montant ton score
+        {texts.step3Encouragement}
       </motion.p>
     </div>
   );
@@ -529,11 +616,14 @@ function Step3({
 ======================================== */
 function Step4({ 
   scoreData,
-  primaryColor 
+  primaryColor,
+  role,
 }: { 
   scoreData: any;
   primaryColor: string;
+  role: string;
 }) {
+  const texts = getRoleTexts(role);
   // Prendre les 5 premières actions dynamiques
   const topActions = scoreData.actions.slice(0, 5);
   
@@ -567,7 +657,7 @@ function Step4({
 
       {/* Titre */}
       <h2 className="text-xl font-black text-gray-900 text-center">
-        Comment l'augmenter
+        {texts.step4Title}
       </h2>
 
       {/* Liste des actions dynamiques */}
@@ -626,7 +716,7 @@ function Step4({
         transition={{ delay: 0.5 }}
       >
         <p className="text-xs text-amber-900 font-bold text-center">
-          Utilise <span style={{ fontFamily: 'Calisga, serif', fontWeight: 700 }}>Jùlaba</span> tous les jours pour monter vite
+          {texts.step4Tip}
         </p>
       </motion.div>
     </div>
@@ -638,11 +728,14 @@ function Step4({
 ======================================== */
 function Step5({ 
   scoreData, 
-  primaryColor 
+  primaryColor,
+  role,
 }: { 
   scoreData: any; 
   primaryColor: string;
+  role: string;
 }) {
+  const texts = getRoleTexts(role);
   const topActions = scoreData.actions.slice(0, 3);
 
   return (
@@ -665,11 +758,11 @@ function Step5({
 
       {/* Titre */}
       <h2 className="text-2xl font-black text-gray-900 text-center">
-        Pret a ameliorer ton score
+        {texts.step5Title}
       </h2>
 
       <p className="text-base text-gray-700 text-center">
-        Commence par ces 3 actions
+        {texts.step5Sub}
       </p>
 
       {/* Top 3 actions */}

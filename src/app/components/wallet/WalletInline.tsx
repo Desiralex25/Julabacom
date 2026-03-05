@@ -128,7 +128,7 @@ function ModalRecevoir({ isOpen, onClose, color, userName, userId }: {
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end"
           onClick={onClose}
         >
           <motion.div
@@ -211,7 +211,7 @@ function ModalEnvoyer({ isOpen, onClose, color, canAfford, onSend }: {
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end"
           onClick={onClose}
         >
           <motion.div
@@ -481,7 +481,7 @@ export function WalletInline({ roleColor }: WalletInlineProps) {
               <TrendingUp className="w-4 h-4 text-green-600" />
               <span className="text-xs text-green-600 font-semibold">Entrées</span>
             </div>
-            <p className="font-bold text-gray-900">
+            <p className="font-bold text-gray-900 truncate">
               {showBalance ? `${stats30j.entrees.toLocaleString('fr-FR')} FCFA` : '••••'}
             </p>
           </div>

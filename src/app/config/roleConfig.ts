@@ -245,14 +245,14 @@ export const ROLE_CONFIGS: Record<RoleType, RoleConfig> = {
       action1: {
         label: 'Achats groupés',
         subtitle: 'Voir les achats',
-        route: '/cooperative/achats',
+        route: '/cooperative/marche',
         color: '#16A34A',
         icon: 'ShoppingCart',
       },
       action2: {
         label: 'Ventes groupées',
         subtitle: 'Voir les ventes',
-        route: '/cooperative/ventes',
+        route: '/cooperative/marche',
         color: '#2563EB',
         icon: 'TrendingUp',
       },
@@ -287,7 +287,7 @@ export const ROLE_CONFIGS: Record<RoleType, RoleConfig> = {
     bottomBar: {
       items: [
         { label: 'Accueil', path: '/identificateur', icon: 'Home' },
-        { label: 'Acteurs', path: '/identificateur/acteurs', icon: 'Users' },
+        { label: 'Acteurs', path: '/identificateur/identifications', icon: 'Users' },
         { label: 'Suivi', path: '/identificateur/rapports', icon: 'BarChart3' },
         { label: 'Moi', path: '/identificateur/profil', icon: 'User' },
       ],
@@ -310,14 +310,14 @@ export const ROLE_CONFIGS: Record<RoleType, RoleConfig> = {
       action1: {
         label: 'Nouveau marchand',
         subtitle: 'Identifier un marchand',
-        route: '/identificateur/identification',
+        route: '/identificateur/fiche-identification',
         color: '#C66A2C',
         icon: 'UserPlus',
       },
       action2: {
         label: 'Nouveau producteur',
         subtitle: 'Identifier un producteur',
-        route: '/identificateur/identification',
+        route: '/identificateur/fiche-identification',
         color: '#2E8B57',
         icon: 'Sprout',
       },

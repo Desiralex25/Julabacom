@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useBackOffice, BORoleType } from '../../contexts/BackOfficeContext';
 import { useTickets, Ticket } from '../../contexts/TicketsContext';
+import { ScrollToTop } from '../layout/ScrollToTop';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -63,7 +65,7 @@ const MOBILE_BOTTOM = [
   { id: 'profil', label: 'Profil', icon: Shield, path: '/backoffice/profil' },
 ];
 
-// ─── Panneau de notifications ────────────────────────────────────────────────
+// ─── Panneau de notifications BO ─────────────────────────────────────────────
 
 function formatRelTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -85,7 +87,9 @@ interface NotifPanelProps {
 }
 
 function NotifPanel({ open, onClose, tickets, nouveauxCount, onVoirTicket, onMarquerLu }: NotifPanelProps) {
-  const nonLus = tickets.filter(t => !t.luParBO && t.statut !== 'ferme');
+  const nonLus  = tickets.filter(t => !t.luParBO && t.statut !== 'ferme');
+  const [tab, setTab] = React.useState<'nonlus' | 'tous'>('nonlus');
+  const displayed = tab === 'nonlus' ? nonLus : tickets.slice(0, 20);
 
   return (
     <AnimatePresence>
@@ -93,111 +97,221 @@ function NotifPanel({ open, onClose, tickets, nouveauxCount, onVoirTicket, onMar
         <>
           {/* Overlay */}
           <motion.div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
+
           {/* Panneau */}
           <motion.div
-            className="fixed top-14 right-4 z-50 w-96 max-h-[calc(100vh-100px)] bg-white rounded-3xl shadow-2xl border-2 border-gray-100 flex flex-col overflow-hidden"
-            initial={{ opacity: 0, y: -12, scale: 0.95 }}
+            className="fixed top-[72px] right-4 z-50 w-96 max-h-[calc(100vh-96px)] flex flex-col overflow-hidden rounded-3xl border-2 shadow-2xl bg-white"
+            style={{ borderColor: `${BO_PRIMARY}30` }}
+            initial={{ opacity: 0, y: -16, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            exit={{ opacity: 0, y: -16, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <div className="flex items-center gap-2">
+            {/* Header dégradé */}
+            <div
+              className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${BO_PRIMARY}14 0%, ${BO_PRIMARY}06 100%)`,
+                borderBottom: `2px solid ${BO_PRIMARY}20`,
+              }}
+            >
+              <div className="flex items-center gap-3">
                 <motion.div
-                  animate={{ rotate: [0, -15, 15, -10, 10, 0] }}
-                  transition={{ duration: 0.6, repeat: nouveauxCount > 0 ? Infinity : 0, repeatDelay: 3 }}
+                  className="w-11 h-11 rounded-3xl flex items-center justify-center border-2"
+                  style={{
+                    background: `linear-gradient(135deg, ${BO_PRIMARY}25, ${BO_PRIMARY}10)`,
+                    borderColor: `${BO_PRIMARY}35`,
+                  }}
+                  animate={nouveauxCount > 0 ? { scale: [1, 1.06, 1] } : {}}
+                  transition={{ repeat: Infinity, duration: 2 }}
                 >
                   <BellRing className="w-5 h-5" style={{ color: BO_PRIMARY }} />
                 </motion.div>
-                <h3 className="font-bold text-gray-900">Nouveaux tickets</h3>
-                {nouveauxCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-black text-white" style={{ backgroundColor: '#EF4444' }}>
-                    {nouveauxCount}
-                  </span>
-                )}
+                <div>
+                  <h3 className="font-black text-gray-900 text-base leading-tight">Tickets entrants</h3>
+                  <p className="text-xs mt-0.5 font-semibold" style={{ color: BO_PRIMARY }}>
+                    {nouveauxCount > 0
+                      ? `${nouveauxCount} nouveau${nouveauxCount > 1 ? 'x' : ''} ticket${nouveauxCount > 1 ? 's' : ''}`
+                      : 'Tout est traité'}
+                  </p>
+                </div>
               </div>
-              <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
+              <motion.button
+                onClick={onClose}
+                whileHover={{ rotate: 90, scale: 1.1 }}
+                whileTap={{ scale: 0.88 }}
+                className="w-9 h-9 rounded-2xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center"
+              >
                 <X className="w-4 h-4 text-gray-500" />
-              </button>
+              </motion.button>
+            </div>
+
+            {/* Filtres */}
+            <div
+              className="flex gap-2 px-4 py-3 flex-shrink-0"
+              style={{ borderBottom: `2px solid ${BO_PRIMARY}12` }}
+            >
+              {([
+                { key: 'nonlus', label: 'Non traités', count: nonLus.length },
+                { key: 'tous',   label: 'Tous',         count: tickets.length },
+              ] as const).map(({ key, label, count }) => {
+                const active = tab === key;
+                return (
+                  <motion.button
+                    key={key}
+                    onClick={() => setTab(key)}
+                    whileTap={{ scale: 0.94 }}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-2xl border-2 text-xs font-bold flex items-center gap-1.5 transition-all"
+                    style={
+                      active
+                        ? {
+                            background: `linear-gradient(135deg, ${BO_PRIMARY}, ${BO_PRIMARY}CC)`,
+                            color: '#fff',
+                            borderColor: BO_PRIMARY,
+                            boxShadow: `0 4px 10px ${BO_PRIMARY}40`,
+                          }
+                        : { color: '#6B7280', borderColor: '#E5E7EB', backgroundColor: '#fff' }
+                    }
+                  >
+                    {label}
+                    <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-xs font-black flex items-center justify-center ${active ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      {count}
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
 
             {/* Liste */}
             <div className="overflow-y-auto flex-1">
-              {nonLus.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4">
-                  <CheckCircle2 className="w-10 h-10 text-green-400 mb-3" />
-                  <p className="font-bold text-gray-500">Tout est à jour</p>
-                  <p className="text-xs text-gray-400 mt-1">Aucun ticket en attente de traitement</p>
-                </div>
+              {displayed.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center py-12 px-4 gap-4"
+                >
+                  <div
+                    className="w-20 h-20 rounded-3xl flex items-center justify-center border-2"
+                    style={{
+                      background: `linear-gradient(135deg, ${BO_PRIMARY}12, ${BO_PRIMARY}06)`,
+                      borderColor: `${BO_PRIMARY}20`,
+                    }}
+                  >
+                    <CheckCircle2 className="w-9 h-9" style={{ color: `${BO_PRIMARY}90` }} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-gray-700">Tout est à jour</p>
+                    <p className="text-xs text-gray-400 mt-1">Aucun ticket en attente</p>
+                  </div>
+                </motion.div>
               ) : (
                 <div className="p-3 space-y-2">
-                  {nonLus.map((ticket, i) => {
-                    const statut = STATUT_CONFIG[ticket.statut];
-                    const dernier = ticket.messages[ticket.messages.length - 1];
-                    return (
-                      <motion.div
-                        key={ticket.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-gray-50 rounded-2xl p-3 border-2 border-transparent hover:border-[#E6A817] transition-all cursor-pointer"
-                        onClick={() => { onVoirTicket(ticket.id); onMarquerLu(ticket.id); onClose(); }}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Icône statut */}
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${statut.bg}` }}>
-                            {ticket.statut === 'nouveau'
-                              ? <AlertCircle className="w-4 h-4" style={{ color: statut.color }} />
-                              : <Circle className="w-4 h-4" style={{ color: statut.color }} />
-                            }
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="font-black text-xs" style={{ color: BO_PRIMARY }}>{ticket.numero}</span>
-                              <span
-                                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                                style={{ backgroundColor: statut.bg, color: statut.color }}
-                              >
-                                {statut.label}
-                              </span>
-                              {/* Pastille non-lu */}
-                              <span className="w-2 h-2 rounded-full bg-red-500 ml-auto shrink-0" />
+                  <AnimatePresence mode="popLayout">
+                    {displayed.map((ticket, i) => {
+                      const statut  = STATUT_CONFIG[ticket.statut];
+                      const dernier = ticket.messages[ticket.messages.length - 1];
+                      const isNew   = !ticket.luParBO;
+                      return (
+                        <motion.div
+                          key={ticket.id}
+                          layout
+                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                          transition={{ delay: i * 0.04, type: 'spring', damping: 26, stiffness: 280 }}
+                          className={`rounded-3xl border-2 overflow-hidden cursor-pointer transition-all ${
+                            isNew ? 'border-orange-200 bg-gradient-to-r from-amber-50 to-orange-50' : 'border-gray-100 bg-gray-50'
+                          }`}
+                          style={isNew ? { borderColor: `${BO_PRIMARY}50` } : {}}
+                          onClick={() => { onVoirTicket(ticket.id); onMarquerLu(ticket.id); onClose(); }}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {/* Barre gauche colorée */}
+                          <div
+                            className="flex items-start gap-3 pl-4 pr-3 py-3 relative"
+                          >
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-3xl"
+                              style={{ backgroundColor: isNew ? BO_PRIMARY : statut.color }}
+                            />
+
+                            {/* Icône statut */}
+                            <div
+                              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: statut.bg }}
+                            >
+                              {ticket.statut === 'nouveau'
+                                ? <AlertCircle className="w-5 h-5" style={{ color: statut.color }} />
+                                : <Circle className="w-4 h-4" style={{ color: statut.color }} />
+                              }
                             </div>
-                            <p className="font-bold text-gray-800 text-xs truncate">{ticket.sujet}</p>
-                            <p className="text-gray-500 text-[11px] truncate mt-0.5">{ticket.role} — {dernier?.auteurNom}</p>
-                            {dernier && (
-                              <p className="text-gray-400 text-[11px] mt-1 line-clamp-1 italic">
-                                "{dernier.texte}"
-                              </p>
-                            )}
-                            <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
-                              <Clock className="w-3 h-3" />
-                              <span>{formatRelTime(ticket.dateCreation)}</span>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                <span className="font-black text-xs" style={{ color: BO_PRIMARY }}>{ticket.numero}</span>
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                  style={{ backgroundColor: statut.bg, color: statut.color }}
+                                >
+                                  {statut.label}
+                                </span>
+                                {isNew && (
+                                  <motion.span
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ repeat: Infinity, duration: 1.8 }}
+                                    className="w-2 h-2 rounded-full bg-red-500 ml-auto shrink-0"
+                                  />
+                                )}
+                              </div>
+                              <p className="font-bold text-gray-800 text-xs truncate">{ticket.sujet}</p>
+                              <p className="text-gray-500 text-[11px] truncate mt-0.5">{ticket.role} — {dernier?.auteurNom}</p>
+                              {dernier && (
+                                <p className="text-gray-400 text-[11px] mt-1 line-clamp-1 italic">
+                                  "{dernier.texte}"
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                <span>{formatRelTime(ticket.dateCreation)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-100">
+            <div
+              className="px-4 py-3 flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${BO_PRIMARY}08, ${BO_PRIMARY}04)`,
+                borderTop: `2px solid ${BO_PRIMARY}18`,
+              }}
+            >
               <motion.button
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => { onClose(); }}
-                className="w-full py-2.5 rounded-2xl font-bold text-sm text-white"
-                style={{ backgroundColor: BO_PRIMARY }}
+                onClick={onClose}
+                className="w-full py-3 rounded-3xl border-2 font-bold text-sm flex items-center justify-center gap-2"
+                style={{
+                  background: `linear-gradient(135deg, ${BO_PRIMARY}, ${BO_PRIMARY}CC)`,
+                  borderColor: BO_PRIMARY,
+                  color: '#fff',
+                  boxShadow: `0 4px 14px ${BO_PRIMARY}40`,
+                }}
               >
+                <Hash className="w-4 h-4" />
                 Gérer tous les tickets
               </motion.button>
             </div>
@@ -415,6 +529,7 @@ export function BOLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <ScrollToTop />
 
       {/* ── PUSH TOAST ─────────────────────────────────────────────────── */}
       <PushToast
@@ -524,21 +639,37 @@ export function BOLayout() {
         {/* Cloche notifications */}
         <motion.button
           onClick={() => setNotifOpen(o => !o)}
-          className="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"
-          whileHover={{ scale: 1.1 }}
+          className="relative w-11 h-11 rounded-2xl flex items-center justify-center border-2 bg-white shadow-sm overflow-visible"
+          style={{
+            borderColor: notifOpen ? BO_PRIMARY : `${BO_PRIMARY}40`,
+            background: notifOpen
+              ? `linear-gradient(135deg, ${BO_PRIMARY}18, ${BO_PRIMARY}08)`
+              : `linear-gradient(135deg, ${BO_PRIMARY}0A, #FFFFFF)`,
+          }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.9 }}
-          animate={bellShake ? { rotate: [0, -18, 18, -14, 14, -8, 8, 0] } : {}}
+          animate={bellShake ? { rotate: [0, -14, 14, -10, 10, -6, 6, 0] } : {}}
           transition={{ duration: 0.6 }}
         >
-          <Bell className="w-5 h-5 text-gray-600" />
+          {/* Halo pulsant si nouveaux tickets */}
+          {nouveauxCount > 0 && (
+            <motion.span
+              className="absolute inset-0 rounded-2xl border-2"
+              style={{ borderColor: BO_PRIMARY }}
+              animate={{ opacity: [0.7, 0, 0.7], scale: [1, 1.18, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+          )}
+          <Bell className="w-5 h-5" style={{ color: nouveauxCount > 0 ? BO_PRIMARY : '#6B7280' }} />
           <AnimatePresence>
             {nouveauxCount > 0 && (
               <motion.span
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-xs font-black flex items-center justify-center border-2 border-white"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
                 key={nouveauxCount}
+                transition={{ type: 'spring', damping: 14, stiffness: 300 }}
               >
                 {nouveauxCount > 9 ? '9+' : nouveauxCount}
               </motion.span>
@@ -673,7 +804,7 @@ export function BOLayout() {
         <Outlet />
       </main>
 
-      {/* ── BOTTOM BAR MOBILE ──────────────────────────────────────────── */}
+      {/* ── BOTTOM BAR MOBILE ─────────────────────────────────���────────── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-100 shadow-lg">
         <div className="flex items-center justify-around px-2 py-2">
           {MOBILE_BOTTOM.map(item => {
@@ -706,6 +837,9 @@ export function BOLayout() {
           })}
         </div>
       </div>
+
+      {/* ProfileSwitcher en mode DEV */}
+      {import.meta.env.DEV && <ProfileSwitcher />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Package, TrendingUp, Award, FileText, ShoppingCart, Users, X, DollarSig
 import { useApp } from '../../contexts/AppContext';
 import { useNavigate } from 'react-router';
 import { useCooperative } from '../../contexts/CooperativeContext';
+import { ModalPortal } from '../shared/ModalPortal';
 
 const COOPERATIVE_COLOR = '#2072AF';
 
@@ -17,34 +18,36 @@ interface BaseModalProps {
 
 function BaseModal({ isOpen, onClose, children }: BaseModalProps) {
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop avec blur */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-            onClick={onClose}
-          />
-          
-          {/* Contenu du modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+    <ModalPortal isOpen={isOpen}>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop avec blur */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.5 }}
-              className="w-full max-w-md pointer-events-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {children}
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
+              onClick={onClose}
+            />
+            
+            {/* Contenu du modal */}
+            <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', duration: 0.5 }}
+                className="w-full max-w-md pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {children}
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+    </ModalPortal>
   );
 }
 
@@ -272,7 +275,7 @@ export function TransactionsModal({ isOpen, onClose, montant }: TransactionsModa
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-blue-600">
-                          {transaction.montant.toLocaleString()} FCFA
+                          {transaction.montant.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                         </p>
                       </div>
                     </div>
@@ -459,7 +462,7 @@ export function AchatsGroupesModal({ isOpen, onClose }: AchatsGroupesModalProps)
   const handleStart = () => {
     speak('Accédons aux achats groupés de la coopérative');
     onClose();
-    navigate('/cooperative/marche');
+    navigate('/cooperative/marche', { state: { vue: 'achats' } });
   };
 
   return (
@@ -539,7 +542,7 @@ export function VentesGroupeesModal({ isOpen, onClose }: VentesGroupeesModalProp
   const handleStart = () => {
     speak('Accédons aux ventes groupées de la coopérative');
     onClose();
-    navigate('/cooperative/marche');
+    navigate('/cooperative/marche', { state: { vue: 'ventes' } });
   };
 
   return (

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import bgMarket from 'figma:asset/48e145369a8527cd9a3a469a88f0ca0455a0c874.png';
-import bgMarketplace from 'figma:asset/6ee6f5bd5f4c9f1cb2b98f0e26b90dd98e7b2dd6.png';
-import bgTantie from 'figma:asset/a2a68416ef5df15ab6bede30c533e5b62616a307.png';
-import bgOffline from 'figma:asset/a1e7b24524a6956fb901c5d7c7869acd4fd54712.png';
-import logoJulaba from 'figma:asset/cbc59d485b8bea3d7ee028c4c7aee05023d7e2d9.png';
-import bgCotisations from 'figma:asset/120a4219ca3ac09ca18268496eea4203b78668e7.png';
-import logoSplash from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
-import bgVirtualMarket from 'figma:asset/c8aec7f17fcb212135a5a1f30279b7204eebd363.png';
+const bgMarket = '/images/bg-market.svg';
+const bgMarketplace = '/images/bg-marketplace.svg';
+const bgTantie = '/images/bg-tantie.svg';
+const bgOffline = '/images/bg-offline.svg';
+const logoJulaba = '/images/logo-julaba.svg';
+const bgCotisations = '/images/bg-cotisations.svg';
+const logoSplash = '/images/logo-julaba-splash.svg';
+const bgVirtualMarket = '/images/bg-virtual-market.svg';
 
 // ONBOARDING V3 - ANIMATIONS DYNAMIQUES 2025
 export function Onboarding() {
@@ -51,7 +51,7 @@ export function Onboarding() {
     if (currentScreen < 3) {
       setCurrentScreen(currentScreen + 1);
     } else {
-      navigate('/login');
+      navigate('/welcome');
     }
   };
 
@@ -61,7 +61,7 @@ export function Onboarding() {
       window.speechSynthesis.cancel();
     }
     
-    navigate('/login');
+    navigate('/welcome');
   };
 
   const handleListen = () => {

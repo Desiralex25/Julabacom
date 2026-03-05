@@ -194,7 +194,7 @@ export function BOZones() {
       {/* Modal Créer Zone */}
       <AnimatePresence>
         {showCreate && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowCreate(false)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border-2" style={{ borderColor: BO_PRIMARY }}
@@ -242,7 +242,7 @@ export function BOZones() {
       {/* Modal Modifier Zone */}
       <AnimatePresence>
         {editZone && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setEditZone(null)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border-2" style={{ borderColor: BO_DARK }}

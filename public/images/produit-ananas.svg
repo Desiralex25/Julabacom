@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFFDE7"/>
+  <!-- Corps -->
+  <ellipse cx="200" cy="240" rx="80" ry="110" fill="#FFA726"/>
+  <ellipse cx="200" cy="238" rx="75" ry="105" fill="#FFB74D"/>
+  <!-- Texture diamant -->
+  <g stroke="#E65100" stroke-width="1.5" opacity="0.5">
+    <line x1="140" y1="160" x2="260" y2="300"/>
+    <line x1="155" y1="150" x2="275" y2="290"/>
+    <line x1="170" y1="145" x2="275" y2="275"/>
+    <line x1="140" y1="200" x2="260" y2="340"/>
+    <line x1="130" y1="250" x2="250" y2="350"/>
+    <line x1="270" y1="160" x2="150" y2="300"/>
+    <line x1="255" y1="150" x2="135" y2="290"/>
+    <line x1="270" y1="200" x2="140" y2="340"/>
+  </g>
+  <ellipse cx="168" cy="188" rx="20" ry="12" fill="rgba(255,255,255,0.25)"/>
+  <!-- Couronne de feuilles -->
+  <path d="M200 135 Q175 100 165 75 Q188 108 200 135Z" fill="#2E8B57"/>
+  <path d="M200 135 Q185 95 190 70 Q198 100 200 135Z" fill="#388E3C"/>
+  <path d="M200 135 Q200 92 200 68 Q202 98 200 135Z" fill="#43A047"/>
+  <path d="M200 135 Q215 95 210 70 Q202 100 200 135Z" fill="#388E3C"/>
+  <path d="M200 135 Q225 100 235 75 Q212 108 200 135Z" fill="#2E8B57"/>
+  <path d="M200 135 Q240 112 252 88 Q222 115 200 135Z" fill="#1B5E20"/>
+  <path d="M200 135 Q160 112 148 88 Q178 115 200 135Z" fill="#1B5E20"/>
+  <text x="200" y="385" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" font-weight="bold" fill="#E65100">Ananas</text>
+</svg>

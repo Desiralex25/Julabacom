@@ -42,18 +42,7 @@ const StockContext = createContext<StockContextType | undefined>(undefined);
 
 // ── Données initiales ────────────────────────────────────────
 
-const MOCK_STOCK: StockItem[] = [
-  { id: '1', name: 'Riz local',    category: 'cereales',   unit: 'kg',      quantity: 150, purchasePrice: 600,  salePrice: 650,  seuilAlerte: 30  },
-  { id: '2', name: 'Tomates',      category: 'legumes',    unit: 'kg',      quantity: 45,  purchasePrice: 300,  salePrice: 350,  seuilAlerte: 15  },
-  { id: '3', name: 'Oignons',      category: 'legumes',    unit: 'kg',      quantity: 80,  purchasePrice: 350,  salePrice: 400,  seuilAlerte: 20  },
-  { id: '4', name: 'Huile',        category: 'epices',     unit: 'L',       quantity: 25,  purchasePrice: 1400, salePrice: 1500, seuilAlerte: 5   },
-  { id: '5', name: 'Ignames',      category: 'tubercules', unit: 'kg',      quantity: 120, purchasePrice: 350,  salePrice: 400,  seuilAlerte: 25  },
-  { id: '6', name: 'Plantain',     category: 'fruits',     unit: 'régimes', quantity: 15,  purchasePrice: 250,  salePrice: 300,  seuilAlerte: 5   },
-  { id: '7', name: 'Maïs',        category: 'cereales',   unit: 'kg',      quantity: 200, purchasePrice: 250,  salePrice: 300,  seuilAlerte: 40  },
-  { id: '8', name: 'Piment',       category: 'epices',     unit: 'kg',      quantity: 8,   purchasePrice: 800,  salePrice: 1000, seuilAlerte: 5   },
-  { id: '9', name: 'Attiéké',     category: 'cereales',   unit: 'kg',      quantity: 60,  purchasePrice: 400,  salePrice: 500,  seuilAlerte: 15  },
-  { id: '10', name: 'Gombo',       category: 'legumes',    unit: 'kg',      quantity: 12,  purchasePrice: 600,  salePrice: 750,  seuilAlerte: 8   },
-];
+// ✅ MOCK_STOCK SUPPRIMÉ - Migration Supabase
 
 // ── Provider ─────────────────────────────────────────────────
 
@@ -63,33 +52,21 @@ export function StockProvider({ children }: { children: ReactNode }) {
 
   const storageKey = user?.id ? `julaba_stock_${user.id}` : null;
 
-  const [stock, setStock] = useState<StockItem[]>(() => {
-    if (!user?.id) return MOCK_STOCK;
-    try {
-      const saved = localStorage.getItem(`julaba_stock_${user.id}`);
-      return saved ? JSON.parse(saved) : MOCK_STOCK;
-    } catch {
-      return MOCK_STOCK;
-    }
-  });
+  const [stock, setStock] = useState<StockItem[]>([]);
 
-  // Persistance scopée par userId
-  useEffect(() => {
-    if (storageKey) {
-      try { localStorage.setItem(storageKey, JSON.stringify(stock)); } catch {}
-    }
-  }, [stock, storageKey]);
-
-  // Reset si userId change
-  useEffect(() => {
-    if (!user?.id) { setStock(MOCK_STOCK); return; }
-    try {
-      const saved = localStorage.getItem(`julaba_stock_${user.id}`);
-      setStock(saved ? JSON.parse(saved) : MOCK_STOCK);
-    } catch {
-      setStock(MOCK_STOCK);
-    }
-  }, [user?.id]);
+  // TODO: Charger depuis Supabase au mount et lors du changement d'utilisateur
+  // ✅ localStorage SUPPRIMÉ
+  // useEffect(() => {
+  //   if (user?.id) {
+  //     const loadStock = async () => {
+  //       const { data } = await supabase.from('stock').select('*').eq('userId', user.id);
+  //       setStock(data || []);
+  //     };
+  //     loadStock();
+  //   } else {
+  //     setStock([]);
+  //   }
+  // }, [user?.id]);
 
   // ── Détection automatique stocks faibles ─────────────────
   // On garde un ref pour ne pas re-déclencher la même alerte sans cesse

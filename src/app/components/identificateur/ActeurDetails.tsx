@@ -2,80 +2,15 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Phone, MapPin, Briefcase, Calendar, CheckCircle, XCircle, Clock, Lock, Edit } from 'lucide-react';
 import { motion } from 'motion/react';
+import { ACTEURS_BY_NUMERO } from '../../data/acteursData';
 
 const PRIMARY_COLOR = '#9F8170';
-
-// Mock data - à remplacer par vraies données
-const MOCK_ACTEURS_DETAILS: Record<string, any> = {
-  '0722456789': {
-    numero: '0722456789',
-    nom: 'KOUASSI',
-    prenoms: 'Jean',
-    type: 'Marchand',
-    activite: 'Vente de légumes',
-    zone: 'Marché de Cocody',
-    statut: 'approved',
-    dateIdentification: '2024-02-15',
-    dateValidation: '2024-02-16',
-    identificateur: 'YAO Marie (ID007)',
-    coordonneesGPS: '5.3599° N, 4.0083° W',
-    photo: null,
-    documents: ['CNI', 'Attestation marché'],
-    historique: [
-      { date: '2024-02-16', action: 'Validation', par: 'Institution', statut: 'approved' },
-      { date: '2024-02-15', action: 'Soumission', par: 'YAO Marie', statut: 'submitted' },
-      { date: '2024-02-15', action: 'Création dossier', par: 'YAO Marie', statut: 'draft' },
-    ],
-    maZone: true, // true si c'est dans la zone de l'identificateur connecté
-  },
-  '0722334455': {
-    numero: '0722334455',
-    nom: 'KOFFI',
-    prenoms: 'Marie',
-    type: 'Producteur',
-    activite: 'Culture de manioc',
-    zone: 'Marché de Cocody',
-    statut: 'submitted',
-    dateIdentification: '2024-02-20',
-    dateValidation: null,
-    identificateur: 'YAO Marie (ID007)',
-    coordonneesGPS: '5.3650° N, 4.0120° W',
-    photo: null,
-    documents: ['CNI', 'Attestation village'],
-    historique: [
-      { date: '2024-02-20', action: 'Soumission', par: 'YAO Marie', statut: 'submitted' },
-      { date: '2024-02-20', action: 'Création dossier', par: 'YAO Marie', statut: 'draft' },
-    ],
-    maZone: true,
-  },
-  '0555123456': {
-    numero: '0555123456',
-    nom: 'TOURE',
-    prenoms: 'Awa',
-    type: 'Producteur',
-    activite: 'Culture de bananes',
-    zone: 'Village Adzopé',
-    statut: 'approved',
-    dateIdentification: '2024-01-10',
-    dateValidation: '2024-01-11',
-    identificateur: 'DIABATE Ibrahim (ID002)',
-    coordonneesGPS: '6.1072° N, 3.8630° W',
-    photo: null,
-    documents: ['CNI'],
-    historique: [
-      { date: '2024-01-11', action: 'Validation', par: 'Institution', statut: 'approved' },
-      { date: '2024-01-10', action: 'Soumission', par: 'DIABATE Ibrahim', statut: 'submitted' },
-      { date: '2024-01-10', action: 'Création dossier', par: 'DIABATE Ibrahim', statut: 'draft' },
-    ],
-    maZone: false, // HORS ZONE - verrouillé
-  },
-};
 
 export function ActeurDetails() {
   const { numero } = useParams<{ numero: string }>();
   const navigate = useNavigate();
 
-  const acteur = numero ? MOCK_ACTEURS_DETAILS[numero] : null;
+  const acteur = numero ? ACTEURS_BY_NUMERO[numero] : null;
 
   if (!acteur) {
     return (
@@ -102,7 +37,7 @@ export function ActeurDetails() {
         return <div className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700 flex items-center gap-1">
           <CheckCircle className="w-4 h-4" /> Validé
         </div>;
-      case 'submitted':
+      case 'soumis':
         return <div className="px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700 flex items-center gap-1">
           <Clock className="w-4 h-4" /> En cours de validation
         </div>;
@@ -156,7 +91,7 @@ export function ActeurDetails() {
               <div>
                 <p className="font-bold text-red-900">Acteur hors de votre zone</p>
                 <p className="text-sm text-red-700 mt-1">
-                  Cet acteur appartient à la zone "{acteur.zone}". Vous ne pouvez pas modifier ses informations.
+                  Cet acteur appartient à la zone "{acteur.marche}". Vous ne pouvez pas modifier ses informations.
                 </p>
               </div>
             </div>
@@ -186,9 +121,7 @@ export function ActeurDetails() {
               <Briefcase className="w-5 h-5 text-gray-600 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-600">Type d'acteur</p>
-                <p className="font-bold text-gray-900">
-                  {acteur.type === 'Marchand' ? '🏪' : '🌾'} {acteur.type}
-                </p>
+                <p className="font-bold text-gray-900 capitalize">{acteur.role}</p>
               </div>
             </div>
 
@@ -203,8 +136,9 @@ export function ActeurDetails() {
             <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
               <MapPin className="w-5 h-5 text-gray-600 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600">Zone</p>
-                <p className="font-bold text-gray-900">{acteur.zone}</p>
+                <p className="text-xs text-gray-600">Zone / Marché</p>
+                <p className="font-bold text-gray-900">{acteur.marche}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{acteur.commune}</p>
               </div>
             </div>
 

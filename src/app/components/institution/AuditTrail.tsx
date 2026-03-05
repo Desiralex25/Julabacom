@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { matchesSearch } from '../../utils/searchUtils';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   History,
@@ -317,7 +318,7 @@ export function AuditTrail() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
             onClick={() => setShowDetailModal(false)}
           >
             <motion.div

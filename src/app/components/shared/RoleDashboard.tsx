@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   TrendingUp, 
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-import tantieSagesseImg from 'figma:asset/ea74d578f6b563853423b6d08f6cc6dcb454702f.png';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 import { RoleConfig } from '../../config/roleConfig';
 import { CompactProfileCard } from './CompactProfileCard';
 import { WalletCard } from '../wallet/WalletCard';
@@ -74,7 +74,7 @@ interface RoleDashboardProps {
   setShowAction1Modal?: (show: boolean) => void;
   setShowAction2Modal?: (show: boolean) => void;
   speak: (text: string) => void;
-  navigate: (path: string) => void;
+  navigate: (path: string, options?: { state?: any }) => void;
   showCoachMark?: boolean;
   onDismissCoachMark?: () => void;
   customGreeting?: React.ReactNode;
@@ -156,8 +156,11 @@ export function RoleDashboard({
   // Calculer la "marge" (différence entre KPI1 et KPI2 pour certains rôles)
   const difference = stats.kpi1Value - stats.kpi2Value;
 
+  // Ref Tantie Sagesse (image bounce)
+  const tantieSagesseRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className={`pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b ${gradientFrom} ${gradientTo}`}>
+    <div className={`pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b ${gradientFrom} ${gradientTo}`}>
       
       {/* Carte de profil compacte */}
       {showProfileCard && (
@@ -201,7 +204,7 @@ export function RoleDashboard({
             </motion.div>
 
             {/* Card contenu à droite */}
-            <Card className="flex-1 px-8 py-6 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: primaryColor }}>
+            <Card className="flex-1 px-4 py-3 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: primaryColor }}>
               {/* Fond animé */}
               <motion.div
                 className="absolute inset-0 opacity-5"
@@ -213,9 +216,11 @@ export function RoleDashboard({
                 transition={{ duration: 3, repeat: Infinity }}
               />
               
-              <div className="relative z-10 w-full h-full">
-                <motion.h3 
-                  className="font-bold text-2xl text-gray-900 mb-2"
+              <div className="relative z-10 flex flex-col h-full gap-1">
+                {/* Titre */}
+                <motion.h3
+                  className="font-black text-gray-900 leading-none"
+                  style={{ fontSize: '20px' }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
@@ -223,11 +228,11 @@ export function RoleDashboard({
                 >
                   Tantie Sagesse
                 </motion.h3>
-                <motion.p 
-                  className="text-gray-600 leading-relaxed pr-4"
-                  style={{
-                    fontSize: user?.firstName && user.firstName.length > 15 ? '0.875rem' : '1rem'
-                  }}
+
+                {/* Message */}
+                <motion.p
+                  className="text-gray-600 leading-snug flex-1"
+                  style={{ fontSize: 'clamp(0.72rem, 2.2vw, 0.9rem)' }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 }}
@@ -235,21 +240,23 @@ export function RoleDashboard({
                 >
                   {customGreeting || `Bonjour ${user?.firstName} ! ${roleConfig.greeting}`}
                 </motion.p>
+
+                {/* Bouton écouter — bas droite */}
+                <div className="flex justify-end flex-shrink-0">
+                  <motion.button
+                    onClick={handleListenMessage}
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md flex-shrink-0"
+                    style={{ backgroundColor: primaryColor }}
+                    whileHover={{ scale: 1.1, boxShadow: `0 8px 20px ${primaryColor}40` }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </motion.button>
+                </div>
               </div>
-              
-              <motion.button
-                onClick={handleListenMessage}
-                className="flex items-center gap-2 px-6 py-3 rounded-full text-base font-semibold text-white shadow-md absolute bottom-5 left-8 z-20"
-                style={{ backgroundColor: primaryColor }}
-                whileHover={{ scale: 1.05, boxShadow: `0 8px 20px ${primaryColor}33` }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Volume2 className="w-5 h-5" />
-                Écouter
-              </motion.button>
             </Card>
           </div>
         </motion.div>
@@ -538,7 +545,12 @@ export function RoleDashboard({
                 if (setShowAction1Modal) {
                   setShowAction1Modal(true);
                 } else {
-                  navigate(roleConfig.mainActions.action1.route);
+                  // Pour la coopérative, on navigue vers le marché avec la vue "achats"
+                  if (role === 'cooperative') {
+                    navigate(roleConfig.mainActions.action1.route, { state: { vue: 'achats' } });
+                  } else {
+                    navigate(roleConfig.mainActions.action1.route);
+                  }
                 }
               }}
               className="w-full text-left"
@@ -598,7 +610,12 @@ export function RoleDashboard({
                 if (setShowAction2Modal) {
                   setShowAction2Modal(true);
                 } else {
-                  navigate(roleConfig.mainActions.action2.route);
+                  // Pour la coopérative, on navigue vers le marché avec la vue "ventes"
+                  if (role === 'cooperative') {
+                    navigate(roleConfig.mainActions.action2.route, { state: { vue: 'ventes' } });
+                  } else {
+                    navigate(roleConfig.mainActions.action2.route);
+                  }
                 }
               }}
               className="w-full text-left"
@@ -670,11 +687,11 @@ export function RoleDashboard({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={onDismissCoachMark}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
               />
               
               {/* Coach Mark Modal */}
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -770,11 +787,11 @@ export function RoleDashboard({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDisabledModal(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
             />
             
             {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}

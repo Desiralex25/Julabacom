@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { useStock } from '../../contexts/StockContext';
-import tantieSagesseImg from 'figma:asset/c503d0acc72377dbc52462a00eea2a8e1e249e38.png';
+const tantieSagesseImg = '/images/tantie-sagesse-vente.svg';
 
 interface VenteVocaleModalProps {
   isOpen: boolean;
@@ -199,8 +199,6 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      console.log('Commande vocale:', transcript);
-      
       // Si on est en attente de confirmation
       if (pendingSale) {
         const normalized = transcript.toLowerCase();
@@ -298,7 +296,7 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[100] flex flex-col"
+        className="fixed inset-0 z-[200] flex flex-col"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -308,7 +306,7 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(https://images.unsplash.com/photo-1759344114577-b6c32e4d68c8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwbWFya2V0JTIwdmVnZXRhYmxlcyUyMGNvbG9yZnVsfGVufDF8fHx8MTc3MjIyNDQ3MXww&ixlib=rb-4.1.0&q=80&w=1080)`,
+            backgroundImage: `url(/images/bg-marche-vente.svg)`,
             filter: 'blur(12px) brightness(0.7)',
           }}
         />
@@ -468,18 +466,17 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
 
         {/* Bouton de fermeture flottant centré en bas */}
         <motion.button
-          onClick={onClose}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white/90 backdrop-blur-lg border-2 border-white/50 shadow-2xl flex items-center justify-center text-gray-800 hover:bg-white transition-all z-[110]"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white/90 backdrop-blur-lg border-2 border-white/50 shadow-2xl flex items-center justify-center text-gray-800 hover:bg-white transition-all z-[210]"
           initial={{ opacity: 0, y: 50, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.8 }}
           transition={{ delay: 0.6, type: 'spring', stiffness: 300, damping: 25 }}
           whileHover={{ scale: 1.1, boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)' }}
           whileTap={{ scale: 0.9 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
         >
           <X className="w-8 h-8" strokeWidth={3} />
         </motion.button>

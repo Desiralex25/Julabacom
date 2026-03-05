@@ -49,9 +49,9 @@ function InfoField({ icon: Icon, label, value }: { icon: any; label: string; val
     <div className="p-3 rounded-xl bg-white/50 border border-gray-200">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-4 h-4 text-gray-500" />
-        <p className="text-xs font-semibold text-gray-600">{label}</p>
+        <p className="text-xs font-semibold text-gray-600 truncate">{label}</p>
       </div>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
     </div>
   );
 }

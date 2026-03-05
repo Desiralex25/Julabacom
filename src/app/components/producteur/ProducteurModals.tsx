@@ -4,6 +4,7 @@ import { Calendar, TrendingUp, AlertCircle, DollarSign, Award, FileText, Receipt
 import { useApp } from '../../contexts/AppContext';
 import { useProducteur } from '../../contexts/ProducteurContext';
 import { useNavigate } from 'react-router';
+import { Montant, MontantCard } from '../shared/Montant';
 
 const PRIMARY_COLOR = '#2E8B57';
 
@@ -25,12 +26,12 @@ function BaseModal({ isOpen, onClose, children }: BaseModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
             onClick={onClose}
           />
           
           {/* Contenu du modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -211,10 +212,9 @@ export function VentesModal({ isOpen, onClose }: VentesModalProps) {
           {/* KPI Principal */}
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border-2 border-blue-200">
             <p className="text-sm font-semibold text-gray-600 mb-2">Total revenus</p>
-            <p className="text-4xl font-black text-blue-600 mb-1">
-              {stats.revenusTotaux.toLocaleString()}
-            </p>
-            <p className="text-lg font-bold text-gray-600">FCFA</p>
+            <MontantCard accentColor="#3b82f6" className="rounded-xl">
+              <Montant value={stats.revenusTotaux} size="2xl" color="#2563eb" />
+            </MontantCard>
           </div>
 
           {/* Stats détaillées */}

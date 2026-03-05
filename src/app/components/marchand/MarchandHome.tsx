@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useStock } from '../../contexts/StockContext';
 import { Navigation } from '../layout/Navigation';
-import { TantieSagesse } from '../assistant/TantieSagesse';
 import { RoleDashboard } from '../shared/RoleDashboard';
 import { getRoleConfig } from '../../config/roleConfig';
 import { buildAlertesMarchand } from '../shared/AlertesBanner';
@@ -17,14 +16,13 @@ import {
   ScoreModal,
   ResumeModal,
 } from './MarchandModals';
-import tantieSagesseImgMarchand from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImgMarchand = '/images/tantie-sagesse.svg';
 
 export function MarchandHome() {
   const navigate = useNavigate();
   const { user, speak, currentSession, getTodayStats } = useApp();
   const { getStockFaible } = useStock();
   
-  // Construire alertes stock faible
   const alertesMarchand = buildAlertesMarchand(getStockFaible());
   
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -36,49 +34,36 @@ export function MarchandHome() {
   const [showStatsMargeModal, setShowStatsMargeModal] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
-  const [showTantieSagesseModal, setShowTantieSagesseModal] = useState(false);
   const [showCoachMark, setShowCoachMark] = useState(false);
   const [showVenteVocaleModal, setShowVenteVocaleModal] = useState(false);
 
-  // Configuration du rôle Marchand
   const roleConfig = getRoleConfig('marchand');
-
   const stats = getTodayStats();
 
-  // Stats adaptées pour RoleDashboard
   const dashboardStats = {
     kpi1Value: stats.ventes,
-    kpi2Value: stats.ventes - stats.depenses, // Marge
+    kpi2Value: stats.ventes - stats.depenses,
     caisse: stats.caisse,
   };
 
-  // Coach mark apparaît à chaque fois que la journée n'est pas ouverte
   useEffect(() => {
     if (!currentSession?.opened) {
       const timer = setTimeout(() => {
         setShowCoachMark(true);
         speak('Ouvre ta journée pour activer ta caisse');
       }, 5000);
-      
       return () => clearTimeout(timer);
     } else {
       setShowCoachMark(false);
     }
   }, [currentSession?.opened, speak]);
 
-  const handleDismissCoachMark = () => {
-    setShowCoachMark(false);
-  };
-
   const handleListenMessage = () => {
     if (!currentSession?.opened) {
-      const message = `Bonjour ${user?.firstName} ! Ouvre ta journée pour commencer`;
-      speak(message);
+      speak(`Bonjour ${user?.firstName} ! Ouvre ta journée pour commencer`);
       return;
     }
-
     let message = '';
-    
     if (stats.ventes > 0 && stats.depenses === 0) {
       message = `Bravo ! Tu as ${stats.ventes.toLocaleString()} francs CFA de ventes. Ta caisse est à ${stats.caisse.toLocaleString()} francs CFA`;
     } else if (stats.ventes > 0 && stats.depenses > 0) {
@@ -88,16 +73,9 @@ export function MarchandHome() {
     } else {
       message = `Ta caisse est prête avec ${stats.caisse.toLocaleString()} francs CFA. Commence à vendre !`;
     }
-    
     speak(message);
   };
 
-  const handleTantieSagesseClick = () => {
-    setShowTantieSagesseModal(true);
-    speak('Bonjour ! Tu veux écrire ou parler avec moi ?');
-  };
-
-  // Greeting personnalisé basé sur l'état de la session
   const customGreeting = (currentSession?.opened && currentSession.opened === true) ? (
     <>
       {stats.ventes > 0 && stats.depenses === 0 && (
@@ -119,7 +97,6 @@ export function MarchandHome() {
 
   return (
     <>
-      {/* Dashboard Marchand harmonisé */}
       <RoleDashboard
         roleConfig={roleConfig}
         role="marchand"
@@ -137,6 +114,7 @@ export function MarchandHome() {
         setShowKPI2Modal={setShowStatsMargeModal}
         setShowScoreModal={setShowScoreModal}
         setShowResumeModal={setShowResumeModal}
+        setShowAction1Modal={setShowVenteVocaleModal}
         speak={speak}
         navigate={navigate}
         showCoachMark={showCoachMark}
@@ -148,48 +126,39 @@ export function MarchandHome() {
         alertes={alertesMarchand}
       />
 
-      <Navigation role="marchand" onMicClick={handleTantieSagesseClick} />
+      <Navigation role="marchand" />
 
-      {/* Modals Ouvre/Ferme/Edit/Stats */}
       <OpenDayModal isOpen={showOpenDayModal} onClose={() => setShowOpenDayModal(false)} />
-      <EditFondModal 
-        isOpen={showEditFondModal} 
-        onClose={() => setShowEditFondModal(false)} 
+      <EditFondModal
+        isOpen={showEditFondModal}
+        onClose={() => setShowEditFondModal(false)}
         currentFond={currentSession?.fondInitial || 0}
       />
-      <CloseDayModal 
-        isOpen={showCloseDayModal} 
-        onClose={() => setShowCloseDayModal(false)} 
+      <CloseDayModal
+        isOpen={showCloseDayModal}
+        onClose={() => setShowCloseDayModal(false)}
         stats={stats}
       />
-      <StatsVentesModal 
-        isOpen={showStatsVentesModal} 
-        onClose={() => setShowStatsVentesModal(false)} 
+      <StatsVentesModal
+        isOpen={showStatsVentesModal}
+        onClose={() => setShowStatsVentesModal(false)}
         montant={stats.ventes}
       />
-      <StatsMargeModal 
-        isOpen={showStatsMargeModal} 
-        onClose={() => setShowStatsMargeModal(false)} 
+      <StatsMargeModal
+        isOpen={showStatsMargeModal}
+        onClose={() => setShowStatsMargeModal(false)}
         marge={stats.ventes - stats.depenses}
       />
       <ScoreModal isOpen={showScoreModal} onClose={() => setShowScoreModal(false)} />
-      <ResumeModal 
-        isOpen={showResumeModal} 
-        onClose={() => setShowResumeModal(false)} 
+      <ResumeModal
+        isOpen={showResumeModal}
+        onClose={() => setShowResumeModal(false)}
         stats={stats}
       />
-      <VenteVocaleModal 
-        isOpen={showVenteVocaleModal} 
-        onClose={() => setShowVenteVocaleModal(false)} 
+      <VenteVocaleModal
+        isOpen={showVenteVocaleModal}
+        onClose={() => setShowVenteVocaleModal(false)}
       />
-
-      {/* Tantie Sagesse modal */}
-      {showTantieSagesseModal && (
-        <TantieSagesse
-          isOpen={showTantieSagesseModal}
-          onClose={() => setShowTantieSagesseModal(false)}
-        />
-      )}
     </>
   );
 }

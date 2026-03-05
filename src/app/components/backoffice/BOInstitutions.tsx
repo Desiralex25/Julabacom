@@ -457,7 +457,7 @@ export function BOInstitutions() {
 
               {/* Référent */}
               <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Référent</p>
+                <p className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">R��férent</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Nom complet *</label>
@@ -544,7 +544,7 @@ export function BOInstitutions() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-end lg:items-center lg:justify-center"
+            className="fixed inset-0 z-[200] flex items-end lg:items-center lg:justify-center"
             onClick={() => setEditTarget(null)}
           >
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -622,7 +622,7 @@ export function BOInstitutions() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[400] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[210] flex items-center justify-center p-4"
             onClick={() => setDeleteTarget(null)}
           >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />

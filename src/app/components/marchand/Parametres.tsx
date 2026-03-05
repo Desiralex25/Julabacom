@@ -126,7 +126,7 @@ function ModalPIN({ isOpen, onClose, color, onSave, hasPinAlready }: {
     <AnimatePresence>
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end" onClick={onClose}>
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 26 }}
             onClick={e => e.stopPropagation()} className="bg-white rounded-t-3xl w-full p-6 pb-10">
@@ -211,7 +211,7 @@ function ModalDanger({ isOpen, title, message, onConfirm, onClose }: {
     <AnimatePresence>
       {isOpen && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-5"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-5"
           onClick={onClose}>
           <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
             onClick={e => e.stopPropagation()} className="bg-white rounded-3xl p-6 w-full max-w-sm">

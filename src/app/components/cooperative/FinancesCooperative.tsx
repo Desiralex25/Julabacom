@@ -29,6 +29,7 @@ import { useCooperative, TransactionTresorerie } from '../../contexts/Cooperativ
 import { useApp } from '../../contexts/AppContext';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import { useUser } from '../../contexts/UserContext';
+import { Montant, MontantCard } from '../shared/Montant';
 
 const COLOR = '#2072AF';
 
@@ -84,7 +85,7 @@ function ModalAjoutTransaction({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end"
           onClick={onClose}
         >
           <motion.div
@@ -320,7 +321,7 @@ export function FinancesCooperative() {
           >
             {soldeActuel.toLocaleString('fr-FR')}
           </motion.p>
-          <p className="text-white/70 text-lg">FCFA</p>
+          <p className="text-white/50 text-sm font-bold">FCFA</p>
           <div className="mt-3 flex justify-center gap-3">
             <div className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm flex items-center gap-2">
               <Users className="w-3 h-3 text-white/80" />

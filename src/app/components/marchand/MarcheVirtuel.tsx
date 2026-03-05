@@ -38,6 +38,7 @@ import { NotificationButton } from './NotificationButton';
 import { useCommande } from '../../contexts/CommandeContext';
 import { HistoriqueList } from '../marche/HistoriqueList';
 import { COMMANDES_MARCHE } from '../marche/marketplace-data';
+import { Montant } from '../shared/Montant';
 
 // Types
 interface Product {
@@ -80,7 +81,7 @@ const mockProducts: Product[] = [
     id: '1',
     name: 'Riz local',
     emoji: '🌾',
-    image: 'https://images.unsplash.com/photo-1613045935265-265ff612e0e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwcmljZSUyMGdyYWlucyUyMHdoaXRlfGVufDF8fHx8MTc3MjEyMzA2Nnww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-riz.svg',
     sellerType: 'producteur',
     sellerName: 'Kouassi Jean',
     sellerId: 'PROD-001',
@@ -96,7 +97,7 @@ const mockProducts: Product[] = [
     id: '2',
     name: 'Ignames fraîches',
     emoji: '🍠',
-    image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHlhbSUyMHR1YmVyJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjEyMzA2N3ww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-igname.svg',
     sellerType: 'cooperative',
     sellerName: 'Coopérative de Bouaké',
     sellerId: 'COOP-001',
@@ -116,7 +117,7 @@ const mockProducts: Product[] = [
     id: '3',
     name: 'Tomates fraîches',
     emoji: '🍅',
-    image: 'https://images.unsplash.com/photo-1701125242150-8b93be3f7989?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaXBlJTIwcmVkJTIwdG9tYXRvZXMlMjBmcmVzaHxlbnwxfHx8fDE3NzIwODQ2MzF8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-tomate.svg',
     sellerType: 'producteur',
     sellerName: 'Traoré Mamadou',
     sellerId: 'PROD-002',
@@ -132,7 +133,7 @@ const mockProducts: Product[] = [
     id: '4',
     name: 'Maïs grain',
     emoji: '🌽',
-    image: 'https://images.unsplash.com/photo-1764050446111-335a35cc7220?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnxlbnwxfHx8fDE3NzIxMjMwNjh8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-mais.svg',
     sellerType: 'producteur',
     sellerName: 'Yao Akissi',
     sellerId: 'PROD-003',
@@ -148,7 +149,7 @@ const mockProducts: Product[] = [
     id: '5',
     name: 'Bananes plantain',
     emoji: '🍌',
-    image: 'https://images.unsplash.com/photo-1750601455197-a7ba46fb1544?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNoJTIwZ3JlZW58ZW58MXx8fHwxNzcyMTIzMDY5fDA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-plantain.svg',
     sellerType: 'cooperative',
     sellerName: 'Coopérative Adzopé',
     sellerId: 'COOP-002',
@@ -167,7 +168,7 @@ const mockProducts: Product[] = [
     id: '6',
     name: 'Piment frais',
     emoji: '🌶️',
-    image: 'https://images.unsplash.com/photo-1761669411746-8f401c29e9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjBjaGlsaSUyMHBlcHBlciUyMGZyZXNofGVufDF8fHx8MTc3MjEyMzA2OXww&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-piment.svg',
     sellerType: 'producteur',
     sellerName: 'Ouattara Fatou',
     sellerId: 'PROD-004',
@@ -183,7 +184,7 @@ const mockProducts: Product[] = [
     id: '7',
     name: 'Aubergines',
     emoji: '🍆',
-    image: 'https://images.unsplash.com/photo-1659260180173-8d58b38648f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZ2dwbGFudCUyMGF1YmVyZ2luZSUyMHB1cnBsZXxlbnwxfHx8fDE3NzIxMjMwNjl8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-aubergine.svg',
     sellerType: 'cooperative',
     sellerName: 'Coopérative Daloa Sud',
     sellerId: 'COOP-003',
@@ -203,7 +204,7 @@ const mockProducts: Product[] = [
     id: '8',
     name: 'Gombo',
     emoji: '🫛',
-    image: 'https://images.unsplash.com/photo-1766164767278-a4a655ee2f85?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ3JlZW4lMjB2ZWdldGFibGUlMjBmcmVzaHxlbnwxfHx8fDE3NzIxMjMwNzB8MA&ixlib=rb-4.1.0&q=80&w=400',
+    image: '/images/produit-gombo.svg',
     sellerType: 'producteur',
     sellerName: 'Coulibaly Marie',
     sellerId: 'PROD-005',
@@ -834,32 +835,32 @@ export function MarcheVirtuel() {
 
         {/* ── MARKETPLACE (Coop + Producteur) ── */}
         {activeTab !== 'historique' && (<>
-        {/* 3. Filtres catégories - Horizontal Scroll */}
-        <div className="flex items-center gap-3 lg:gap-4 overflow-x-auto pb-4 mb-5 scrollbar-hide">
+        {/* 3. Filtres catégories - Grille 5 colonnes sur une seule ligne */}
+        <div className="grid grid-cols-5 gap-2 mb-5">
           {categories.map((cat, index) => {
             const IconComponent = cat.icon;
             return (
               <motion.button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex-shrink-0 flex flex-col items-center justify-center gap-2 min-w-[90px] lg:min-w-[140px] px-4 lg:px-6 py-3 lg:py-5 rounded-2xl text-xs font-bold transition-all ${
+                className={`flex flex-col items-center justify-center gap-1.5 w-full px-1 py-3 rounded-2xl font-bold transition-all border-2 ${
                   selectedCategory === cat.id
-                    ? 'bg-gradient-to-br from-[#C46210] to-[#D97706] text-white shadow-lg shadow-orange-300/50'
-                    : 'bg-white text-gray-700 border border-gray-200 shadow-sm'
+                    ? 'bg-gradient-to-br from-[#C46210] to-[#D97706] text-white shadow-lg shadow-orange-300/50 border-[#C46210]'
+                    : 'bg-white text-gray-700 border-gray-200 shadow-sm'
                 }`}
                 whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.05, y: -2 }}
+                whileHover={{ scale: 1.03, y: -2 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <IconComponent 
-                  className={`w-8 h-8 lg:w-10 lg:h-10 ${
+                <IconComponent
+                  className={`w-5 h-5 flex-shrink-0 ${
                     selectedCategory === cat.id ? 'text-white' : 'text-[#C46210]'
                   }`}
                   strokeWidth={2.5}
                 />
-                <span className={`text-xs lg:text-sm font-semibold ${
+                <span className={`text-[10px] font-semibold leading-tight truncate w-full text-center ${
                   selectedCategory === cat.id ? 'text-white' : 'text-gray-600'
                 }`}>
                   {cat.label}
@@ -945,8 +946,7 @@ export function MarcheVirtuel() {
 
                 {/* Prix */}
                 <p className="text-2xl font-bold text-[#C46210] mb-3">
-                  {product.price.toLocaleString('fr-FR')} FCFA
-                  <span className="text-xs text-gray-500 ml-1">/{product.unit}</span>
+                  <Montant value={product.price} unit={product.unit} size="xl" color="#C46210" />
                 </p>
 
                 {/* Bouton Ajouter */}
@@ -981,7 +981,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
             onClick={() => setSelectedProduct(null)}
           >
             <motion.div
@@ -1020,8 +1020,7 @@ export function MarcheVirtuel() {
                 <div className="text-center">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">{selectedProduct.name}</h3>
                   <p className="text-3xl font-bold text-[#C46210]">
-                    {selectedProduct.price} FCFA
-                    <span className="text-base text-gray-500 ml-2">/ {selectedProduct.unit}</span>
+                    <Montant value={selectedProduct.price} unit={selectedProduct.unit} size="2xl" color="#C46210" />
                   </p>
                 </div>
 
@@ -1114,7 +1113,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowCart(false)}
           >
             <motion.div
@@ -1168,7 +1167,7 @@ export function MarcheVirtuel() {
                             <h3 className="font-bold text-gray-900">{item.product.name}</h3>
                             <p className="text-sm text-gray-500">{item.product.producer}</p>
                             <p className="text-lg font-bold text-[#C46210] mt-1">
-                              {item.product.price.toLocaleString('fr-FR')} FCFA / {item.product.unit}
+                              <Montant value={item.product.price} unit={item.product.unit} size="md" color="#C46210" />
                             </p>
                           </div>
                         </div>
@@ -1202,7 +1201,7 @@ export function MarcheVirtuel() {
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-lg font-bold text-gray-900">Total</span>
                         <span className="text-3xl font-bold text-[#C46210]">
-                          {cartTotal.toLocaleString('fr-FR')} FCFA
+                          <Montant value={cartTotal} size="2xl" color="#C46210" />
                         </span>
                       </div>
 
@@ -1236,7 +1235,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowFavorites(false)}
           >
             <motion.div
@@ -1347,7 +1346,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowPaymentModal(false);
               setPaymentMethod(null);
@@ -1383,7 +1382,7 @@ export function MarcheVirtuel() {
                 <div className="bg-orange-50 rounded-2xl p-4 mb-6">
                   <p className="text-sm text-gray-600 mb-1">Montant à payer</p>
                   <p className="text-3xl font-bold text-[#C46210]">
-                    {cartTotal.toLocaleString('fr-FR')} FCFA
+                    <Montant value={cartTotal} size="2xl" color="#C46210" />
                   </p>
                 </div>
 
@@ -1411,7 +1410,7 @@ export function MarcheVirtuel() {
                     <div className="flex-1 text-left">
                       <h3 className="font-bold text-gray-900 text-lg">Payer par Wallet</h3>
                       <p className="text-sm text-gray-600 mt-1">
-                        Solde disponible: {walletBalance.toLocaleString('fr-FR')} FCFA
+                        Solde disponible: {walletBalance.toLocaleString('fr-FR')} <span className="text-[10px] opacity-70">FCFA</span>
                       </p>
                     </div>
                     {paymentMethod === 'wallet' && (
@@ -1492,7 +1491,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowPinModal(false);
               setPinCode('');
@@ -1566,7 +1565,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowSuccessModal(false);
             }}
@@ -1634,7 +1633,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowErrorModal(false);
             }}
@@ -1672,7 +1671,7 @@ export function MarcheVirtuel() {
                   </p>
                 </div>
 
-                {/* Message d'erreur */}
+                {/* Message d erreur */}
                 <div className="bg-gray-50 rounded-2xl p-4">
                   <p className="text-sm text-gray-600 mb-1">Une erreur s'est produite</p>
                   <p className="text-lg font-bold text-red-500">{errorMessage}</p>
@@ -1702,7 +1701,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowNegotiationModal(false);
               setProductToNegotiate(null);
@@ -1825,13 +1824,13 @@ export function MarcheVirtuel() {
                     <div>
                       <p className="text-sm text-gray-600">Prix catalogue</p>
                       <p className="text-lg font-bold text-gray-400 line-through">
-                        {(productToNegotiate.price * negotiationQuantity).toLocaleString()} FCFA
+                        {(productToNegotiate.price * negotiationQuantity).toLocaleString()} <span className="text-[11px] opacity-60">FCFA</span>
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Ton total</p>
                       <p className="text-2xl font-bold text-[#C46210]">
-                        {(negotiationPrice * negotiationQuantity).toLocaleString()} FCFA
+                        <Montant value={negotiationPrice * negotiationQuantity} size="xl" color="#C46210" />
                       </p>
                     </div>
                   </div>
@@ -1882,7 +1881,7 @@ export function MarcheVirtuel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => {
               setShowNegotiationSuccess(false);
               setShowCart(false);

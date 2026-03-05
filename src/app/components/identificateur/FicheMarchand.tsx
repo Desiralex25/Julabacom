@@ -92,7 +92,7 @@ export function FicheMarchand() {
   };
 
   return (
-    <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl mx-auto min-h-screen">
+    <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl mx-auto min-h-screen">
       
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -354,7 +354,7 @@ export function FicheMarchand() {
 
       {/* Modal code de sécurité */}
       {showCodeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

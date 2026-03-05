@@ -30,6 +30,7 @@ import { useUser } from '../../contexts/UserContext';
 import { getRoleColor } from '../../config/roleConfig';
 import { RechargeWalletModal } from './RechargeWalletModal';
 import { WithdrawWalletModal } from './WithdrawWalletModal';
+import { Montant, MontantCard } from '../shared/Montant';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -165,7 +166,7 @@ function ModalRecevoir({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end"
           onClick={onClose}
         >
           <motion.div
@@ -285,7 +286,7 @@ function ModalEnvoyer({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-end"
           onClick={onClose}
         >
           <motion.div
@@ -551,20 +552,6 @@ export function WalletPage() {
             </motion.button>
 
             <p className="text-white/70 text-lg">FCFA</p>
-
-            {/* Sous-soldes */}
-            {escrow > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm"
-              >
-                <Clock className="w-4 h-4 text-white/80" />
-                <span className="text-sm text-white/90">
-                  {showBalance ? `${escrow.toLocaleString('fr-FR')} FCFA` : '•••'} en attente
-                </span>
-              </motion.div>
-            )}
           </div>
         </div>
       </div>
@@ -631,7 +618,7 @@ export function WalletPage() {
                 <TrendingUp className="w-4 h-4 text-green-600" />
                 <span className="text-xs text-green-600 font-semibold">Entrées</span>
               </div>
-              <p className="font-bold text-gray-900">
+              <p className="font-bold text-gray-900 truncate">
                 {showBalance ? `${stats30j.entrees.toLocaleString('fr-FR')} FCFA` : '••••'}
               </p>
             </div>

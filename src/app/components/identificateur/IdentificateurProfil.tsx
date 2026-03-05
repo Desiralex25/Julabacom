@@ -55,6 +55,8 @@ import { DocumentsCertificationsModalUniversal } from '../shared/DocumentsCertif
 import { SupportCardProfil } from '../shared/SupportCardProfil';
 import { DocumentModal } from '../marchand/DocumentModal';
 import { DocumentData, DocumentStatus, getStatusColor, getStatusLabel } from '../../types/document';
+import { IdentificationInfoBadge } from '../shared/IdentificationInfoBadge';
+import { FicheIdentificationModal } from '../marchand/FicheIdentificationModal';
 import QRCode from 'qrcode';
 import { SimulateurBO } from '../shared/SimulateurBO';
 import { PartenairesLogos } from '../shared/PartenairesLogos';
@@ -91,7 +93,7 @@ export function IdentificateurProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1635231152740-dcfba853f33d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpZGVudGl0eSUyMGNhcmQlMjBkb2N1bWVudHxlbnwxfHx8fDE3NzIzNzQ1NjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-cni.svg',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -111,7 +113,7 @@ export function IdentificateurProfil() {
       type: 'certification-julaba',
       title: 'Certification JULABA Identificateur',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1637763723578-79a4ca9225f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNlcnRpZmljYXRlJTIwZG9jdW1lbnR8ZW58MXx8fHwxNzcyMzc0NTY4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-certificat.svg',
       uploadedAt: '2024-02-20T08:00:00Z',
       verifiedAt: '2024-02-20T14:00:00Z',
       verifiedBy: 'Aminata Touré - JULABA',
@@ -204,7 +206,7 @@ export function IdentificateurProfil() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-stone-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-stone-50 to-white">
         
         {/* 🎴 MA CARTE PROFESSIONNELLE - Style Moderne avec Flip */}
         <motion.div
@@ -214,20 +216,31 @@ export function IdentificateurProfil() {
           className="mb-4"
         >
           {/* Header avec boutons actions */}
-          <div className="flex items-center justify-center mb-3">
-            {/* Bouton Afficher/Masquer */}
+          <div className="flex items-center gap-3 mb-3">
+            {/* Bouton Afficher/Masquer carte */}
             <motion.button
               onClick={() => {
                 setShowProfessionalCard(!showProfessionalCard);
                 speak(showProfessionalCard ? 'Carte masquée' : 'Carte affichée');
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
               style={{ backgroundColor: roleColor }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <CreditCard className="w-4 h-4" />
-              {showProfessionalCard ? 'Masquer ma carte professionnelle' : 'Afficher ma carte professionnelle'}
+              {showProfessionalCard ? 'Masquer ma carte' : 'Afficher ma carte'}
+            </motion.button>
+            {/* Bouton Réglages */}
+            <motion.button
+              onClick={() => navigate('/identificateur/parametres')}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-sm border-2"
+              style={{ borderColor: roleColor, color: roleColor, backgroundColor: `${roleColor}0f` }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              Réglages
             </motion.button>
           </div>
 
@@ -525,20 +538,22 @@ export function IdentificateurProfil() {
           </motion.button>
         </motion.div>
 
-        {/* Fiche d'identification - Juste sous la carte */}
+        {/* Fiche d'identification - Badge unifié */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, type: 'spring', stiffness: 200 }}
           className="mb-4"
         >
-          <DocumentCard
-            icon={FileText}
-            label="Fiche d'identification JULABA"
-            status="Complété"
-            statusColor="green"
-            date={new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            onClick={() => {
+          <IdentificationInfoBadge
+            numeroFiche={(user as any).numeroIdentificateur || 'IDEN-2026-0001'}
+            nomAgent={(user as any).nomAgent || 'BAMBA'}
+            prenomAgent={(user as any).prenomAgent || 'Issa'}
+            dateIdentification={(user as any).dateIdentification || '2026-02-10T09:30:00Z'}
+            statut={((user as any).statutIdentification as any) || 'valide'}
+            raisonsRejet={(user as any).raisonsRejetIdentification}
+            accentColor="#9F8170"
+            onVoirFiche={() => {
               setShowFicheIdentification(true);
               speak('Ouverture de la fiche d\'identification');
             }}
@@ -794,6 +809,18 @@ export function IdentificateurProfil() {
 
       <Navigation role="identificateur" />
 
+      {/* Modal Fiche d'Identification */}
+      <AnimatePresence>
+        {showFicheIdentification && (
+          <FicheIdentificationModal
+            onClose={() => setShowFicheIdentification(false)}
+            speak={speak}
+            user={user}
+            onSave={(updatedUser) => updateUser(updatedUser)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Modal Info Personnelles */}
       <AnimatePresence>
         {showInfoPersonnelles && (
@@ -892,9 +919,9 @@ function InfoField({ icon: Icon, label, value }: InfoFieldProps) {
     <div className="p-3 rounded-[16px] bg-white/60 border-2 border-gray-200">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3 h-3 text-gray-500" />
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">{label}</p>
       </div>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
     </div>
   );
 }

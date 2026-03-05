@@ -53,7 +53,7 @@ export function IdentificateurStats() {
   const progressPercent = (stats.total / stats.objectifMois) * 100;
 
   return (
-    <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen">
+    <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen">
       
       {/* Header */}
       <motion.div

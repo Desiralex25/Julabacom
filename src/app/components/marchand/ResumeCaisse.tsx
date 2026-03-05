@@ -32,6 +32,8 @@ import {
   Legend,
 } from 'recharts';
 
+import { Montant, MontantCard } from '../shared/Montant';
+
 type Period = 'today' | '7days' | '30days' | 'custom';
 
 export function ResumeCaisse() {
@@ -309,7 +311,7 @@ export function ResumeCaisse() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
             >
-              {financialData.totalVentes.toLocaleString()} FCFA
+              <Montant value={financialData.totalVentes} size="xl" color="#15803d" />
             </motion.p>
             <p className="text-xs text-gray-600 mt-1">
               {financialData.nombreVentes} vente{financialData.nombreVentes > 1 ? 's' : ''}
@@ -330,7 +332,7 @@ export function ResumeCaisse() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
             >
-              {financialData.totalDepenses.toLocaleString()} FCFA
+              <Montant value={financialData.totalDepenses} size="xl" color="#b91c1c" />
             </motion.p>
             <p className="text-xs text-gray-600 mt-1">
               {financialData.nombreDepenses} dépense{financialData.nombreDepenses > 1 ? 's' : ''}
@@ -369,8 +371,7 @@ export function ResumeCaisse() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
             >
-              {financialData.beneficeNet >= 0 ? '+' : ''}
-              {financialData.beneficeNet.toLocaleString()} FCFA
+              <Montant value={financialData.beneficeNet} size="xl" color={financialData.beneficeNet >= 0 ? '#15803d' : '#b91c1c'} showPlus />
             </motion.p>
           </motion.div>
 
@@ -390,10 +391,10 @@ export function ResumeCaisse() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
             >
-              {soldeActuel.toLocaleString()} FCFA
+              <Montant value={soldeActuel} size="xl" color="#C46210" />
             </motion.p>
             <p className="text-xs text-gray-600 mt-1">
-              Fond initial: {(currentSession?.fondInitial || 0).toLocaleString()} FCFA
+              Fond initial: <Montant value={currentSession?.fondInitial || 0} size="xs" color="#6b7280" />
             </p>
           </motion.div>
         </motion.div>
@@ -412,7 +413,7 @@ export function ResumeCaisse() {
               <p className="text-sm font-semibold text-gray-700">Moyenne par vente</p>
             </div>
             <p className="text-xl font-bold" style={{ color: '#C46210' }}>
-              {financialData.moyenneVente.toLocaleString()} FCFA
+              <Montant value={financialData.moyenneVente} size="lg" color="#C46210" />
             </p>
           </motion.div>
         )}
@@ -533,7 +534,7 @@ export function ResumeCaisse() {
                     </div>
                   </div>
                   <p className="font-bold" style={{ color: '#C46210' }}>
-                    {product.total.toLocaleString()} FCFA
+                    <Montant value={product.total} size="xs" color="#C46210" />
                   </p>
                 </motion.div>
               ))}
@@ -592,7 +593,7 @@ export function ResumeCaisse() {
                       }`}
                     >
                       {transaction.type === 'vente' ? '+' : '-'}
-                      {(transaction.price * transaction.quantity).toLocaleString()} FCFA
+                      {(transaction.price * transaction.quantity).toLocaleString()} <span className="text-[10px] font-bold opacity-70">FCFA</span>
                     </p>
                     {transaction.synced !== false ? (
                       <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />

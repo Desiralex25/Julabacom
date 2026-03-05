@@ -53,7 +53,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const txKey       = user?.id ? `julaba_wallet_txns_${user.id}` : null;
   const escrowKey   = user?.id ? `julaba_wallet_escrow_${user.id}` : null;
 
-  // Chargement/reset au changement d'userId
+  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
+  // TODO: Charger wallet et transactions depuis Supabase
   useEffect(() => {
     if (!user?.id) {
       setWallet(null);
@@ -62,46 +63,32 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const storedWallet       = walletKey   ? localStorage.getItem(walletKey)   : null;
-    const storedTransactions = txKey       ? localStorage.getItem(txKey)       : null;
-    const storedEscrows      = escrowKey   ? localStorage.getItem(escrowKey)   : null;
+    // TODO: Charger depuis Supabase
+    // const loadWalletData = async () => {
+    //   const { data: walletData } = await supabase.from('wallets').select('*').eq('user_id', user.id).single();
+    //   const { data: transactionsData } = await supabase.from('wallet_transactions').select('*').eq('user_id', user.id);
+    //   const { data: escrowsData } = await supabase.from('wallet_escrows').select('*').eq('user_id', user.id);
+    //   setWallet(walletData || null);
+    //   setTransactions(transactionsData || []);
+    //   setEscrowPayments(escrowsData || []);
+    // };
+    // loadWalletData();
 
-    if (storedWallet) {
-      setWallet(JSON.parse(storedWallet));
-    } else {
-      // Initialiser un nouveau wallet pour cet utilisateur
-      const newWallet: WalletAccount = {
-        userId: user.id,
-        balance: 0,
-        currency: 'FCFA',
-        escrowBalance: 0,
-        totalReceived: 0,
-        totalSent: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setWallet(newWallet);
-      if (walletKey) localStorage.setItem(walletKey, JSON.stringify(newWallet));
-    }
-
-    setTransactions(storedTransactions ? JSON.parse(storedTransactions) : []);
-    setEscrowPayments(storedEscrows ? JSON.parse(storedEscrows) : []);
+    // En attente Supabase : Initialiser wallet vide
+    const newWallet: WalletAccount = {
+      userId: user.id,
+      balance: 0,
+      currency: 'FCFA',
+      escrowBalance: 0,
+      totalReceived: 0,
+      totalSent: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setWallet(newWallet);
+    setTransactions([]);
+    setEscrowPayments([]);
   }, [user?.id]);
-
-  // Sauvegarde automatique — scopée par userId
-  useEffect(() => {
-    if (wallet && walletKey) {
-      localStorage.setItem(walletKey, JSON.stringify(wallet));
-    }
-  }, [wallet, walletKey]);
-
-  useEffect(() => {
-    if (txKey) localStorage.setItem(txKey, JSON.stringify(transactions));
-  }, [transactions, txKey]);
-
-  useEffect(() => {
-    if (escrowKey) localStorage.setItem(escrowKey, JSON.stringify(escrowPayments));
-  }, [escrowPayments, escrowKey]);
 
   // Créer une transaction wallet
   const createTransaction = (
@@ -173,9 +160,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setWallet(updatedWallet);
     setTransactions([transaction, ...transactions]);
-
-    // TODO: Dans version production, appeler API Mobile Money
-    console.log(`✅ Rechargement ${montant} FCFA via ${provider}`);
   };
 
   // 💸 Retirer du wallet (vers Mobile Money ou Agent)
@@ -208,8 +192,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setWallet(updatedWallet);
     setTransactions([transaction, ...transactions]);
-
-    console.log(`✅ Retrait ${montant} FCFA vers ${provider}`);
   };
 
   // 🔒 Bloquer l'argent en escrow (lors du paiement d'une commande)
@@ -259,7 +241,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setTransactions([transaction, ...transactions]);
     setEscrowPayments([escrow, ...escrowPayments]);
 
-    console.log(`🔒 Argent bloqué en escrow : ${montant} FCFA pour commande ${commandeId}`);
     return escrow.id;
   };
 
@@ -281,8 +262,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setEscrowPayments(
       escrowPayments.map(e => (e.id === escrowId ? updatedEscrow : e))
     );
-
-    console.log(`✅ Escrow ${escrowId} libéré. ${receiverId} peut récupérer l'argent.`);
   };
 
   // 💵 Récupérer l'argent (action manuelle du Producteur)
@@ -318,8 +297,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setEscrowPayments(escrowPayments.filter(e => e.id !== escrowId));
     setWallet(updatedWallet);
     setTransactions([transaction, ...transactions]);
-
-    console.log(`💰 ${escrow.amount} FCFA récupérés dans le wallet`);
   };
 
   // 🔙 Rembourser (si commande annulée)
@@ -364,8 +341,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setEscrowPayments(
       escrowPayments.map(e => (e.id === escrowId ? updatedEscrow : e))
     );
-
-    console.log(`🔙 Escrow ${escrowId} remboursé à ${payerId}`);
   };
 
   // Helpers

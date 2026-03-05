@@ -92,156 +92,19 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const [commandesGroupees, setCommandesGroupees] = useState<CommandeGroupee[]>([]);
   const [soldeActuel, setSoldeActuel] = useState<number>(0);
 
-  // Charger les données depuis localStorage au démarrage
-  useEffect(() => {
-    const savedMembres = localStorage.getItem('julaba_cooperative_membres');
-    const savedTresorerie = localStorage.getItem('julaba_cooperative_tresorerie');
-    const savedCommandes = localStorage.getItem('julaba_cooperative_commandes');
-
-    if (savedMembres) {
-      setMembres(JSON.parse(savedMembres));
-    } else {
-      // Membres mock initiaux
-      const membresMock: MembreCooperative[] = [
-        {
-          id: '1',
-          nom: 'Kouassi',
-          prenom: 'Jean',
-          telephone: '+225 07 12 34 56 78',
-          specialite: 'Maraîcher',
-          localisation: 'Yopougon',
-          dateAdhesion: '2025-01-15',
-          cotisationPayee: true,
-          montantCotisation: 25000,
-          productionsActives: 5,
-          totalVentes: 1250000,
-          statut: 'actif',
-        },
-        {
-          id: '2',
-          nom: 'Koné',
-          prenom: 'Aminata',
-          telephone: '+225 05 98 76 54 32',
-          specialite: 'Céréalière',
-          localisation: 'Abobo',
-          dateAdhesion: '2025-01-10',
-          cotisationPayee: true,
-          montantCotisation: 25000,
-          productionsActives: 3,
-          totalVentes: 890000,
-          statut: 'actif',
-        },
-        {
-          id: '3',
-          nom: 'Traoré',
-          prenom: 'Ibrahim',
-          telephone: '+225 01 23 45 67 89',
-          specialite: 'Fruitier',
-          localisation: 'Adjamé',
-          dateAdhesion: '2025-02-01',
-          cotisationPayee: false,
-          montantCotisation: 25000,
-          productionsActives: 2,
-          totalVentes: 450000,
-          statut: 'actif',
-        },
-        {
-          id: '4',
-          nom: 'Ouattara',
-          prenom: 'Fatoumata',
-          telephone: '+225 07 55 66 77 88',
-          specialite: 'Tubercules',
-          localisation: 'Cocody',
-          dateAdhesion: '2024-12-20',
-          cotisationPayee: true,
-          montantCotisation: 25000,
-          productionsActives: 4,
-          totalVentes: 1680000,
-          statut: 'actif',
-        },
-      ];
-      setMembres(membresMock);
-      localStorage.setItem('julaba_cooperative_membres', JSON.stringify(membresMock));
-    }
-
-    if (savedTresorerie) {
-      setTresorerie(JSON.parse(savedTresorerie));
-    } else {
-      // Transactions mock initiales
-      const tresorerieMock: TransactionTresorerie[] = [
-        {
-          id: '1',
-          type: 'entree',
-          categorie: 'cotisation',
-          montant: 25000,
-          description: 'Cotisation mensuelle - Kouassi Jean',
-          membreId: '1',
-          membreNom: 'Kouassi Jean',
-          date: new Date().toISOString(),
-          statut: 'validee',
-        },
-        {
-          id: '2',
-          type: 'entree',
-          categorie: 'cotisation',
-          montant: 25000,
-          description: 'Cotisation mensuelle - Koné Aminata',
-          membreId: '2',
-          membreNom: 'Koné Aminata',
-          date: new Date().toISOString(),
-          statut: 'validee',
-        },
-        {
-          id: '3',
-          type: 'entree',
-          categorie: 'commission',
-          montant: 45000,
-          description: 'Commission vente groupée (3%)',
-          date: new Date().toISOString(),
-          statut: 'validee',
-        },
-        {
-          id: '4',
-          type: 'sortie',
-          categorie: 'achat_groupe',
-          montant: 350000,
-          description: 'Achat groupé engrais bio',
-          date: new Date(Date.now() - 86400000).toISOString(),
-          statut: 'validee',
-        },
-      ];
-      setTresorerie(tresorerieMock);
-      localStorage.setItem('julaba_cooperative_tresorerie', JSON.stringify(tresorerieMock));
-    }
-
-    if (savedCommandes) {
-      setCommandesGroupees(JSON.parse(savedCommandes));
-    } else {
-      // Commandes mock initiales
-      const commandesMock: CommandeGroupee[] = [
-        {
-          id: '1',
-          produit: 'Engrais bio NPK',
-          categorie: 'Intrants agricoles',
-          quantiteTotale: 500,
-          unite: 'kg',
-          prixUnitaire: 700,
-          prixTotal: 350000,
-          fournisseur: 'AgroTech CI',
-          dateCommande: new Date().toISOString(),
-          dateLivraisonPrevue: new Date(Date.now() + 7 * 86400000).toISOString(),
-          statut: 'en_cours',
-          membresParticipants: [
-            { membreId: '1', membreNom: 'Kouassi Jean', quantite: 200, montantPaye: true },
-            { membreId: '2', membreNom: 'Koné Aminata', quantite: 150, montantPaye: true },
-            { membreId: '4', membreNom: 'Ouattara Fatoumata', quantite: 150, montantPaye: false },
-          ],
-        },
-      ];
-      setCommandesGroupees(commandesMock);
-      localStorage.setItem('julaba_cooperative_commandes', JSON.stringify(commandesMock));
-    }
-  }, []);
+  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ complètement
+  // TODO: Charger les données depuis Supabase au démarrage
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     const { data: membres } = await supabase.from('cooperative_membres').select('*');
+  //     const { data: tresorerie } = await supabase.from('cooperative_tresorerie').select('*');
+  //     const { data: commandes } = await supabase.from('cooperative_commandes').select('*');
+  //     setMembres(membres || []);
+  //     setTresorerie(tresorerie || []);
+  //     setCommandesGroupees(commandes || []);
+  //   };
+  //   loadData();
+  // }, []);
 
   // Calculer le solde automatiquement
   useEffect(() => {
@@ -249,18 +112,24 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
     setSoldeActuel(solde);
   }, [tresorerie]);
 
-  // Sauvegarder dans localStorage à chaque changement
-  useEffect(() => {
-    localStorage.setItem('julaba_cooperative_membres', JSON.stringify(membres));
-  }, [membres]);
+  // TODO: Sync avec Supabase à chaque changement
+  // useEffect(() => {
+  //   if (membres.length > 0) {
+  //     supabase.from('cooperative_membres').upsert(membres);
+  //   }
+  // }, [membres]);
 
-  useEffect(() => {
-    localStorage.setItem('julaba_cooperative_tresorerie', JSON.stringify(tresorerie));
-  }, [tresorerie]);
+  // useEffect(() => {
+  //   if (tresorerie.length > 0) {
+  //     supabase.from('cooperative_tresorerie').upsert(tresorerie);
+  //   }
+  // }, [tresorerie]);
 
-  useEffect(() => {
-    localStorage.setItem('julaba_cooperative_commandes', JSON.stringify(commandesGroupees));
-  }, [commandesGroupees]);
+  // useEffect(() => {
+  //   if (commandesGroupees.length > 0) {
+  //     supabase.from('cooperative_commandes').upsert(commandesGroupees);
+  //   }
+  // }, [commandesGroupees]);
 
   // ========== GESTION DES MEMBRES ==========
   const ajouterMembre = (membre: Omit<MembreCooperative, 'id'>) => {

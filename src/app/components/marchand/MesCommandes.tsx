@@ -232,7 +232,7 @@ export function MesCommandes() {
                           </span>
                         </div>
                         <div className="font-semibold text-gray-800">
-                          {item.prixUnitaire.toLocaleString()} FCFA
+                          {item.prixUnitaire.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                         </div>
                       </div>
                     ))}
@@ -246,7 +246,7 @@ export function MesCommandes() {
                         <div className="flex-1">
                           <h4 className="font-semibold text-orange-900 mb-1">Contre-proposition reçue</h4>
                           <p className="text-sm text-orange-700 mb-2">
-                            Nouveau prix: {commande.negociation.contreProposition.montant.toLocaleString()} FCFA
+                            Nouveau prix: {commande.negociation.contreProposition.montant.toLocaleString()} <span className="text-[10px] opacity-60">FCFA</span>
                           </p>
                           {commande.negociation.contreProposition.message && (
                             <p className="text-sm text-orange-600 italic">
@@ -282,7 +282,7 @@ export function MesCommandes() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 font-medium">Montant total</span>
                       <span className="text-xl font-bold text-gray-800">
-                        {montant.toLocaleString()} FCFA
+                        {montant.toLocaleString()} <span className="text-sm opacity-60">FCFA</span>
                       </span>
                     </div>
 

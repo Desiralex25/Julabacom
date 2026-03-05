@@ -56,6 +56,8 @@ import { InfoPersonnellesModalUniversal } from '../shared/InfoPersonnellesModalU
 import { DocumentsCertificationsModalUniversal } from '../shared/DocumentsCertificationsModalUniversal';
 import { SupportCardProfil } from '../shared/SupportCardProfil';
 import { DocumentModal } from '../marchand/DocumentModal';
+import { IdentificationInfoBadge } from '../shared/IdentificationInfoBadge';
+import { FicheIdentificationModal } from '../marchand/FicheIdentificationModal';
 import { DocumentData, DocumentStatus, getStatusColor, getStatusLabel } from '../../types/document';
 import QRCode from 'qrcode';
 import { PartenairesLogos } from '../shared/PartenairesLogos';
@@ -94,7 +96,7 @@ export function ProducteurMoi() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1635231152740-dcfba853f33d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpZGVudGl0eSUyMGNhcmQlMjBkb2N1bWVudHxlbnwxfHx8fDE3NzIzNzQ1NjV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-cni.svg',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -114,7 +116,7 @@ export function ProducteurMoi() {
       type: 'certification-julaba',
       title: 'Certification JULABA Producteur',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1637763723578-79a4ca9225f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNlcnRpZmljYXRlJTIwZG9jdW1lbnR8ZW58MXx8fHwxNzcyMzc0NTY4fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      imageUrl: '/images/doc-certificat.svg',
       uploadedAt: '2024-02-20T08:00:00Z',
       verifiedAt: '2024-02-20T14:00:00Z',
       verifiedBy: 'Aminata Touré - JULABA',
@@ -207,7 +209,7 @@ export function ProducteurMoi() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-green-50 to-white">
         
         {/* 🎴 MA CARTE PROFESSIONNELLE - Style Moderne avec Flip */}
         <motion.div
@@ -558,24 +560,25 @@ export function ProducteurMoi() {
           </motion.button>
         </motion.div>
 
-        {/* Fiche d'identification - Juste sous la carte */}
+        {/* Fiche d'identification - Badge unifié */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, type: 'spring', stiffness: 200 }}
           className="mb-4"
         >
-          <DocumentCard
-            icon={FileText}
-            label="Fiche d'identification JULABA"
-            status="Complété"
-            statusColor="green"
-            date={new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            onClick={() => {
+          <IdentificationInfoBadge
+            numeroFiche={(user as any).numeroProducteur || 'PROD-2026-0001'}
+            nomAgent={(user as any).nomAgent || 'BAMBA'}
+            prenomAgent={(user as any).prenomAgent || 'Issa'}
+            dateIdentification={(user as any).dateIdentification || '2026-02-10T09:30:00Z'}
+            statut={((user as any).statutIdentification as any) || 'valide'}
+            raisonsRejet={(user as any).raisonsRejetIdentification}
+            accentColor={roleColor}
+            onVoirFiche={() => {
               setShowFicheIdentification(true);
               speak('Ouverture de la fiche d\'identification');
             }}
-            roleColor={roleColor}
           />
         </motion.div>
 
@@ -827,6 +830,18 @@ export function ProducteurMoi() {
 
       <Navigation role="producteur" />
 
+      {/* Modal Fiche d'Identification */}
+      <AnimatePresence>
+        {showFicheIdentification && (
+          <FicheIdentificationModal
+            onClose={() => setShowFicheIdentification(false)}
+            speak={speak}
+            user={user}
+            onSave={(updatedUser) => updateUser(updatedUser)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Modal Info Personnelles */}
       <AnimatePresence>
         {showInfoPersonnelles && (
@@ -925,9 +940,9 @@ function InfoField({ icon: Icon, label, value }: InfoFieldProps) {
     <div className="p-3 rounded-[16px] bg-white/60 border-2 border-gray-200">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3 h-3 text-gray-500" />
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">{label}</p>
       </div>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
     </div>
   );
 }

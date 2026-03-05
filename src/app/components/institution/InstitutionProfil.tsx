@@ -32,7 +32,6 @@ import {
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
-import { Navigation } from '../layout/Navigation';
 import { InfoPersonnellesModalUniversal } from '../shared/InfoPersonnellesModalUniversal';
 import { DocumentsCertificationsModalUniversal } from '../shared/DocumentsCertificationsModalUniversal';
 import { SupportCardProfil } from '../shared/SupportCardProfil';
@@ -96,7 +95,7 @@ export function InstitutionProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1635231152740-dcfba853f33d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      imageUrl: '/images/doc-cni.svg',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',
@@ -214,7 +213,7 @@ export function InstitutionProfil() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-purple-50 to-white">
 
         {/* ── 1. CARTE INSTITUTIONNELLE (clone exact de la Carte Pro) ──── */}
         <motion.div
@@ -223,20 +222,31 @@ export function InstitutionProfil() {
           transition={{ type: 'spring', stiffness: 200 }}
           className="mb-4"
         >
-          {/* Bouton Afficher/Masquer */}
-          <div className="flex items-center justify-center mb-3">
+          {/* Bouton Afficher/Masquer + Réglages */}
+          <div className="flex items-center gap-3 mb-3">
             <motion.button
               onClick={() => {
                 setShowCarteInstitutionnelle(!showCarteInstitutionnelle);
                 speak(showCarteInstitutionnelle ? 'Carte masquée' : 'Carte institutionnelle affichée');
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-white"
               style={{ backgroundColor: ROLE_COLOR }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Shield className="w-4 h-4" />
-              {showCarteInstitutionnelle ? 'Masquer ma carte institutionnelle' : 'Afficher ma carte institutionnelle'}
+              {showCarteInstitutionnelle ? 'Masquer ma carte' : 'Afficher ma carte'}
+            </motion.button>
+            {/* Bouton Réglages */}
+            <motion.button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm shadow-sm border-2"
+              style={{ borderColor: ROLE_COLOR, color: ROLE_COLOR, backgroundColor: `${ROLE_COLOR}0f` }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              Réglages
             </motion.button>
           </div>
 
@@ -558,7 +568,7 @@ export function InstitutionProfil() {
           transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
           className="mb-4"
         >
-          <h3 className="text-lg font-bold text-gray-900 mb-3">Activité de supervision</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Activit de supervision</h3>
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon={Users} label="Nouveaux inscrits" value="127" color={ROLE_COLOR} bgColor="from-purple-50 via-white to-purple-50" borderColor={`${ROLE_COLOR}50`} delay={0.1} />
             <StatCard icon={CheckCircle} label="Dossiers validés" value="84" color="#16A34A" bgColor="from-green-50 via-white to-green-50" borderColor="#16A34A50" delay={0.2} />
@@ -681,8 +691,6 @@ export function InstitutionProfil() {
         <PartenairesLogos />
 
       </div>
-
-      <Navigation role="institution" />
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
 
@@ -900,9 +908,9 @@ function InfoField({ icon: Icon, label, value }: InfoFieldProps) {
     <div className="p-3 rounded-[16px] bg-white/60 border-2 border-gray-200">
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-3 h-3 text-gray-500" />
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide truncate">{label}</p>
       </div>
-      <p className="text-sm font-bold text-gray-900">{value}</p>
+      <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
     </div>
   );
 }

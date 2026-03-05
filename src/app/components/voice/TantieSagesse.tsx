@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import tantieSagesseAvatar from 'figma:asset/c57c6b035a1cf2a547f2ddf8ab7ca6884bc3980e.png';
+const tantieSagesseAvatar = '/images/tantie-sagesse.svg';
 
 interface TantieSagesseProps {
   isVisible: boolean;
@@ -43,7 +43,7 @@ export function TantieSagesse({ isVisible, isSpeaking, onSkip }: TantieSagessePr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[59]"
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[200]"
           />
 
           {/* Tantie Sagesse */}
@@ -52,7 +52,7 @@ export function TantieSagesse({ isVisible, isSpeaking, onSkip }: TantieSagessePr
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60]"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[210]"
           >
             {/* Cercle lumineux pulsant en arrière-plan */}
             <motion.div
@@ -198,7 +198,7 @@ export function TantieSagesse({ isVisible, isSpeaking, onSkip }: TantieSagessePr
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ delay: 0.3 }}
                 onClick={handleSkip}
-                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[61] bg-white/90 backdrop-blur-sm text-gray-700 text-sm font-medium px-4 py-2 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all duration-200 border border-gray-200"
+                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[210] bg-white/90 backdrop-blur-sm text-gray-700 text-sm font-medium px-4 py-2 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all duration-200 border border-gray-200"
               >
                 Passer
               </motion.button>

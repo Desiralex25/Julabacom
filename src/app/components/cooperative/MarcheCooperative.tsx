@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingCart,
@@ -33,8 +34,10 @@ import {
 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
+import { Montant } from '../shared/Montant';
 
 // ─── Couleurs ────────────────────────────────────────────────────────────────
 const C = '#2072AF';
@@ -236,7 +239,7 @@ function StepperStatut({ statut }: { statut: Statut }) {
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export function MarcheCooperative() {
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
   const [vue, setVue] = useState<VueType>('achats');
   const [commandes, setCommandes] = useState<CommandeGroupee[]>(mockCommandes);
   const [searchQuery, setSearchQuery] = useState('');
@@ -269,23 +272,11 @@ export function MarcheCooperative() {
   const [fournisseurChoisi, setFournisseurChoisi] = useState('');
   const [membresPaiement, setMembresPaiement] = useState<string[]>([]);
 
-  // ── Synchronisation Bottom Bar ──────────────────────────────────────────
-  useEffect(() => {
-    const anyModalOpen =
-      selected !== null ||
-      showCreer ||
-      showPasserStatut ||
-      showSuspendre ||
-      showParticiper ||
-      showPaiement ||
-      showReception ||
-      showFournisseur;
-    setIsModalOpen(anyModalOpen);
-  }, [selected, showCreer, showPasserStatut, showSuspendre, showParticiper,
-      showPaiement, showReception, showFournisseur, setIsModalOpen]);
-
-  // Nettoyage à la destruction du composant
-  useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
+  // ── Synchronisation Bottom Bar via ModalContext ──────────────────────────
+  useModalRegister(
+    selected !== null || showCreer || showPasserStatut || showSuspendre ||
+    showParticiper || showPaiement || showReception || showFournisseur
+  );
 
   // ─── KPIs ────────────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -622,7 +613,7 @@ export function MarcheCooperative() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
           onClick={() => setSelected(null)}
         >
           <motion.div
@@ -711,8 +702,8 @@ export function MarcheCooperative() {
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: `${color}15` }}>
                           <Icon className="w-4 h-4" style={{ color }} />
                         </div>
-                        <p className="text-[10px] text-gray-500">{label}</p>
-                        <p className="text-sm font-bold text-gray-900 mt-0.5">{val}</p>
+                        <p className="text-[10px] text-gray-500 truncate">{label}</p>
+                        <p className="text-sm font-bold text-gray-900 mt-0.5 truncate">{val}</p>
                       </div>
                     ))}
                   </div>
@@ -737,7 +728,7 @@ export function MarcheCooperative() {
                             <span className="text-sm">{f.nom}</span>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold text-gray-900">{f.prixUnitaire.toLocaleString('fr-FR')} FCFA</p>
+                            <p className="text-sm font-bold text-gray-900">{f.prixUnitaire.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span></p>
                             <p className="text-[10px] text-gray-400">{f.delaiJours}j de livraison</p>
                           </div>
                         </div>
@@ -890,7 +881,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
@@ -921,7 +912,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
@@ -957,7 +948,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
             <h3 className="font-bold text-gray-900 text-lg mb-4">Choisir le fournisseur</h3>
@@ -971,7 +962,7 @@ export function MarcheCooperative() {
                     {fournisseurChoisi === f.nom && <CheckCircle className="w-4 h-4 text-orange-500" />}
                   </div>
                   <div className="flex gap-3 mt-1 text-xs text-gray-500">
-                    <span className="font-bold text-gray-900">{f.prixUnitaire.toLocaleString('fr-FR')} FCFA/{selected.unite}</span>
+                    <span className="font-bold text-gray-900">{f.prixUnitaire.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span>/{selected.unite}</span>
                     <span>{f.delaiJours}j livraison</span>
                   </div>
                 </motion.div>
@@ -997,7 +988,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
@@ -1022,7 +1013,7 @@ export function MarcheCooperative() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-gray-900">{m.nom}</p>
-                      <p className="text-xs text-gray-400">{m.quantite} {selected.unite} — {montant.toLocaleString('fr-FR')} FCFA</p>
+                      <p className="text-xs text-gray-400">{m.quantite} {selected.unite} — {montant.toLocaleString('fr-FR')} <span className="text-[10px] opacity-60">FCFA</span></p>
                     </div>
                   </motion.div>
                 );
@@ -1044,7 +1035,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center px-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
@@ -1070,7 +1061,7 @@ export function MarcheCooperative() {
     return (
       <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end"
           onClick={() => setShowCreer(false)}>
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 26 }}
@@ -1122,16 +1113,39 @@ export function MarcheCooperative() {
                           {cat}
                         </motion.button>
                       ))}
+                      {/* Bouton "Autre" */}
+                      <motion.button
+                        onClick={() => setNewCmd(p => ({ ...p, categorie: p.categorie.startsWith('__') || !CATEGORIES.includes(p.categorie) ? '' : '__autre__' }))}
+                        className={`py-2 rounded-xl border-2 text-xs font-bold ${!CATEGORIES.includes(newCmd.categorie) && newCmd.categorie !== '' ? 'text-white border-transparent' : 'border-dashed border-gray-300 text-gray-400'}`}
+                        style={!CATEGORIES.includes(newCmd.categorie) && newCmd.categorie !== '' ? { background: `linear-gradient(135deg, ${C}, ${C_DARK})` } : {}}
+                        whileTap={{ scale: 0.95 }}>
+                        Autre
+                      </motion.button>
                     </div>
+                    {/* Saisie libre si "Autre" */}
+                    {(!CATEGORIES.includes(newCmd.categorie) || newCmd.categorie === '__autre__') && (
+                      <motion.input
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        type="text"
+                        placeholder="Ex: Épices, Légumineuses..."
+                        value={newCmd.categorie === '__autre__' ? '' : newCmd.categorie}
+                        onChange={e => setNewCmd(p => ({ ...p, categorie: e.target.value }))}
+                        className="mt-2 w-full px-4 py-2 rounded-xl border-2 text-sm focus:outline-none"
+                        style={{ borderColor: C }}
+                        autoFocus
+                      />
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-gray-700 block mb-2">Unité</label>
-                      <select value={newCmd.unite} onChange={e => setNewCmd(p => ({ ...p, unite: e.target.value }))}
-                        className="w-full px-3 py-3 rounded-2xl border-2 border-gray-200 focus:outline-none text-sm bg-white">
-                        {['kg', 'tonne', 'sac 50kg', 'carton', 'litre', 'unité'].map(u => <option key={u} value={u}>{u}</option>)}
-                      </select>
-                    </div>
+                    <SelectWithAutre
+                      label="Unité"
+                      value={newCmd.unite}
+                      onChange={(v) => setNewCmd(p => ({ ...p, unite: v }))}
+                      options={['kg', 'tonne', 'sac 50kg', 'carton', 'litre', 'régimes']}
+                      primaryColor={C}
+                      placeholder="Ex: barrique, caisse..."
+                    />
                     <div>
                       <label className="text-xs font-bold text-gray-700 block mb-2">Prix marché (FCFA)</label>
                       <input type="number" placeholder="Ex: 620" value={newCmd.prixUnitaireMarche}

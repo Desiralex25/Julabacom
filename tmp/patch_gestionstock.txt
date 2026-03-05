@@ -1,0 +1,1 @@
+Lines to replace in GestionStock.tsx

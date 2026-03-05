@@ -270,7 +270,6 @@ export function POSCaisse() {
   // Traiter commande vocale
   const processVoiceCommand = (command: string) => {
     const lowerCommand = command.toLowerCase().trim();
-    console.log('Commande vocale:', lowerCommand);
 
     // ===== CONFIRMATION =====
     if (conversationState === 'confirming' && pendingAction) {
@@ -755,7 +754,7 @@ export function POSCaisse() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowCartDrawer(false)}
           >
             <motion.div
@@ -1170,7 +1169,7 @@ function PaymentModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
       onClick={onCancel}
     >
       <motion.div
@@ -1405,7 +1404,7 @@ function SuccessModal({ transaction, onClose }: SuccessModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
@@ -1475,7 +1474,7 @@ function ErrorModal({ onRetry, onCancel }: ErrorModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
@@ -1547,7 +1546,7 @@ function DiscountModal({ onApply, onClose }: DiscountModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
@@ -1662,7 +1661,7 @@ function ClientModal({ onSelect, onClose }: ClientModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div

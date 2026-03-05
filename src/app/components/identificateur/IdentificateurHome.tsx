@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Search, Clock, CheckCircle, XCircle, MapPin, TrendingUp, Target, Phone, Volume2, Users, UserPlus, Sparkles, ArrowRight, Award, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,18 +9,11 @@ import { Card } from '../ui/card';
 import { Navigation } from '../layout/Navigation';
 import { FormulaireNouveauDossier } from './FormulaireNouveauDossier';
 import { ScoreResumeCard } from '../shared/ScoreResumeCard';
-import tantieSagesseImg from 'figma:asset/82c93653bb1eda722d8188565757dfef53e2f469.png';
+import { TantieSagesseCard } from '../shared/TantieSagesseCard';
+const tantieSagesseImg = '/images/tantie-sagesse-identificateur.svg';
+import { ACTEURS_DATA } from '../../data/acteursData';
 
 const PRIMARY_COLOR = '#9F8170';
-
-// Mock data pour les acteurs identifiés (à remplacer par vraies données)
-const MOCK_ACTEURS = [
-  { numero: '0722456789', nom: 'KOUASSI Jean', type: 'Marchand', zone: 'Marché de Cocody', statut: 'approved' },
-  { numero: '0722334455', nom: 'KOFFI Marie', type: 'Producteur', zone: 'Marché de Cocody', statut: 'submitted' },
-  { numero: '0722112233', nom: 'YAO Pierre', type: 'Marchand', zone: 'Marché de Cocody', statut: 'draft' },
-  { numero: '0555123456', nom: 'TOURE Awa', type: 'Producteur', zone: 'Village Adzopé', statut: 'approved' },
-  { numero: '0777889900', nom: 'BAMBA Koffi', type: 'Marchand', zone: 'Marché de Cocody', statut: 'rejected' },
-];
 
 export function IdentificateurHome() {
   const navigate = useNavigate();
@@ -31,6 +24,7 @@ export function IdentificateurHome() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showNouveauDossierModal, setShowNouveauDossierModal] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Zone attribuée
   const zoneAttribuee = user?.market || 'Marché de Cocody';
@@ -45,7 +39,7 @@ export function IdentificateurHome() {
 
   // Filtrer les résultats de recherche
   const filteredActeurs = searchQuery.length > 0 
-    ? MOCK_ACTEURS.filter(acteur => acteur.numero.startsWith(searchQuery))
+    ? ACTEURS_DATA.filter(acteur => acteur.numero.includes(searchQuery))
     : [];
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +75,7 @@ export function IdentificateurHome() {
 
   return (
     <>
-      <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-[#9F8170]/5 via-white to-gray-50">
+      <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 lg:pl-[320px] max-w-2xl lg:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-[#9F8170]/5 via-white to-gray-50">
         
         {/* Card Tantie Sagesse - EXACTEMENT comme Marchand */}
         <motion.div
@@ -107,7 +101,7 @@ export function IdentificateurHome() {
             </motion.div>
 
             {/* Card contenu à droite */}
-            <Card className="flex-1 px-8 py-6 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: PRIMARY_COLOR }}>
+            <Card className="flex-1 px-5 py-5 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: PRIMARY_COLOR }}>
               {/* Fond animé */}
               <motion.div
                 className="absolute inset-0 opacity-5"
@@ -119,186 +113,307 @@ export function IdentificateurHome() {
                 transition={{ duration: 3, repeat: Infinity }}
               />
               
-              <div className="relative z-10 w-full h-full">
-                <motion.h3 
-                  className="font-bold text-2xl text-gray-900 mb-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  Tantie Sagesse
-                </motion.h3>
-                <motion.p 
-                  className="text-gray-600 leading-relaxed pr-4"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Bonjour {user?.firstName} ! Votre zone {zoneAttribuee} compte {stats.totalIdentifications} acteurs enrôlés
-                </motion.p>
+              <div className="relative z-10 flex flex-col justify-between h-full">
+                {/* Textes */}
+                <div className="flex-1 flex flex-col justify-center">
+                  <motion.h3 
+                    className="font-black text-gray-900 mb-1 leading-tight"
+                    style={{ fontSize: 'clamp(1.4rem, 4.5vw, 2.2rem)' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    Tantie Sagesse
+                  </motion.h3>
+                  <motion.p 
+                    className="text-gray-600 leading-snug"
+                    style={{ fontSize: 'clamp(0.8rem, 2.5vw, 1rem)' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    Bonjour {user?.firstName} ! Votre zone {zoneAttribuee} compte {stats.totalIdentifications} acteurs enrôlés
+                  </motion.p>
+                </div>
+
+                {/* Bouton aligné à droite, dans le flux */}
+                <div className="flex justify-end mt-2">
+                  <motion.button
+                    onClick={handleListenMessage}
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md flex-shrink-0"
+                    style={{ backgroundColor: PRIMARY_COLOR }}
+                    whileHover={{ scale: 1.1, boxShadow: `0 8px 20px ${PRIMARY_COLOR}33` }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </motion.button>
+                </div>
               </div>
-              
-              <motion.button
-                onClick={handleListenMessage}
-                className="flex items-center gap-2 px-6 py-3 rounded-full text-base font-semibold text-white shadow-md absolute bottom-5 left-8 z-20"
-                style={{ backgroundColor: PRIMARY_COLOR }}
-                whileHover={{ scale: 1.05, boxShadow: `0 8px 20px ${PRIMARY_COLOR}33` }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Volume2 className="w-5 h-5" />
-                Écouter
-              </motion.button>
             </Card>
           </div>
         </motion.div>
 
-        {/* Grande barre de recherche - Style unifié */}
+        {/* Grande barre de recherche */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-6 relative"
+          className="mb-6"
         >
           <motion.div 
             className="relative"
-            whileHover={{ scale: 1.01 }}
+            animate={isSearchFocused ? { scale: 1.02 } : { scale: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
           >
-            <motion.div
-              className="absolute left-5 top-1/2 -translate-y-1/2"
-              animate={{ 
-                scale: searchQuery.length > 0 ? [1, 1.2, 1] : 1,
-                rotate: searchQuery.length > 0 ? [0, 10, -10, 0] : 0
-              }}
-              transition={{ duration: 0.5, repeat: searchQuery.length > 0 ? Infinity : 0, repeatDelay: 2 }}
-            >
-              <div 
-                className="w-11 h-11 rounded-full flex items-center justify-center"
-                style={{ 
-                  background: `linear-gradient(135deg, ${PRIMARY_COLOR}20 0%, ${PRIMARY_COLOR}40 100%)`,
-                }}
+            {/* Icône loupe animée */}
+            <div className="absolute left-4 top-5 z-10">
+              <motion.div
+                className="w-11 h-11 rounded-full flex items-center justify-center relative"
+                style={{ background: `linear-gradient(135deg, ${PRIMARY_COLOR}25 0%, ${PRIMARY_COLOR}45 100%)` }}
+                animate={
+                  searchQuery.length > 0
+                    ? { rotate: [0, -15, 15, -10, 10, 0], scale: [1, 1.15, 1] }
+                    : isSearchFocused
+                    ? { scale: [1, 1.08, 1] }
+                    : { scale: 1, rotate: 0 }
+                }
+                transition={
+                  searchQuery.length > 0
+                    ? { duration: 0.5, repeat: Infinity, repeatDelay: 1.5 }
+                    : isSearchFocused
+                    ? { duration: 1.2, repeat: Infinity }
+                    : {}
+                }
               >
                 <Search className="w-5 h-5" style={{ color: PRIMARY_COLOR }} />
-              </div>
-            </motion.div>
+                {searchQuery.length > 0 && (
+                  <>
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: PRIMARY_COLOR }}
+                      animate={{ scale: [1, 2], opacity: [0.6, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: PRIMARY_COLOR }}
+                      animate={{ scale: [1, 2], opacity: [0.4, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                    />
+                  </>
+                )}
+                {isSearchFocused && searchQuery.length === 0 && (
+                  <motion.div
+                    className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white"
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                )}
+              </motion.div>
+            </div>
 
-            <motion.input
+            {/* Input */}
+            <input
               type="tel"
               value={searchQuery}
               onChange={handleSearchChange}
-              onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
-              placeholder="Rechercher par numéro..."
-              className="w-full pl-20 pr-6 py-5 rounded-3xl border-2 focus:outline-none text-base font-medium bg-white shadow-lg transition-all"
-              style={{
-                borderColor: searchQuery.length > 0 ? PRIMARY_COLOR : '#e5e7eb',
+              onFocus={() => {
+                setIsSearchFocused(true);
+                if (searchQuery.length > 0) setShowSearchResults(true);
               }}
-              whileFocus={{ 
-                scale: 1.01,
-                boxShadow: `0 10px 30px ${PRIMARY_COLOR}20`
+              onBlur={() => {
+                setIsSearchFocused(false);
+                // Délai pour permettre le clic sur un résultat
+                setTimeout(() => setShowSearchResults(false), 200);
+              }}
+              placeholder="Tape un numéro pour rechercher..."
+              className="w-full pl-20 pr-14 py-5 rounded-3xl border-2 focus:outline-none text-base font-medium bg-white shadow-lg transition-all"
+              style={{
+                borderColor: searchQuery.length > 0
+                  ? PRIMARY_COLOR
+                  : isSearchFocused
+                  ? `${PRIMARY_COLOR}88`
+                  : '#e5e7eb',
+                boxShadow: isSearchFocused
+                  ? `0 8px 30px ${PRIMARY_COLOR}20`
+                  : '0 4px 16px rgba(0,0,0,0.06)',
+                borderBottomLeftRadius: showSearchResults && filteredActeurs.length > 0 ? '0' : undefined,
+                borderBottomRightRadius: showSearchResults && filteredActeurs.length > 0 ? '0' : undefined,
               }}
             />
 
+            {/* Compteur résultats */}
             {searchQuery.length > 0 && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0 }}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                onClick={() => {
-                  setSearchQuery('');
-                  setShowSearchResults(false);
-                  setIsModalOpen(false);
-                }}
-                className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
+                className="absolute right-14 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-xs font-bold text-white"
+                style={{ backgroundColor: filteredActeurs.length > 0 ? PRIMARY_COLOR : '#9ca3af' }}
               >
-                <XCircle className="w-5 h-5 text-gray-600" />
-              </motion.button>
+                {filteredActeurs.length}
+              </motion.div>
             )}
 
-            {/* Effet de brillance animé */}
-            {searchQuery.length === 0 && (
-              <motion.div
-                className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
+            {/* Bouton clear */}
+            <AnimatePresence>
+              {searchQuery.length > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0, rotate: -90 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowSearchResults(false);
+                    setIsModalOpen(false);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-red-100 transition-colors"
+                  whileHover={{ scale: 1.15, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <XCircle className="w-5 h-5 text-gray-500" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Shimmer idle */}
+            {!isSearchFocused && searchQuery.length === 0 && (
+              <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(90deg, transparent 0%, ${PRIMARY_COLOR}10 50%, transparent 100%)`,
-                  }}
-                  animate={{
-                    x: ['-100%', '200%'],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    repeatDelay: 2,
-                    ease: "easeInOut"
-                  }}
+                  style={{ background: `linear-gradient(90deg, transparent 0%, ${PRIMARY_COLOR}08 50%, transparent 100%)` }}
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 3.5, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
                 />
-              </motion.div>
+              </div>
             )}
           </motion.div>
 
-          {/* Résultats de recherche */}
+          {/* ---- Accordéon résultats inline (sous la barre, sans overlay) ---- */}
           <AnimatePresence>
-            {showSearchResults && filteredActeurs.length > 0 && (
+            {showSearchResults && searchQuery.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border-2 border-gray-200 overflow-hidden z-20"
+                key="search-results"
+                initial={{ opacity: 0, scaleY: 0.85, y: -8 }}
+                animate={{ opacity: 1, scaleY: 1, y: 0 }}
+                exit={{ opacity: 0, scaleY: 0.85, y: -8 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                style={{
+                  transformOrigin: 'top center',
+                  borderColor: `${PRIMARY_COLOR}50`,
+                }}
+                className="bg-white border-2 border-t-0 rounded-b-3xl shadow-2xl overflow-hidden"
               >
-                {filteredActeurs.map((acteur, index) => (
-                  <motion.button
-                    key={acteur.numero}
-                    onClick={() => handleActeurClick(acteur.numero)}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="w-full px-5 py-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-[#9F8170]/10 hover:to-transparent transition-all border-b-2 border-gray-100 last:border-b-0"
-                    whileHover={{ x: 4 }}
-                    whileTap={{ scale: 0.98 }}
+                {/* Header avec compteur */}
+                <div
+                  className="px-5 py-3 flex items-center gap-2 border-b border-gray-100"
+                  style={{ background: `${PRIMARY_COLOR}08` }}
+                >
+                  <motion.div
+                    animate={{ rotate: filteredActeurs.length > 0 ? [0, 360] : 0 }}
+                    transition={{ duration: 1.5, repeat: filteredActeurs.length > 0 ? Infinity : 0, ease: 'linear' }}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#9F8170] to-[#7a6558] flex items-center justify-center text-white font-bold shadow-md">
-                      {acteur.nom.charAt(0)}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-[#9F8170]" />
-                        <p className="font-bold text-gray-900">{acteur.numero}</p>
-                      </div>
-                      <p className="text-sm text-gray-900 font-semibold mt-0.5">{acteur.nom}</p>
-                      <p className="text-xs text-gray-600">{acteur.type} - {acteur.zone}</p>
-                    </div>
-                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
-                      acteur.statut === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
-                      acteur.statut === 'submitted' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                      acteur.statut === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                      'bg-gray-50 text-gray-700 border-gray-200'
-                    }`}>
-                      {acteur.statut === 'approved' ? 'Validé' :
-                       acteur.statut === 'submitted' ? 'En cours' :
-                       acteur.statut === 'rejected' ? 'Rejeté' : 'Brouillon'}
-                    </div>
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
+                    <Search className="w-4 h-4" style={{ color: PRIMARY_COLOR }} />
+                  </motion.div>
+                  <span className="text-sm font-semibold text-gray-500">
+                    {filteredActeurs.length > 0
+                      ? `${filteredActeurs.length} résultat${filteredActeurs.length > 1 ? 's' : ''} pour "${searchQuery}"`
+                      : `Aucun acteur trouvé pour "${searchQuery}"`
+                    }
+                  </span>
+                </div>
 
-            {showSearchResults && filteredActeurs.length === 0 && searchQuery.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border-2 border-gray-200 p-6 z-20"
-              >
-                <p className="text-gray-600 text-center font-medium">Aucun résultat pour "{searchQuery}"</p>
+                {/* Liste des résultats */}
+                {filteredActeurs.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto overscroll-contain">
+                    {filteredActeurs.map((acteur, index) => (
+                      <motion.button
+                        key={acteur.numero}
+                        onMouseDown={() => handleActeurClick(acteur.numero)}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05, type: 'spring', stiffness: 350, damping: 28 }}
+                        className="w-full px-5 py-4 flex items-center gap-3 border-b border-gray-50 last:border-b-0 text-left transition-colors"
+                        style={{ background: 'white' }}
+                        whileHover={{ backgroundColor: `${PRIMARY_COLOR}0D`, x: 3 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {/* Avatar */}
+                        <motion.div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-black shadow-md flex-shrink-0 text-lg"
+                          style={{ background: `linear-gradient(135deg, ${PRIMARY_COLOR} 0%, #7a6558 100%)` }}
+                          whileHover={{ scale: 1.08, rotate: 4 }}
+                        >
+                          {acteur.nom.charAt(0)}
+                        </motion.div>
+
+                        {/* Infos */}
+                        <div className="flex-1 min-w-0">
+                          {/* Numéro avec surlignage de la séquence tapée */}
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: PRIMARY_COLOR }} />
+                            <p className="font-bold text-gray-900 text-sm tracking-wide">
+                              {(() => {
+                                const idx = acteur.numero.indexOf(searchQuery);
+                                if (idx < 0) return <span className="text-gray-600">{acteur.numero}</span>;
+                                return (
+                                  <>
+                                    <span className="text-gray-500">{acteur.numero.slice(0, idx)}</span>
+                                    <span
+                                      className="font-black rounded px-0.5"
+                                      style={{ color: PRIMARY_COLOR, background: `${PRIMARY_COLOR}22` }}
+                                    >
+                                      {acteur.numero.slice(idx, idx + searchQuery.length)}
+                                    </span>
+                                    <span className="text-gray-500">{acteur.numero.slice(idx + searchQuery.length)}</span>
+                                  </>
+                                );
+                              })()}
+                            </p>
+                          </div>
+                          <p className="font-black text-gray-900 text-sm truncate">{acteur.nom} {acteur.prenoms}</p>
+                          <p className="text-xs text-gray-500 truncate capitalize">{acteur.role} · {acteur.marche}</p>
+                        </div>
+
+                        {/* Badge statut */}
+                        <div
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 flex-shrink-0 ${
+                            acteur.statut === 'approved' ? 'bg-green-50 text-green-700 border-green-300' :
+                            acteur.statut === 'soumis' ? 'bg-orange-50 text-orange-700 border-orange-300' :
+                            acteur.statut === 'rejected' ? 'bg-red-50 text-red-700 border-red-300' :
+                            'bg-gray-50 text-gray-600 border-gray-200'
+                          }`}
+                        >
+                          {acteur.statut === 'approved' ? 'Validé' :
+                           acteur.statut === 'soumis' ? 'En cours' :
+                           acteur.statut === 'rejected' ? 'Rejeté' : 'Brouillon'}
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-5 py-8 flex flex-col items-center gap-3"
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center"
+                    >
+                      <Search className="w-7 h-7 text-gray-400" />
+                    </motion.div>
+                    <p className="text-gray-500 font-semibold text-sm text-center">
+                      Numéro "{searchQuery}" non enrôlé
+                    </p>
+                    <p className="text-gray-400 text-xs text-center">
+                      Crée un nouveau dossier pour cet acteur
+                    </p>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -599,7 +714,7 @@ export function IdentificateurHome() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-10 bg-black/10 backdrop-blur-sm"
+              className="fixed inset-0 z-10"
               onClick={() => {
                 setShowSearchResults(false);
                 setIsModalOpen(false);
@@ -621,7 +736,7 @@ export function IdentificateurHome() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm"
               onClick={() => {
                 setShowNouveauDossierModal(false);
                 setIsModalOpen(false);
@@ -634,7 +749,7 @@ export function IdentificateurHome() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: 'spring', duration: 0.5 }}
-              className="fixed inset-0 z-50 overflow-y-auto lg:pl-[320px]"
+              className="fixed inset-0 z-[200] overflow-y-auto lg:pl-[320px]"
               style={{ pointerEvents: 'none' }}
             >
               <div className="min-h-screen flex items-start justify-center p-0 lg:p-4" style={{ pointerEvents: 'auto' }}>

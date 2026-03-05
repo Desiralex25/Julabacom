@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, ArrowRight, Code, CheckCircle } from 'lucide-react';
-import { useApp, getMockUserByPhone, getAllMockUsers } from '../../contexts/AppContext';
+import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
-import logoOrange from 'figma:asset/d4e25a0b05d3b69e7e79f65efbd03a87d4b68385.png';
-import logoTonDje from 'figma:asset/c7cc70789b435fa844a3d9eb596e29ecf3d4f80c.png';
-import logoJulaba from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
-import tantieSagesseImg from 'figma:asset/41b92fac963891d143c08b39664bce7342b10a05.png';
+const logoOrange = '/images/logo-orange.svg';
+const logoTonDje = '/images/logo-tondje.svg';
+const logoJulaba = '/images/logo-julaba.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 export function Login() {
   const navigate = useNavigate();
@@ -38,11 +38,6 @@ export function Login() {
       if (voices.length > 0) {
         voicesRef.current = voices;
         setVoicesLoaded(true);
-        console.log('✅ Voix chargées:', voices.length);
-        
-        // Log des voix françaises disponibles
-        const frenchVoices = voices.filter(v => v.lang.startsWith('fr'));
-        console.log('🇫🇷 Voix françaises:', frenchVoices.length, frenchVoices.map(v => v.name));
       }
     };
 
@@ -63,14 +58,12 @@ export function Login() {
 
   // Fonction locale pour parler ET afficher le texte
   const speakWithText = (message: string) => {
-    console.log('🔊 Tentative de parole:', message);
-    
-    // Mise à jour du texte immédiatement
-    setTantieSpeechText(message);
+    // Réinitialiser le texte en attendant que la voix démarre
+    setTantieSpeechText('...');
     
     // Vérifier si la synthèse vocale est disponible
     if (!('speechSynthesis' in window)) {
-      console.warn('❌ speechSynthesis non disponible');
+      setTantieSpeechText(message);
       setTimeout(() => {
         setTantieSpeechText('Appuie sur moi pour me parler');
       }, message.length * 50);
@@ -84,7 +77,7 @@ export function Login() {
       console.warn('⚠️ Erreur lors de cancel():', e);
     }
     
-    // Attendre que les voix soient chargées ET un délai pour éviter les conflits
+    // Délai pour éviter les conflits après cancel()
     const speakTimeout = setTimeout(() => {
       try {
         const utterance = new SpeechSynthesisUtterance(message);
@@ -98,70 +91,50 @@ export function Login() {
         
         // Utiliser les voix en cache ou les recharger
         const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-        console.log('🎤 Voix disponibles:', voices.length);
         
-        if (voices.length === 0) {
-          console.warn('️ Aucune voix disponible, tentative sans voix spécifique');
-        } else {
+        if (voices.length > 0) {
           const frenchVoice = voices.find(voice => voice.lang.startsWith('fr'));
           if (frenchVoice) {
             utterance.voice = frenchVoice;
-            console.log('✅ Voix française sélectionnée:', frenchVoice.name);
-          } else {
-            console.warn('⚠️ Aucune voix française, utilisation voix par défaut');
           }
         }
         
+        // Afficher le texte EXACTEMENT quand la voix commence
+        utterance.onstart = () => {
+          setTantieSpeechText(message);
+        };
+        
         // Quand la voix termine
         utterance.onend = () => {
-          console.log('✅ Parole terminée');
           setTimeout(() => {
             setTantieSpeechText('Appuie sur moi pour me parler');
           }, 500);
           utteranceRef.current = null;
         };
         
-        // Gestion des erreurs améliorée
+        // Gestion des erreurs
         utterance.onerror = (event: any) => {
-          // Ne logger que les vraies erreurs, pas les interruptions normales
           if (event.error !== 'interrupted' && event.error !== 'canceled') {
             console.error('❌ Erreur synthèse vocale:', event.error);
-            
-            // Afficher un message d'erreur convivial pour les vraies erreurs
-            let errorMsg = 'Erreur vocale';
-            if (event.error === 'not-allowed') {
-              errorMsg = 'Autorisation vocale requise';
-            } else if (event.error === 'network') {
-              errorMsg = 'Erreur réseau';
-            }
-            
-            console.warn('💬 Message erreur:', errorMsg);
           }
-          
           setTimeout(() => {
             setTantieSpeechText('Appuie sur moi pour me parler');
           }, 500);
           utteranceRef.current = null;
-        };
-        
-        // Démarrer la voix
-        utterance.onstart = () => {
-          console.log('🎙️ Parole démarrée');
         };
         
         // Lancer la synthèse
         window.speechSynthesis.speak(utterance);
-        console.log('✅ speak() appelé avec succès');
         
       } catch (e) {
         console.error('❌ Erreur lors de speak():', e);
+        setTantieSpeechText(message);
         setTimeout(() => {
           setTantieSpeechText('Appuie sur moi pour me parler');
         }, 2000);
       }
-    }, 200); // Délai de 200ms pour éviter les conflits
+    }, 200);
     
-    // Nettoyer le timeout si le composant est démonté
     return () => clearTimeout(speakTimeout);
   };
 
@@ -207,16 +180,11 @@ export function Login() {
       return;
     }
 
-    const user = getMockUserByPhone(phone);
-    
-    if (user) {
-      speakWithText('Un code de vérification a été envoyé par SMS');
-      setShowOTP(true);
-      setError('');
-    } else {
-      setError('Ton numéro n\'est pas encore enregistré sur JULABA');
-      speakWithText('Ton numéro n\'est pas encore enregistré sur JULABA');
-    }
+    // TODO: Vérifier le numéro dans Supabase
+    // Pour l'instant, on accepte tous les numéros pour permettre les tests
+    speakWithText('Un code de vérification a été envoyé par SMS');
+    setShowOTP(true);
+    setError('');
   };
 
   const handleOTPChange = (index: number, value: string) => {
@@ -242,19 +210,16 @@ export function Login() {
       return;
     }
 
-    // Simulate OTP validation (accept any 6 digits for demo)
-    const user = getMockUserByPhone(phone);
+    // TODO: Valider OTP avec Supabase et récupérer l'utilisateur
+    // Pour l'instant, afficher un message d'erreur car pas de backend connecté
+    setError('Connexion impossible : backend non configuré. Configure Supabase pour continuer.');
+    speakWithText('Connexion impossible. Le backend doit être configuré.');
     
-    if (user) {
-      setAppUser(user);
-      setUserProfile(user);
-      speakWithText(`Bienvenue ${user.firstName}. Ton djè est calé`);
-      
-      // Navigate based on role
-      setTimeout(() => {
-        navigate(`/${user.role}`);
-      }, 500);
-    }
+    // TEMPORAIRE : Pour les tests, décommenter les lignes suivantes et créer un user de test
+    // const testUser = { id: '1', phone, firstName: 'Test', lastName: 'User', role: 'marchand', ... };
+    // setAppUser(testUser);
+    // setUserProfile(testUser);
+    // navigate('/marchand');
   };
 
   const handleMicClick = () => {
@@ -306,15 +271,10 @@ export function Login() {
           // Auto submit when 10 digits reached
           if (phoneNumber.length === 10) {
             setTimeout(() => {
-              const user = getMockUserByPhone(phoneNumber);
-              if (user) {
-                speakWithText('Un code de vérification a été envoyé par SMS');
-                setShowOTP(true);
-                setError('');
-              } else {
-                setError('Ton numéro n\'est pas encore enregistré sur JULABA');
-                speakWithText('Ton numéro n\'est pas encore enregistré sur JULABA');
-              }
+              // TODO: Vérifier dans Supabase
+              speakWithText('Un code de vérification a été envoyé par SMS');
+              setShowOTP(true);
+              setError('');
             }, 500);
           }
         }
@@ -364,16 +324,16 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#C46210] flex flex-col items-center justify-start pt-32 p-6 relative">
+    <div className="min-h-screen bg-[#C46210] flex flex-col items-center p-4 relative overflow-hidden">
       {/* Dev Mode Toggle */}
-      <ProfileSwitcher />
+      {import.meta.env.DEV && <ProfileSwitcher />}
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md flex flex-col items-center flex-grow justify-center">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-4"
         >
           <img 
             src={logoJulaba} 
@@ -387,10 +347,10 @@ export function Login() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl shadow-lg p-8"
+          className="bg-white rounded-3xl shadow-lg p-6 w-full"
         >
           {/* Logo "Ton djè est calé" */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-4">
             
           </div>
 
@@ -528,123 +488,120 @@ export function Login() {
         </motion.div>
 
         {/* Help Text */}
-        <p className="text-center text-white/90 mt-6 font-bold text-[20px]">
+        <p className="text-center text-white/90 mt-4 font-bold text-[18px]">
           Plateforme nationale d'inclusion économique des acteurs vivriers
         </p>
+
+        {/* Tantie Sagesse - intégrée dans le flux de la page, plus de position fixe */}
+        <div className="flex flex-col items-center mt-10 mb-2">
+          <motion.button
+            onClick={handleTantieSagesse}
+            className="relative flex items-center justify-center rounded-full transition-all"
+            style={{ width: '90px', height: '90px' }}
+            animate={{ 
+              y: [0, -8, 0],
+              scale: [1, 1.05, 1]
+            }}
+            transition={{ 
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            {/* Permanent subtle pulse */}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{ backgroundColor: '#C46210' }}
+              animate={{ 
+                scale: [1, 1.5, 1],
+                opacity: [0.3, 0, 0.3]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+
+            {/* Strong pulse when listening */}
+            <AnimatePresence>
+              {isListening && (
+                <>
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ backgroundColor: '#C46210' }}
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ backgroundColor: '#C46210' }}
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 3, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ backgroundColor: '#C46210' }}
+                    initial={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 3.5, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                  />
+                </>
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              animate={isListening ? { 
+                scale: [1, 1.3, 1],
+                rotate: [0, 5, -5, 0]
+              } : { 
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                duration: isListening ? 0.6 : 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="relative z-10 w-full h-full rounded-full overflow-hidden"
+            >
+              <img 
+                src={tantieSagesseImg} 
+                alt="Tantie Sagesse" 
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          </motion.button>
+
+          {/* Texte dynamique sous Tantie Sagesse */}
+          <motion.p
+            className="text-center text-white font-medium text-xs px-4 max-w-xs mt-2"
+            animate={{ opacity: [0.8, 1, 0.8] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {tantieSpeechText}
+          </motion.p>
+        </div>
       </div>
 
-      {/* Link to onboarding - Fixed at bottom */}
-      <div className="absolute bottom-6 text-center w-full left-0 px-6">
+      {/* Link to onboarding - ancré tout en bas de la page */}
+      <div className="w-full text-center py-6 mt-auto">
         <button
           onClick={() => {
             localStorage.removeItem('julaba_skip_onboarding');
             navigate('/onboarding');
           }}
-          className="text-white text-sm font-medium hover:underline"
+          className="text-white text-sm font-medium hover:underline opacity-80"
         >
           Revoir le tutoriel
         </button>
       </div>
-
-      {/* Tantie Sagesse FAB */}
-      <motion.button
-        onClick={handleTantieSagesse}
-        className="fixed left-1/2 -translate-x-1/2 flex items-center justify-center rounded-full transition-all"
-        style={{ 
-          bottom: '140px',
-          width: '120px',
-          height: '120px',
-        }}
-        animate={{ 
-          y: [0, -8, 0],
-          scale: [1, 1.05, 1]
-        }}
-        transition={{ 
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        {/* Permanent subtle pulse */}
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{ backgroundColor: '#C46210' }}
-          animate={{ 
-            scale: [1, 1.5, 1],
-            opacity: [0.3, 0, 0.3]
-          }}
-          transition={{ 
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-
-        {/* Strong pulse when listening */}
-        <AnimatePresence>
-          {isListening && (
-            <>
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: '#C46210' }}
-                initial={{ scale: 1, opacity: 0.6 }}
-                animate={{ scale: 2.5, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, repeat: Infinity }}
-              />
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: '#C46210' }}
-                initial={{ scale: 1, opacity: 0.6 }}
-                animate={{ scale: 3, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-              />
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ backgroundColor: '#C46210' }}
-                initial={{ scale: 1, opacity: 0.6 }}
-                animate={{ scale: 3.5, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-              />
-            </>
-          )}
-        </AnimatePresence>
-
-        <motion.div
-          animate={isListening ? { 
-            scale: [1, 1.3, 1],
-            rotate: [0, 5, -5, 0]
-          } : { 
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ 
-            duration: isListening ? 0.6 : 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="relative z-10 w-full h-full rounded-full overflow-hidden"
-        >
-          <img 
-            src={tantieSagesseImg} 
-            alt="Tantie Sagesse" 
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
-      </motion.button>
-
-      {/* Texte dynamique sous Tantie Sagesse */}
-      <motion.p
-        className="fixed left-1/2 -translate-x-1/2 text-center text-white font-medium text-xs px-4 max-w-xs whitespace-nowrap"
-        style={{ bottom: '110px' }}
-        animate={{ opacity: [0.8, 1, 0.8] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        {tantieSpeechText}
-      </motion.p>
     </div>
   );
 }

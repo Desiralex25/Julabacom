@@ -118,7 +118,7 @@ export function Dashboard() {
           {/* Volume Evolution */}
           <Card className="p-6 rounded-2xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Évolution du volume (Millions FCFA)</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer key="chart-dashboard-volume" width="100%" height={300}>
               <LineChart data={volumeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="month" stroke="#6B7280" />
@@ -138,7 +138,7 @@ export function Dashboard() {
           {/* Distribution by Role */}
           <Card className="p-6 rounded-2xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Répartition par rôle</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer key="chart-dashboard-pie" width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={roleData}
@@ -168,7 +168,7 @@ export function Dashboard() {
         >
           <Card className="p-6 rounded-2xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">Performance par région</h3>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer key="chart-dashboard-region" width="100%" height={400}>
               <BarChart data={regionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="region" stroke="#6B7280" />
@@ -219,7 +219,7 @@ export function Dashboard() {
       </div>
 
       {/* Dev Profile Switcher - Only in development */}
-      <ProfileSwitcher />
+      {import.meta.env.DEV && <ProfileSwitcher />}
     </div>
   );
 }

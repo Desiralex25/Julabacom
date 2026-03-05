@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, Volume2, Zap, Code2, Crown, Globe, MapPin, BarChart3 } from 'lucide-react';
 import { useBackOffice, MOCK_BO_USERS, BORoleType } from '../../contexts/BackOfficeContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -281,6 +282,9 @@ export function BOLogin() {
         </motion.div>
 
       </motion.div>
+
+      {/* ProfileSwitcher en mode DEV */}
+      {import.meta.env.DEV && <ProfileSwitcher />}
     </div>
   );
 }

@@ -59,7 +59,7 @@ export function PublierRecolteModal({ recolte, cycle, isOpen, onClose }: Publier
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
           />
 
           {/* Modal - CENTRÉ */}
@@ -67,7 +67,7 @@ export function PublierRecolteModal({ recolte, cycle, isOpen, onClose }: Publier
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white rounded-3xl shadow-2xl z-[101] overflow-hidden max-h-[90vh] overflow-y-auto"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white rounded-3xl shadow-2xl z-[210] overflow-hidden max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[#2E8B57] to-[#3BA869] px-6 py-5 flex items-center justify-between sticky top-0 z-10">

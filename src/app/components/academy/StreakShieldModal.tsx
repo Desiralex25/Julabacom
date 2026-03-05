@@ -45,7 +45,7 @@ export function StreakShieldModal({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/50 z-[100]"
+            className="fixed inset-0 bg-black/50 z-[200]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -54,7 +54,7 @@ export function StreakShieldModal({
 
           {/* Modal */}
           <motion.div
-            className="fixed inset-0 z-[101] flex items-center justify-center p-6"
+            className="fixed inset-0 z-[210] flex items-center justify-center p-6"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

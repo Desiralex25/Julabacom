@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Search,
   User,
   MapPin,
   Calendar,
@@ -14,32 +13,26 @@ import {
   Users,
   Filter,
   ChevronDown,
+  ChevronRight,
   AlertTriangle,
   FileText,
   History,
   BarChart3,
+  Phone,
+  Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
+import { SearchBar } from '../shared/SearchBar';
+import { matchesSearch } from '../../utils/searchUtils';
+import { FicheActeurDetailModal } from '../shared/FicheActeurDetailModal';
+import { useBackOffice } from '../../contexts/BackOfficeContext';
 
 const PRIMARY_COLOR = '#712864';
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const MOCK_ACTEURS = [
-  { id: 'A001', nom: 'Kouassi', prenoms: 'Aminata', type: 'marchand', region: 'Abidjan', commune: 'Yopougon', telephone: '+225 07 01 02 03 04', statut: 'actif', dateCreation: '2025-08-15', activiteRecente: '2026-03-02', activite: 'Vente de riz' },
-  { id: 'A002', nom: 'Yao', prenoms: 'Kouadio', type: 'producteur', region: 'Gbêkê', commune: 'Bouaké', telephone: '+225 05 12 34 56 78', statut: 'actif', dateCreation: '2025-09-01', activiteRecente: '2026-03-01', activite: 'Production de cacao' },
-  { id: 'A003', nom: 'Traoré', prenoms: 'Fatou', type: 'marchand', region: 'Abidjan', commune: 'Cocody', telephone: '+225 07 23 45 67 89', statut: 'suspendu', dateCreation: '2025-06-20', activiteRecente: '2026-01-15', activite: 'Vente d\'oignons' },
-  { id: 'A004', nom: 'Touré', prenoms: 'Ibrahim', type: 'marchand', region: 'Abidjan', commune: 'Abobo', telephone: '+225 01 45 67 89 12', statut: 'actif', dateCreation: '2025-10-10', activiteRecente: '2026-03-03', activite: 'Vente de tomates' },
-  { id: 'A005', nom: 'Diabaté', prenoms: 'Marie', type: 'producteur', region: 'Hambol', commune: 'Korhogo', telephone: '+225 05 98 76 54 32', statut: 'actif', dateCreation: '2025-07-05', activiteRecente: '2026-02-28', activite: 'Production de mangues' },
-  { id: 'A006', nom: 'Koffi', prenoms: 'Adjoua', type: 'cooperative', region: 'Abidjan', commune: 'Treichville', telephone: '+225 07 34 56 78 90', statut: 'actif', dateCreation: '2025-05-12', activiteRecente: '2026-03-02', activite: 'Coopérative maraîchère (32 membres)' },
-  { id: 'A007', nom: 'Bamba', prenoms: 'Awa', type: 'producteur', region: 'Haut-Sassandra', commune: 'Daloa', telephone: '+225 05 67 89 12 34', statut: 'suspendu', dateCreation: '2025-11-01', activiteRecente: '2026-01-20', activite: 'Production de café' },
-  { id: 'A008', nom: 'Coulibaly', prenoms: 'Seydou', type: 'identificateur', region: 'Abidjan', commune: 'Plateau', telephone: '+225 07 88 99 00 11', statut: 'actif', dateCreation: '2025-04-18', activiteRecente: '2026-03-03', activite: 'Identification d\'acteurs' },
-  { id: 'A009', nom: 'Ouattara', prenoms: 'Mariam', type: 'marchand', region: 'Woroba', commune: 'Séguéla', telephone: '+225 01 22 33 44 55', statut: 'actif', dateCreation: '2025-12-08', activiteRecente: '2026-03-01', activite: 'Vente de maïs' },
-  { id: 'A010', nom: 'Soro', prenoms: 'Gaoussou', type: 'cooperative', region: 'Poro', commune: 'Korhogo', telephone: '+225 05 33 44 55 66', statut: 'actif', dateCreation: '2026-01-15', activiteRecente: '2026-03-02', activite: 'Coop. cacao/café (124 membres)' },
-];
+// ✅ NETTOYAGE PHASE 2 : MOCK_ACTEURS supprimé - utilise BackOfficeContext
 
 const REGIONS = ['Toutes', 'Abidjan', 'Gbêkê', 'Hambol', 'Haut-Sassandra', 'Poro', 'Woroba'];
 const TYPES = ['Tous', 'marchand', 'producteur', 'cooperative', 'identificateur'];
@@ -64,6 +57,7 @@ function getTypeLabel(type: string) {
 export function InstitutionActeurs() {
   const navigate = useNavigate();
   const { speak } = useApp();
+  const { acteurs } = useBackOffice(); // ✅ Utilise BackOfficeContext
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'actif' | 'suspendu'>('all');
@@ -74,28 +68,25 @@ export function InstitutionActeurs() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeView, setActiveView] = useState<'liste' | 'detail'>('liste');
   const [detailActeur, setDetailActeur] = useState<any>(null);
+  const [ficheActeur, setFicheActeur] = useState<any | null>(null);
 
-  // Stats
+  // ✅ Stats basées sur données réelles BackOfficeContext
   const stats = useMemo(() => ({
-    total: MOCK_ACTEURS.length,
-    actifs: MOCK_ACTEURS.filter(a => a.statut === 'actif').length,
-    suspendus: MOCK_ACTEURS.filter(a => a.statut === 'suspendu').length,
-  }), []);
+    total: acteurs.length,
+    actifs: acteurs.filter(a => a.statut === 'actif').length,
+    suspendus: acteurs.filter(a => a.statut === 'suspendu').length,
+  }), [acteurs]);
 
-  // Filtrage
+  // ✅ Filtrage sur données réelles
   const filtered = useMemo(() => {
-    return MOCK_ACTEURS.filter(a => {
-      const matchSearch = searchQuery === '' ||
-        a.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.prenoms.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.telephone.includes(searchQuery) ||
-        a.commune.toLowerCase().includes(searchQuery.toLowerCase());
+    return acteurs.filter(a => {
+      const match = matchesSearch(searchQuery, a.nom, a.prenoms, a.telephone, a.commune);
       const matchStatut = activeFilter === 'all' || a.statut === activeFilter;
       const matchType = selectedType === 'Tous' || a.type === selectedType;
       const matchRegion = selectedRegion === 'Toutes' || a.region === selectedRegion;
-      return matchSearch && matchStatut && matchType && matchRegion;
+      return match && matchStatut && matchType && matchRegion;
     });
-  }, [searchQuery, activeFilter, selectedType, selectedRegion]);
+  }, [acteurs, searchQuery, activeFilter, selectedType, selectedRegion]);
 
   const startVoiceSearch = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -131,6 +122,11 @@ export function InstitutionActeurs() {
     setDetailActeur(acteur);
     setActiveView('detail');
     speak(`Dossier de ${acteur.prenoms} ${acteur.nom}`);
+  };
+
+  const handleCardClick = (acteur: any) => {
+    setFicheActeur(acteur);
+    speak(`Fiche de ${acteur.prenoms} ${acteur.nom}`);
   };
 
   if (activeView === 'detail' && detailActeur) {
@@ -283,126 +279,51 @@ export function InstitutionActeurs() {
         <div className="space-y-3">
           {filtered.map((acteur, idx) => {
             const typeStyle = getTypeColor(acteur.type);
-            const isSelected = selectedActeur === acteur.id;
             return (
               <motion.div
                 key={acteur.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.04 }}
-                className="bg-white rounded-3xl border-2 shadow-md overflow-hidden"
-                style={{ borderColor: isSelected ? PRIMARY_COLOR : '#f3f4f6' }}
+                className="bg-white rounded-3xl border-2 shadow-sm overflow-hidden cursor-pointer"
+                style={{ borderColor: '#f3f4f6' }}
+                onClick={() => handleCardClick(acteur)}
+                whileHover={{ scale: 1.01, y: -2, boxShadow: `0 8px 24px ${PRIMARY_COLOR}18`, borderColor: `${PRIMARY_COLOR}40` }}
+                whileTap={{ scale: 0.98 }}
               >
-                {/* Ligne principale */}
-                <motion.button
-                  className="w-full px-5 py-4 flex items-center gap-3 text-left"
-                  onClick={() => setSelectedActeur(isSelected ? null : acteur.id)}
-                  whileHover={{ backgroundColor: '#faf5fb' }}
-                  whileTap={{ scale: 0.99 }}
-                >
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0"
+                <div className="px-5 py-4 flex items-center gap-3">
+                  <div className="w-13 h-13 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-md flex-shrink-0"
                     style={{ background: `linear-gradient(135deg, ${PRIMARY_COLOR}, #9B3D8A)` }}>
                     {acteur.prenoms.charAt(0)}{acteur.nom.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-gray-900">{acteur.prenoms} {acteur.nom}</p>
+                      <p className="font-black text-gray-900">{acteur.prenoms} {acteur.nom}</p>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold border-2 ${typeStyle.bg} ${typeStyle.text} ${typeStyle.border}`}>
                         {getTypeLabel(acteur.type)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{acteur.commune}, {acteur.region}</span>
+                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{acteur.telephone}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${
                       acteur.statut === 'actif' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                     }`}>
                       {acteur.statut === 'actif' ? 'Actif' : 'Suspendu'}
                     </span>
-                    <motion.div animate={isSelected ? { rotate: 180 } : { rotate: 0 }}>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <motion.div
+                      className="w-7 h-7 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: `${PRIMARY_COLOR}15` }}
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: idx * 0.2 }}
+                    >
+                      <ChevronRight className="w-4 h-4" style={{ color: PRIMARY_COLOR }} />
                     </motion.div>
                   </div>
-                </motion.button>
-
-                {/* Détails expandés */}
-                <AnimatePresence>
-                  {isSelected && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-5 pb-5 pt-2 border-t-2 border-gray-100">
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                          <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-xs text-gray-500 font-semibold mb-1 flex items-center gap-1"><Phone className="w-3 h-3" /> Téléphone</p>
-                            <p className="text-sm font-bold text-gray-900">{acteur.telephone}</p>
-                          </div>
-                          <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-xs text-gray-500 font-semibold mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Créé le</p>
-                            <p className="text-sm font-bold text-gray-900">{new Date(acteur.dateCreation).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-xs text-gray-500 font-semibold mb-1 flex items-center gap-1"><Activity className="w-3 h-3" /> Dernière activité</p>
-                            <p className="text-sm font-bold text-gray-900">{new Date(acteur.activiteRecente).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                          <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-xs text-gray-500 font-semibold mb-1 flex items-center gap-1"><FileText className="w-3 h-3" /> Activité</p>
-                            <p className="text-sm font-bold text-gray-900 truncate">{acteur.activite}</p>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-2 flex-wrap">
-                          <motion.button
-                            onClick={() => handleVoirDossier(acteur)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-semibold text-sm"
-                            style={{ backgroundColor: PRIMARY_COLOR }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <Eye className="w-4 h-4" />
-                            Voir dossier
-                          </motion.button>
-                          <motion.button
-                            onClick={() => toast('Historique activité', { description: `Chargement pour ${acteur.prenoms}...` })}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-blue-50 text-blue-700 font-semibold text-sm border-2 border-blue-200"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <History className="w-4 h-4" />
-                            Historique
-                          </motion.button>
-                          {acteur.statut === 'actif' ? (
-                            <motion.button
-                              onClick={() => handleSuspendre(acteur)}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-50 text-red-700 font-semibold text-sm border-2 border-red-200"
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <XCircle className="w-4 h-4" />
-                              Suspendre
-                            </motion.button>
-                          ) : (
-                            <motion.button
-                              onClick={() => handleReactiver(acteur)}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-green-50 text-green-700 font-semibold text-sm border-2 border-green-200"
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              Réactiver
-                            </motion.button>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                </div>
               </motion.div>
             );
           })}
@@ -416,7 +337,21 @@ export function InstitutionActeurs() {
         </div>
       </div>
 
-      <Navigation role="institution" />
+      {/* Modal fiche acteur */}
+      {ficheActeur && (
+        <FicheActeurDetailModal
+          acteur={{
+            ...ficheActeur,
+            role: ficheActeur.type,
+            statut: ficheActeur.statut,
+            activite: ficheActeur.activite,
+            dateCreation: ficheActeur.dateCreation,
+            activiteRecente: ficheActeur.activiteRecente,
+          }}
+          onClose={() => setFicheActeur(null)}
+          contextRole="institution"
+        />
+      )}
     </>
   );
 }
@@ -424,20 +359,14 @@ export function InstitutionActeurs() {
 // ── Vue Détail Acteur ─────────────────────────────────────────────────────────
 function ActeurDetail({ acteur, onBack }: { acteur: any; onBack: () => void }) {
   const { speak } = useApp();
+  const { transactions } = useBackOffice(); // ✅ Utilise BackOfficeContext
   const [activeTab, setActiveTab] = useState<'infos' | 'transactions' | 'historique' | 'stats'>('infos');
   const typeStyle = getTypeColor(acteur.type);
 
-  const MOCK_TRANSACTIONS = [
-    { id: 'TX001', date: '2026-03-02', montant: 45_000, type: 'vente', statut: 'validé' },
-    { id: 'TX002', date: '2026-03-01', montant: 18_500, type: 'achat', statut: 'validé' },
-    { id: 'TX003', date: '2026-02-28', montant: 62_000, type: 'vente', statut: 'validé' },
-  ];
-
-  const MOCK_HISTORIQUE = [
-    { action: 'Connexion plateforme', date: '2026-03-03 08:12', ip: '196.168.1.45' },
-    { action: 'Transaction enregistrée', date: '2026-03-02 14:30', ip: '196.168.1.45' },
-    { action: 'Profil mis à jour', date: '2026-02-28 11:05', ip: '196.168.1.22' },
-  ];
+  // ✅ NETTOYAGE PHASE 2 : Utilise données réelles du BackOfficeContext
+  // TODO: Filtrer les transactions par acteur depuis Supabase
+  const acteurTransactions = transactions.filter(t => t.acteurNom.includes(acteur.nom));
+  const acteurHistorique: any[] = []; // TODO: Charger depuis Supabase
 
   return (
     <>
@@ -505,7 +434,12 @@ function ActeurDetail({ acteur, onBack }: { acteur: any; onBack: () => void }) {
 
           {activeTab === 'transactions' && (
             <motion.div key="tx" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
-              {MOCK_TRANSACTIONS.map(tx => (
+              {acteurTransactions.length === 0 && (
+                <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 text-center">
+                  <p className="text-gray-500">Aucune transaction disponible</p>
+                </div>
+              )}
+              {acteurTransactions.map(tx => (
                 <div key={tx.id} className="bg-white rounded-3xl p-4 border-2 border-gray-100">
                   <div className="flex items-center justify-between">
                     <div>
@@ -524,7 +458,12 @@ function ActeurDetail({ acteur, onBack }: { acteur: any; onBack: () => void }) {
 
           {activeTab === 'historique' && (
             <motion.div key="hist" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
-              {MOCK_HISTORIQUE.map((h, i) => (
+              {acteurHistorique.length === 0 && (
+                <div className="bg-white rounded-3xl p-8 border-2 border-gray-100 text-center">
+                  <p className="text-gray-500">Aucun historique disponible</p>
+                </div>
+              )}
+              {acteurHistorique.map((h, i) => (
                 <div key={i} className="bg-white rounded-3xl p-4 border-2 border-gray-100">
                   <p className="font-bold text-gray-900 mb-1">{h.action}</p>
                   <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -553,14 +492,10 @@ function ActeurDetail({ acteur, onBack }: { acteur: any; onBack: () => void }) {
           )}
         </AnimatePresence>
       </div>
-      <Navigation role="institution" />
     </>
   );
 }
 
-function Phone({ className }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.43a19.79 19.79 0 01-3.07-8.7A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.09 6.09l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg>;
-}
 function Clock({ className }: { className?: string }) {
   return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
 }

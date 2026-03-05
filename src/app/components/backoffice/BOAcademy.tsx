@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen, Plus, Edit2, Eye, Trash2, Users, Star, Clock,
@@ -13,6 +13,7 @@ import {
   AcademyQuestion, ACADEMY_QUESTIONS, getAllQuestionsForRole, saveAllQuestionsForRole, CHAPTER_THEMES,
 } from '../academy/academyQuestions';
 import { UserRole } from '../academy/types';
+import { ImagePickerField } from '../shared/ImagePickerField';
 
 type ModuleType = 'video' | 'audio' | 'quiz' | 'texte';
 type NiveauType = 'debutant' | 'intermediaire' | 'avance';
@@ -31,15 +32,16 @@ interface AcademyModule {
   nbInscrits: number;
   tauxCompletion: number;
   dateCreation: string;
+  image: string;
 }
 
 const MOCK_MODULES: AcademyModule[] = [
-  { id: 'm1', titre: 'Gestion des stocks quotidienne', description: 'Apprendre à suivre ses stocks chaque jour pour éviter les pertes', type: 'audio', niveau: 'debutant', profil: 'marchand', duree: 8, points: 50, statut: 'publie', nbInscrits: 1240, tauxCompletion: 74, dateCreation: '2025-10-01' },
-  { id: 'm2', titre: 'Identifier un acteur en 5 minutes', description: 'Méthode rapide et complète pour l\'enrôlement terrain', type: 'video', niveau: 'intermediaire', profil: 'identificateur', duree: 15, points: 100, statut: 'publie', nbInscrits: 456, tauxCompletion: 82, dateCreation: '2025-10-15' },
-  { id: 'm3', titre: 'Gérer une coopérative efficacement', description: 'Les fondamentaux de la gestion coopérative agricale', type: 'quiz', niveau: 'avance', profil: 'cooperative', duree: 20, points: 150, statut: 'publie', nbInscrits: 234, tauxCompletion: 61, dateCreation: '2025-11-01' },
-  { id: 'm4', titre: 'Mobile Money pour les producteurs', description: 'Utiliser Orange Money et Wave pour ses transactions', type: 'video', niveau: 'debutant', profil: 'producteur', duree: 10, points: 75, statut: 'publie', nbInscrits: 889, tauxCompletion: 88, dateCreation: '2025-11-20' },
-  { id: 'm5', titre: 'Stratégies de vente au marché', description: 'Techniques de négociation et fidélisation clients', type: 'audio', niveau: 'intermediaire', profil: 'marchand', duree: 12, points: 80, statut: 'brouillon', nbInscrits: 0, tauxCompletion: 0, dateCreation: '2026-02-15' },
-  { id: 'm6', titre: 'Introduction à Jùlaba', description: 'Découvrir la plateforme et ses fonctionnalités essentielles', type: 'texte', niveau: 'debutant', profil: 'tous', duree: 5, points: 30, statut: 'publie', nbInscrits: 3210, tauxCompletion: 91, dateCreation: '2025-09-01' },
+  { id: 'm1', titre: 'Gestion des stocks quotidienne', description: 'Apprendre à suivre ses stocks chaque jour pour éviter les pertes', type: 'audio', niveau: 'debutant', profil: 'marchand', duree: 8, points: 50, statut: 'publie', nbInscrits: 1240, tauxCompletion: 74, dateCreation: '2025-10-01', image: '' },
+  { id: 'm2', titre: 'Identifier un acteur en 5 minutes', description: 'Méthode rapide et complète pour l\'enrôlement terrain', type: 'video', niveau: 'intermediaire', profil: 'identificateur', duree: 15, points: 100, statut: 'publie', nbInscrits: 456, tauxCompletion: 82, dateCreation: '2025-10-15', image: '' },
+  { id: 'm3', titre: 'Gérer une coopérative efficacement', description: 'Les fondamentaux de la gestion coopérative agricale', type: 'quiz', niveau: 'avance', profil: 'cooperative', duree: 20, points: 150, statut: 'publie', nbInscrits: 234, tauxCompletion: 61, dateCreation: '2025-11-01', image: '' },
+  { id: 'm4', titre: 'Mobile Money pour les producteurs', description: 'Utiliser Orange Money et Wave pour ses transactions', type: 'video', niveau: 'debutant', profil: 'producteur', duree: 10, points: 75, statut: 'publie', nbInscrits: 889, tauxCompletion: 88, dateCreation: '2025-11-20', image: '' },
+  { id: 'm5', titre: 'Stratégies de vente au marché', description: 'Techniques de négociation et fidélisation clients', type: 'audio', niveau: 'intermediaire', profil: 'marchand', duree: 12, points: 80, statut: 'brouillon', nbInscrits: 0, tauxCompletion: 0, dateCreation: '2026-02-15', image: '' },
+  { id: 'm6', titre: 'Introduction à Jùlaba', description: 'Découvrir la plateforme et ses fonctionnalités essentielles', type: 'texte', niveau: 'debutant', profil: 'tous', duree: 5, points: 30, statut: 'publie', nbInscrits: 3210, tauxCompletion: 91, dateCreation: '2025-09-01', image: '' },
 ];
 
 const TYPE_CONFIG: Record<ModuleType, { label: string; icon: any; color: string }> = {
@@ -63,6 +65,9 @@ const STATUT_CONFIG = {
 
 type ActiveTab = 'modules' | 'questions';
 
+const BO_PRIMARY = '#E6A817';
+const BO_DARK    = '#1E293B';
+
 export function BOAcademy() {
   const { hasPermission, addAuditLog, boUser } = useBackOffice();
   const [modules, setModules] = useState<AcademyModule[]>(MOCK_MODULES);
@@ -70,7 +75,7 @@ export function BOAcademy() {
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [filterProfil, setFilterProfil] = useState<string>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [form, setForm] = useState({ titre: '', description: '', type: 'video' as ModuleType, niveau: 'debutant' as NiveauType, profil: 'tous' as ProfilType, duree: 10, points: 50 });
+  const [form, setForm] = useState({ titre: '', description: '', type: 'video' as ModuleType, niveau: 'debutant' as NiveauType, profil: 'tous' as ProfilType, duree: 10, points: 50, image: '' });
 
   // Questions du Jeu
   const [activeTab, setActiveTab] = useState<ActiveTab>('modules');
@@ -172,7 +177,7 @@ export function BOAcademy() {
     if (boUser) addAuditLog({ action: 'CRÉATION module Academy', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: form.titre, ancienneValeur: '—', nouvelleValeur: 'brouillon', ip: '127.0.0.1', module: 'Academy' });
     toast.success(`Module "${form.titre}" créé en brouillon`);
     setShowCreate(false);
-    setForm({ titre: '', description: '', type: 'video', niveau: 'debutant', profil: 'tous', duree: 10, points: 50 });
+    setForm({ titre: '', description: '', type: 'video', niveau: 'debutant', profil: 'tous', duree: 10, points: 50, image: '' });
   };
 
   const handlePublier = (id: string) => {
@@ -195,6 +200,20 @@ export function BOAcademy() {
     if (boUser && mod) addAuditLog({ action: 'SUPPRESSION module Academy (soft)', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: mod.titre, ancienneValeur: mod.statut, nouvelleValeur: 'supprimé', ip: '127.0.0.1', module: 'Academy' });
     toast.error('Module supprimé définitivement');
   };
+
+  const totalInscrits = useMemo(() => modules.reduce((acc, m) => acc + m.nbInscrits, 0), [modules]);
+  const tauxMoyen = useMemo(() => {
+    const total = modules.reduce((acc, m) => acc + m.tauxCompletion, 0);
+    return total / modules.length || 0;
+  }, [modules]);
+
+  const filtered = useMemo(() => {
+    return modules.filter(m => {
+      if (filterStatut !== 'all' && m.statut !== filterStatut) return false;
+      if (filterProfil !== 'all' && m.profil !== filterProfil) return false;
+      return true;
+    });
+  }, [modules, filterStatut, filterProfil]);
 
   return (
     <div className="px-4 lg:px-8 py-6 max-w-7xl mx-auto">
@@ -501,9 +520,9 @@ export function BOAcademy() {
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                       {q.options.map((opt, oi) => (
                         <div key={oi}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 ${oi === q.correctIndex ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 overflow-hidden ${oi === q.correctIndex ? 'bg-green-50 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
                           {oi === q.correctIndex && <CheckCircle className="w-3 h-3 inline mr-1 text-green-500" />}
-                          {opt.text}
+                          <span className="truncate">{opt.text}</span>
                         </div>
                       ))}
                     </div>
@@ -543,7 +562,7 @@ export function BOAcademy() {
       {/* Modal création module */}
       <AnimatePresence>
         {showCreate && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowCreate(false)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border-2 max-h-[90vh] overflow-y-auto"
@@ -557,6 +576,16 @@ export function BOAcademy() {
                 </button>
               </div>
               <form onSubmit={handleCreate} className="space-y-4">
+                {/* Miniature du module */}
+                <ImagePickerField
+                  label="Miniature du module"
+                  value={(form as any).image || ''}
+                  onChange={(url) => setForm(p => ({ ...p, image: url }))}
+                  primaryColor={BO_PRIMARY}
+                  shape="rect"
+                  size={90}
+                />
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Titre du module *</label>
                   <input value={form.titre} onChange={e => setForm(p => ({ ...p, titre: e.target.value }))} required
@@ -622,7 +651,7 @@ export function BOAcademy() {
       {/* Modal éditeur question */}
       <AnimatePresence>
         {showQEditor && (
-          <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowQEditor(false)}>
             <motion.div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border-2 max-h-[90vh] overflow-y-auto"

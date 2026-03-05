@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Montant, MontantCard } from '../shared/Montant';
 import { Volume2, Users, Package, TrendingUp, ArrowRight, Calendar, Edit, XCircle, ChevronDown } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import tantieSagesseImg from 'figma:asset/64c3ca539d2561b4696443c44d5985c07aa02f42.png';
+const tantieSagesseImg = '/images/tantie-sagesse-cooperative.svg';
 import { RESPONSIVE_IMAGES, RESPONSIVE_GRIDS } from '../../config/responsive';
 
 interface CooperativeDashboardProps {
@@ -46,7 +47,7 @@ export function CooperativeDashboard({
   const benefice = stats.ventesGroupees - stats.achatsCollectifs;
 
   return (
-    <div className="pb-32 lg:pb-8 pt-24 lg:pt-16 px-4 md:px-6 lg:pl-[280px] xl:pl-[320px] max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="pb-32 lg:pb-8 pt-16 lg:pt-10 px-4 md:px-6 lg:pl-[280px] xl:pl-[320px] max-w-2xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto min-h-screen bg-gradient-to-b from-blue-50 to-white">
       
       {/* Card Tantie Sagesse */}
       <motion.div
@@ -72,7 +73,7 @@ export function CooperativeDashboard({
           </motion.div>
 
           {/* Card contenu à droite */}
-          <Card className="flex-1 px-8 py-6 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: '#2072AF' }}>
+          <Card className="flex-1 px-5 py-5 rounded-3xl border-2 shadow-lg relative overflow-hidden" style={{ borderColor: '#2072AF' }}>
             {/* Fond animé */}
             <motion.div
               className="absolute inset-0 opacity-5"
@@ -81,46 +82,45 @@ export function CooperativeDashboard({
               transition={{ duration: 3, repeat: Infinity }}
             />
             
-            <div className="relative z-10 w-full h-full">
-              <motion.h3 
-                className="font-bold text-2xl text-gray-900 mb-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                Tantie Sagesse
-              </motion.h3>
-              <motion.p 
-                className="text-gray-600 leading-relaxed pr-4"
-                style={{
-                  fontSize: currentSession?.opened 
-                    ? (currentSession.fondInitial.toLocaleString().length > 10 ? '0.875rem' : '1rem')
-                    : (user?.firstName && user.firstName.length > 15 ? '0.875rem' : '1rem')
-                }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                {currentSession?.opened
-                  ? `Fonds commun ouvert avec ${currentSession.fondInitial.toLocaleString()} FCFA`
-                  : `Bonjour ${user?.firstName} ! Ouvre le fonds commun pour commencer`
-                }
-              </motion.p>
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <div className="flex-1 flex flex-col justify-center">
+                <motion.h3 
+                  className="font-black text-gray-900 mb-1 leading-tight"
+                  style={{ fontSize: 'clamp(1.4rem, 4.5vw, 2.2rem)' }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Tantie Sagesse
+                </motion.h3>
+                <motion.p 
+                  className="text-gray-600 leading-snug"
+                  style={{ fontSize: 'clamp(0.8rem, 2.5vw, 1rem)' }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {currentSession?.opened
+                    ? `Fonds commun ouvert avec ${currentSession.fondInitial.toLocaleString()} FCFA`
+                    : `Bonjour ${user?.firstName} ! Ouvre le fonds commun pour commencer`
+                  }
+                </motion.p>
+              </div>
+              <div className="flex justify-end mt-2">
+                <motion.button
+                  onClick={handleListenMessage}
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md flex-shrink-0"
+                  style={{ backgroundColor: '#2072AF' }}
+                  whileHover={{ scale: 1.1, boxShadow: '0 8px 20px rgba(32, 114, 175, 0.35)' }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Volume2 className="w-5 h-5" />
+                </motion.button>
+              </div>
             </div>
-            
-            <motion.button
-              onClick={handleListenMessage}
-              className="flex items-center gap-2 px-6 py-3 rounded-full text-base font-semibold text-white shadow-md absolute bottom-5 left-8 z-20"
-              style={{ backgroundColor: '#2072AF' }}
-              whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(32, 114, 175, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Volume2 className="w-5 h-5" />
-              Écouter
-            </motion.button>
           </Card>
         </div>
       </motion.div>
@@ -154,8 +154,8 @@ export function CooperativeDashboard({
                   </motion.div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm">Fonds commun ouvert</h3>
-                    <p className="text-lg font-bold" style={{ color: '#2072AF' }}>
-                      {currentSession.fondInitial.toLocaleString()} FCFA
+                    <p className="font-bold" style={{ color: '#2072AF' }}>
+                      <Montant value={currentSession.fondInitial} size="lg" color="#2072AF" />
                     </p>
                   </div>
                 </div>
@@ -541,9 +541,7 @@ export function CooperativeDashboard({
                 <div className="w-2 h-2 rounded-full bg-green-500" />
                 <p className="text-sm font-medium text-gray-700">Ventes groupées</p>
               </div>
-              <p className="text-base font-bold text-green-700">
-                {stats.ventesGroupees.toLocaleString()} FCFA
-              </p>
+              <Montant value={stats.ventesGroupees} size="md" color="#15803d" />
             </div>
 
             {/* Achats collectifs */}
@@ -552,9 +550,7 @@ export function CooperativeDashboard({
                 <div className="w-2 h-2 rounded-full bg-red-500" />
                 <p className="text-sm font-medium text-gray-700">Achats collectifs</p>
               </div>
-              <p className="text-base font-bold text-red-700">
-                {stats.achatsCollectifs.toLocaleString()} FCFA
-              </p>
+              <Montant value={stats.achatsCollectifs} size="md" color="#b91c1c" />
             </div>
 
             {/* Fonds commun */}
@@ -563,9 +559,7 @@ export function CooperativeDashboard({
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2072AF' }} />
                 <p className="text-sm font-medium text-gray-700">Fonds commun</p>
               </div>
-              <p className="text-base font-bold" style={{ color: '#2072AF' }}>
-                {stats.fondsCommun.toLocaleString()} FCFA
-              </p>
+              <Montant value={stats.fondsCommun} size="md" color="#2072AF" />
             </div>
           </div>
         </Card>

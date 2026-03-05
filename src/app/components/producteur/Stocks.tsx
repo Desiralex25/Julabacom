@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Montant, MontantCard } from '../shared/Montant';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
 import {
   Package,
   TrendingUp,
@@ -26,6 +29,8 @@ import { useUser } from '../../contexts/UserContext';
 import { useToast } from '../../hooks/useToast';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { NotificationButton } from '../marchand/NotificationButton';
+import { SearchBar } from '../shared/SearchBar';
+import { matchesSearch } from '../../utils/searchUtils';
 
 interface Stock {
   id: string;
@@ -56,116 +61,16 @@ const sortOptions = [
 ];
 
 const mockStocks: Stock[] = [
-  { 
-    id: '1', 
-    name: 'Tomates', 
-    image: 'https://images.unsplash.com/photo-1443131612988-32b6d97cc5da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjB0b21hdG9lcyUyMGZyZXNofGVufDF8fHx8MTc3MjEwODI4N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 1200, 
-    unit: 'kg', 
-    productionCost: 600, 
-    salePrice: 750, 
-    threshold: 500, 
-    category: 'legumes' 
-  },
-  { 
-    id: '2', 
-    name: 'Aubergines locales', 
-    image: 'https://images.unsplash.com/photo-1659260180173-8d58b38648f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZ2dwbGFudCUyMGF1YmVyZ2luZSUyMHB1cnBsZXxlbnwxfHx8fDE3NzIxMjMwNjl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 350, 
-    unit: 'kg', 
-    productionCost: 650, 
-    salePrice: 800, 
-    threshold: 200, 
-    category: 'legumes' 
-  },
-  { 
-    id: '3', 
-    name: 'Oignons', 
-    image: 'https://images.unsplash.com/photo-1756361946737-6a1a2784928c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbmlvbnMlMjBidWxiJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjEyNzM5Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 800, 
-    unit: 'kg', 
-    productionCost: 700, 
-    salePrice: 900, 
-    threshold: 300, 
-    category: 'legumes' 
-  },
-  { 
-    id: '4', 
-    name: 'Piment frais', 
-    image: 'https://images.unsplash.com/photo-1761669411746-8f401c29e9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjBjaGlsaSUyMHBlcHBlciUyMGZyZXNofGVufDF8fHx8MTc3MjEyMzA2OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 80, 
-    unit: 'kg', 
-    productionCost: 2000, 
-    salePrice: 2500, 
-    threshold: 100, 
-    category: 'epices' 
-  },
-  { 
-    id: '5', 
-    name: 'Ignames', 
-    image: 'https://images.unsplash.com/photo-1757332051150-a5b3c4510af8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMHlhbSUyMHR1YmVyJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjEyMzA2N3ww&ixlib=rb-4.1.0&q=80&w=400', 
-    quantity: 320, 
-    unit: 'kg', 
-    productionCost: 500, 
-    salePrice: 600, 
-    threshold: 250, 
-    category: 'tubercules' 
-  },
-  { 
-    id: '6', 
-    name: 'Plantain', 
-    image: 'https://images.unsplash.com/photo-1635013973792-2d1595bfa0b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNofGVufDF8fHx8MTc3MjAyNTYzM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 450, 
-    unit: 'régimes', 
-    productionCost: 2000, 
-    salePrice: 2500, 
-    threshold: 200, 
-    category: 'fruits' 
-  },
-  { 
-    id: '7', 
-    name: 'Gombo frais', 
-    image: 'https://images.unsplash.com/photo-1654786733145-78fa33b56de0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ3JlZW4lMjB2ZWdldGFibGV8ZW58MXx8fHwxNzcyMTI3Mzk0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 25, 
-    unit: 'kg', 
-    productionCost: 1200, 
-    salePrice: 1500, 
-    threshold: 50, 
-    category: 'legumes' 
-  },
-  { 
-    id: '8', 
-    name: 'Maïs grain', 
-    image: 'https://images.unsplash.com/photo-1651667343153-6dc318e27e41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnN8ZW58MXx8fHwxNzcyMTI3Mzk1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 600, 
-    unit: 'kg', 
-    productionCost: 350, 
-    salePrice: 500, 
-    threshold: 400, 
-    category: 'cereales' 
-  },
-  { 
-    id: '9', 
-    name: 'Manioc', 
-    image: 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXNzYXZhJTIwdHViZXIlMjByb290fGVufDF8fHx8MTc3MjEyNzM5Nnww&ixlib=rb-4.1.0&q=80&w=400', 
-    quantity: 600, 
-    unit: 'kg', 
-    productionCost: 300, 
-    salePrice: 400, 
-    threshold: 400, 
-    category: 'tubercules' 
-  },
-  { 
-    id: '10', 
-    name: 'Riz local', 
-    image: 'https://images.unsplash.com/photo-1743674452796-ad8d0cf38005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwZ3JhaW5zJTIwd2hpdGUlMjBib3dsfGVufDF8fHx8MTc3MjEyNzM5MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 150, 
-    unit: 'kg', 
-    productionCost: 550, 
-    salePrice: 650, 
-    threshold: 50, 
-    category: 'cereales' 
-  },
+  { id: '1', name: 'Tomates', image: '/images/produit-tomate.svg', quantity: 1200, unit: 'kg', productionCost: 600, salePrice: 750, threshold: 500, category: 'legumes' },
+  { id: '2', name: 'Aubergines locales', image: '/images/produit-aubergine.svg', quantity: 350, unit: 'kg', productionCost: 650, salePrice: 800, threshold: 200, category: 'legumes' },
+  { id: '3', name: 'Oignons', image: '/images/produit-oignon.svg', quantity: 800, unit: 'kg', productionCost: 700, salePrice: 900, threshold: 300, category: 'legumes' },
+  { id: '4', name: 'Piment frais', image: '/images/produit-piment.svg', quantity: 80, unit: 'kg', productionCost: 2000, salePrice: 2500, threshold: 100, category: 'epices' },
+  { id: '5', name: 'Ignames', image: '/images/produit-igname.svg', quantity: 320, unit: 'kg', productionCost: 500, salePrice: 600, threshold: 250, category: 'tubercules' },
+  { id: '6', name: 'Plantain', image: '/images/produit-plantain.svg', quantity: 450, unit: 'régimes', productionCost: 2000, salePrice: 2500, threshold: 200, category: 'fruits' },
+  { id: '7', name: 'Gombo frais', image: '/images/produit-gombo.svg', quantity: 25, unit: 'kg', productionCost: 1200, salePrice: 1500, threshold: 50, category: 'legumes' },
+  { id: '8', name: 'Maïs grain', image: '/images/produit-mais.svg', quantity: 600, unit: 'kg', productionCost: 350, salePrice: 500, threshold: 400, category: 'cereales' },
+  { id: '9', name: 'Manioc', image: '/images/produit-manioc.svg', quantity: 600, unit: 'kg', productionCost: 300, salePrice: 400, threshold: 400, category: 'tubercules' },
+  { id: '10', name: 'Riz local', image: '/images/produit-riz.svg', quantity: 150, unit: 'kg', productionCost: 550, salePrice: 650, threshold: 50, category: 'cereales' },
 ];
 
 export function Stocks() {
@@ -472,18 +377,17 @@ export function Stocks() {
   const filteredStocks = stocks
     .filter(stock => {
       const matchesCategory = selectedCategory === 'tous' || stock.category === selectedCategory;
-      const matchesSearch = stock.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearchQuery = matchesSearch(searchQuery, stock.name);
       
       // Appliquer le filtre actif des KPIs
       let matchesActiveFilter = true;
       if (activeFilter === 'alerts') {
         matchesActiveFilter = stock.quantity < stock.threshold;
       } else if (activeFilter === 'value') {
-        // Trier par valeur totale (quantité × prix de vente)
-        matchesActiveFilter = true; // On affiche tous mais on triera après
+        matchesActiveFilter = true;
       }
       
-      return matchesCategory && matchesSearch && matchesActiveFilter;
+      return matchesCategory && matchesSearchQuery && matchesActiveFilter;
     })
     .sort((a, b) => {
       // Si le filtre "value" est actif, trier par valeur totale
@@ -522,7 +426,7 @@ export function Stocks() {
     setShowAddModal(false);
     setNewStock({
       name: '',
-      image: '📦',
+      image: '',
       quantity: 0,
       unit: 'kg',
       productionCost: 0,
@@ -672,22 +576,22 @@ export function Stocks() {
       >
         <motion.button
           onClick={() => navigate('/producteur/declarer-recolte')}
-          className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2E8B57] transition-colors"
+          className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2E8B57] transition-colors whitespace-nowrap"
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Sprout className="w-5 h-5 text-[#2E8B57]" />
-          <span className="font-semibold text-gray-700">Déclarer récolte</span>
+          <Sprout className="w-5 h-5 text-[#2E8B57] flex-shrink-0" />
+          <span className="font-semibold text-gray-700">Déclarer</span>
         </motion.button>
 
         <motion.button
           onClick={() => navigate('/producteur/revenus')}
-          className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2E8B57] transition-colors"
+          className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#2E8B57] transition-colors whitespace-nowrap"
           whileHover={{ scale: 1.02, y: -2 }}
           whileTap={{ scale: 0.98 }}
         >
-          <TrendingUp className="w-5 h-5 text-[#2E8B57]" />
-          <span className="font-semibold text-gray-700">Voir revenus</span>
+          <TrendingUp className="w-5 h-5 text-[#2E8B57] flex-shrink-0" />
+          <span className="font-semibold text-gray-700">Revenus</span>
         </motion.button>
       </motion.div>
 
@@ -721,22 +625,22 @@ export function Stocks() {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <motion.button
           onClick={() => setShowAddModal(true)}
-          className="py-4 rounded-2xl bg-white border-2 border-[#2E8B57] text-[#2E8B57] font-bold flex items-center justify-center gap-2"
+          className="py-4 px-3 rounded-2xl bg-white border-2 border-[#2E8B57] text-[#2E8B57] font-bold flex items-center justify-center gap-2 whitespace-nowrap"
           whileTap={{ scale: 0.98 }}
           whileHover={{ scale: 1.02 }}
         >
-          <Plus className="w-5 h-5" strokeWidth={3} />
-          Ajouter un produit
+          <Plus className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+          Ajouter
         </motion.button>
 
         <motion.button
           onClick={() => navigate('/producteur/declarer-recolte')}
-          className="py-4 rounded-2xl bg-[#2E8B57] text-white font-bold flex items-center justify-center gap-2"
+          className="py-4 px-3 rounded-2xl bg-[#2E8B57] text-white font-bold flex items-center justify-center gap-2 whitespace-nowrap"
           whileTap={{ scale: 0.98 }}
           whileHover={{ scale: 1.02 }}
         >
-          <Leaf className="w-5 h-5" strokeWidth={3} />
-          Nouvelle récolte
+          <Leaf className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+          Récolte
         </motion.button>
       </div>
 
@@ -811,11 +715,11 @@ export function Stocks() {
                 <div className="grid grid-cols-2 gap-1.5 text-xs">
                   <div className="bg-red-50 rounded-lg p-1.5 text-center">
                     <p className="text-red-600 font-semibold mb-0.5">Coût</p>
-                    <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.productionCost.toLocaleString('fr-FR')} FCFA</p>
+                    <Montant value={stock.productionCost} size="xs" color="#374151" />
                   </div>
                   <div className="bg-green-50 rounded-lg p-1.5 text-center">
                     <p className="text-green-600 font-semibold mb-0.5">Vente</p>
-                    <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.salePrice.toLocaleString('fr-FR')} FCFA</p>
+                    <Montant value={stock.salePrice} size="xs" color="#374151" />
                   </div>
                 </div>
 
@@ -843,7 +747,7 @@ export function Stocks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
@@ -867,6 +771,16 @@ export function Stocks() {
               </div>
 
               <div className="p-6 space-y-4">
+                {/* Photo du produit */}
+                <ImagePickerField
+                  label="Photo du produit"
+                  value={newStock.image?.startsWith('data:') || newStock.image?.startsWith('http') ? newStock.image : ''}
+                  onChange={(url) => setNewStock({ ...newStock, image: url })}
+                  primaryColor="#2E8B57"
+                  shape="rect"
+                  size={96}
+                />
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Nom du produit</label>
                   <input
@@ -888,20 +802,14 @@ export function Stocks() {
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2E8B57] focus:outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unité</label>
-                    <select
-                      value={newStock.unit}
-                      onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2E8B57] focus:outline-none"
-                    >
-                      <option value="kg">kg</option>
-                      <option value="L">L</option>
-                      <option value="tas">tas</option>
-                      <option value="régimes">régimes</option>
-                      <option value="sac">sac</option>
-                    </select>
-                  </div>
+                  <SelectWithAutre
+                    label="Unité"
+                    value={newStock.unit}
+                    onChange={(v) => setNewStock({ ...newStock, unit: v })}
+                    options={['kg', 'L', 'tas', 'régimes', 'sac', 'tonne', 'carton']}
+                    primaryColor="#2E8B57"
+                    placeholder="Ex: caisse, panier..."
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -929,15 +837,14 @@ export function Stocks() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Catégorie</label>
-                  <select
+                  <SelectWithAutre
+                    label="Catégorie"
                     value={newStock.category}
-                    onChange={(e) => setNewStock({ ...newStock, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#2E8B57] focus:outline-none"
-                  >
-                    {categories.filter(c => c.id !== 'tous').map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => setNewStock({ ...newStock, category: v })}
+                    options={categories.filter(c => c.id !== 'tous').map(cat => cat.id)}
+                    primaryColor="#2E8B57"
+                    placeholder="Ex: épices, fleurs..."
+                  />
                 </div>
 
                 <div>
@@ -971,7 +878,7 @@ export function Stocks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowEditModal(false)}
           >
             <motion.div
@@ -1033,16 +940,16 @@ export function Stocks() {
                 <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Coût production</span>
-                    <span className="font-bold text-gray-900">{selectedStock.productionCost.toLocaleString()} FCFA/{selectedStock.unit}</span>
+                    <span className="font-bold text-gray-900"><Montant value={selectedStock.productionCost} unit={selectedStock.unit} size="sm" color="#374151" /></span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Prix de vente</span>
-                    <span className="font-bold text-green-600">{selectedStock.salePrice.toLocaleString()} FCFA/{selectedStock.unit}</span>
+                    <span className="font-bold text-green-600"><Montant value={selectedStock.salePrice} unit={selectedStock.unit} size="sm" color="#16a34a" /></span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Marge unitaire</span>
                     <span className="font-bold text-[#2E8B57]">
-                      {(selectedStock.salePrice - selectedStock.productionCost).toLocaleString()} FCFA 
+                      <Montant value={selectedStock.salePrice - selectedStock.productionCost} size="sm" color="#2E8B57" showPlus />
                       <span className="text-xs ml-1">
                         (+{(((selectedStock.salePrice - selectedStock.productionCost) / selectedStock.productionCost) * 100).toFixed(0)}%)
                       </span>
@@ -1051,7 +958,7 @@ export function Stocks() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Valeur totale</span>
                     <span className="font-bold text-lg text-[#2E8B57]">
-                      {(selectedStock.quantity * selectedStock.salePrice).toLocaleString()} FCFA
+                      <Montant value={selectedStock.quantity * selectedStock.salePrice} size="lg" color="#2E8B57" />
                     </span>
                   </div>
                 </div>

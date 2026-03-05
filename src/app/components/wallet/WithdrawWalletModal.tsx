@@ -5,10 +5,10 @@ import { useWallet } from '../../contexts/WalletContext';
 import { useApp } from '../../contexts/AppContext';
 
 // Import des logos Mobile Money
-import logoOrange from 'figma:asset/7840046de3eacaf33de5795c18da3a00db7537d8.png';
-import logoMTN from 'figma:asset/05a1748493c62d7c35d0a1fc74000c8692f4626c.png';
-import logoMoov from 'figma:asset/465392f77ff396489006c9f3550b62cd1a884f25.png';
-import logoWave from 'figma:asset/9119f6953c88fd332a7c103f59e0ce9b7098da8a.png';
+const logoOrange = '/images/logo-orange-money.svg';
+const logoMTN = '/images/logo-mtn.svg';
+const logoMoov = '/images/logo-moov.svg';
+const logoWave = '/images/logo-wave.svg';
 
 interface WithdrawWalletModalProps {
   isOpen: boolean;
@@ -168,12 +168,12 @@ export function WithdrawWalletModal({ isOpen, onClose, roleColor = '#2E8B57' }: 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
             onClick={handleClose}
           />
           
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

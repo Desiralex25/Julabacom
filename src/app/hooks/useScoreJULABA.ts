@@ -393,7 +393,7 @@ export function getRecommendedActions(
         description: 'Enregistre de nouveaux acteurs quotidiennement',
         points: 5,
         completed: false,
-        route: '/identificateur/identification',
+        route: '/identificateur/fiche-identification',
       },
       {
         id: 'daily_opening',

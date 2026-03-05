@@ -22,12 +22,15 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { Montant, MontantCard } from '../shared/Montant';
 import { Navigation } from '../layout/Navigation';
 import { useUser } from '../../contexts/UserContext';
 import { useApp } from '../../contexts/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { TantieSagesse } from '../voice/TantieSagesse';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
 import { NotificationButton } from './NotificationButton';
 import { VenteVocaleModal } from './VenteVocaleModal';
 import { useCaisse } from '../../contexts/CaisseContext';
@@ -62,116 +65,16 @@ const sortOptions = [
 ];
 
 const mockStocks: Stock[] = [
-  { 
-    id: '1', 
-    name: 'Riz local', 
-    image: 'https://images.unsplash.com/photo-1743674452796-ad8d0cf38005?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyaWNlJTIwZ3JhaW5zJTIwd2hpdGUlMjBib3dsfGVufDF8fHx8MTc3MjEyNzM5MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 150, 
-    unit: 'kg', 
-    purchasePrice: 600, 
-    salePrice: 650, 
-    threshold: 50, 
-    category: 'cereales' 
-  },
-  { 
-    id: '2', 
-    name: 'Tomates', 
-    image: 'https://images.unsplash.com/photo-1443131612988-32b6d97cc5da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjB0b21hdG9lcyUyMGZyZXNofGVufDF8fHx8MTc3MjEwODI4N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 45, 
-    unit: 'kg', 
-    purchasePrice: 300, 
-    salePrice: 350, 
-    threshold: 50, 
-    category: 'legumes' 
-  },
-  { 
-    id: '3', 
-    name: 'Oignons', 
-    image: 'https://images.unsplash.com/photo-1756361946737-6a1a2784928c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvbmlvbnMlMjBidWxiJTIwdmVnZXRhYmxlfGVufDF8fHx8MTc3MjEyNzM5Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 80, 
-    unit: 'kg', 
-    purchasePrice: 350, 
-    salePrice: 400, 
-    threshold: 40, 
-    category: 'legumes' 
-  },
-  { 
-    id: '4', 
-    name: 'Huile', 
-    image: 'https://images.unsplash.com/photo-1757801333069-f7b3cabaec4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb29raW5nJTIwb2lsJTIwYm90dGxlfGVufDF8fHx8MTc3MjAyOTMyNHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 25, 
-    unit: 'L', 
-    purchasePrice: 1400, 
-    salePrice: 1500, 
-    threshold: 30, 
-    category: 'epices' 
-  },
-  { 
-    id: '5', 
-    name: 'Ignames', 
-    image: 'figma:asset/7b5929e307a7d1715c5a7dbb4b6c0658a539777f.png', 
-    quantity: 120, 
-    unit: 'kg', 
-    purchasePrice: 350, 
-    salePrice: 400, 
-    threshold: 60, 
-    category: 'tubercules' 
-  },
-  { 
-    id: '6', 
-    name: 'Plantain', 
-    image: 'https://images.unsplash.com/photo-1635013973792-2d1595bfa0b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGFudGFpbiUyMGJhbmFuYSUyMGJ1bmNofGVufDF8fHx8MTc3MjAyNTYzM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 15, 
-    unit: 'régimes', 
-    purchasePrice: 250, 
-    salePrice: 300, 
-    threshold: 20, 
-    category: 'fruits' 
-  },
-  { 
-    id: '7', 
-    name: 'Piment', 
-    image: 'https://images.unsplash.com/photo-1761669411746-8f401c29e9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWQlMjBjaGlsaSUyMHBlcHBlciUyMGZyZXNofGVufDF8fHx8MTc3MjEyMzA2OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 8, 
-    unit: 'tas', 
-    purchasePrice: 150, 
-    salePrice: 200, 
-    threshold: 10, 
-    category: 'epices' 
-  },
-  { 
-    id: '8', 
-    name: 'Gombo', 
-    image: 'https://images.unsplash.com/photo-1654786733145-78fa33b56de0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxva3JhJTIwZ3JlZW4lMjB2ZWdldGFibGV8ZW58MXx8fHwxNzcyMTI3Mzk0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 30, 
-    unit: 'tas', 
-    purchasePrice: 120, 
-    salePrice: 150, 
-    threshold: 15, 
-    category: 'legumes' 
-  },
-  { 
-    id: '9', 
-    name: 'Maïs', 
-    image: 'https://images.unsplash.com/photo-1651667343153-6dc318e27e41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3JuJTIwbWFpemUlMjB5ZWxsb3clMjBncmFpbnN8ZW58MXx8fHwxNzcyMTI3Mzk1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 100, 
-    unit: 'kg', 
-    purchasePrice: 450, 
-    salePrice: 500, 
-    threshold: 40, 
-    category: 'cereales' 
-  },
-  { 
-    id: '10', 
-    name: 'Aubergines', 
-    image: 'https://images.unsplash.com/photo-1659260180173-8d58b38648f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZ2dwbGFudCUyMGF1YmVyZ2luZSUyMHB1cnBsZXxlbnwxfHx8fDE3NzIxMjMwNjl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral', 
-    quantity: 35, 
-    unit: 'kg', 
-    purchasePrice: 700, 
-    salePrice: 800, 
-    threshold: 25, 
-    category: 'legumes' 
-  },
+  { id: '1', name: 'Riz local', image: '/images/produit-riz.svg', quantity: 150, unit: 'kg', purchasePrice: 600, salePrice: 650, threshold: 50, category: 'cereales' },
+  { id: '2', name: 'Tomates', image: '/images/produit-tomate.svg', quantity: 45, unit: 'kg', purchasePrice: 300, salePrice: 350, threshold: 50, category: 'legumes' },
+  { id: '3', name: 'Oignons', image: '/images/produit-oignon.svg', quantity: 80, unit: 'kg', purchasePrice: 350, salePrice: 400, threshold: 40, category: 'legumes' },
+  { id: '4', name: 'Huile', image: '/images/produit-huile.svg', quantity: 25, unit: 'L', purchasePrice: 1400, salePrice: 1500, threshold: 30, category: 'epices' },
+  { id: '5', name: 'Ignames', image: '/images/produit-igname.svg', quantity: 120, unit: 'kg', purchasePrice: 350, salePrice: 400, threshold: 60, category: 'tubercules' },
+  { id: '6', name: 'Plantain', image: '/images/produit-plantain.svg', quantity: 15, unit: 'régimes', purchasePrice: 250, salePrice: 300, threshold: 20, category: 'fruits' },
+  { id: '7', name: 'Piment', image: '/images/produit-piment.svg', quantity: 8, unit: 'tas', purchasePrice: 150, salePrice: 200, threshold: 10, category: 'epices' },
+  { id: '8', name: 'Gombo', image: '/images/produit-gombo.svg', quantity: 30, unit: 'tas', purchasePrice: 120, salePrice: 150, threshold: 15, category: 'legumes' },
+  { id: '9', name: 'Maïs', image: '/images/produit-mais.svg', quantity: 100, unit: 'kg', purchasePrice: 450, salePrice: 500, threshold: 40, category: 'cereales' },
+  { id: '10', name: 'Aubergines', image: '/images/produit-aubergine.svg', quantity: 35, unit: 'kg', purchasePrice: 700, salePrice: 800, threshold: 25, category: 'legumes' },
 ];
 
 export function GestionStock() {
@@ -553,7 +456,7 @@ export function GestionStock() {
     setShowAddModal(false);
     setNewStock({
       name: '',
-      image: '📦',
+      image: '',
       quantity: 0,
       unit: 'kg',
       purchasePrice: 0,
@@ -724,7 +627,7 @@ export function GestionStock() {
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {totalValue.toLocaleString('fr-FR')} FCFA
+              <Montant value={totalValue} size="md" color="#16a34a" />
             </motion.p>
             {showValueModal && (
               <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-green-500 rounded-full" />
@@ -740,21 +643,21 @@ export function GestionStock() {
         >
           <motion.button
             onClick={() => navigate('/marchand/ventes-passees')}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#C46210] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#C46210] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Receipt className="w-5 h-5 text-[#C46210]" />
+            <Receipt className="w-5 h-5 text-[#C46210] flex-shrink-0" />
             <span className="font-semibold text-gray-700">Ventes passées</span>
           </motion.button>
 
           <motion.button
             onClick={() => navigate('/marchand/resume-caisse')}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#C46210] transition-colors"
+            className="flex items-center justify-center gap-2 px-3 py-3.5 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#C46210] transition-colors whitespace-nowrap"
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Wallet className="w-5 h-5 text-[#C46210]" />
+            <Wallet className="w-5 h-5 text-[#C46210] flex-shrink-0" />
             <span className="font-semibold text-gray-700">Résumé caisse</span>
           </motion.button>
         </motion.div>
@@ -789,12 +692,12 @@ export function GestionStock() {
         <div className="grid grid-cols-2 gap-3 mb-4">
           <motion.button
             onClick={() => setShowAddModal(true)}
-            className="py-4 rounded-2xl bg-white border-2 border-[#C46210] text-[#C46210] font-bold flex items-center justify-center gap-2"
+            className="py-4 px-4 rounded-2xl bg-white border-2 border-[#C46210] text-[#C46210] font-bold flex items-center justify-center gap-2 whitespace-nowrap"
             whileTap={{ scale: 0.98 }}
             whileHover={{ scale: 1.02 }}
           >
-            <Plus className="w-5 h-5" strokeWidth={3} />
-            Ajouter un produit
+            <Plus className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+            Ajouter
           </motion.button>
 
           <motion.button
@@ -879,11 +782,11 @@ export function GestionStock() {
                   <div className="grid grid-cols-2 gap-1.5 text-xs">
                     <div className="bg-red-50 rounded-lg p-1.5 text-center">
                       <p className="text-red-600 font-semibold mb-0.5">Achat</p>
-                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.purchasePrice.toLocaleString('fr-FR')} FCFA</p>
+                      <Montant value={stock.purchasePrice} size="xs" color="#374151" />
                     </div>
                     <div className="bg-green-50 rounded-lg p-1.5 text-center">
                       <p className="text-green-600 font-semibold mb-0.5">Vente</p>
-                      <p className="font-bold text-gray-900 text-[10px] leading-tight">{stock.salePrice.toLocaleString('fr-FR')} FCFA</p>
+                      <Montant value={stock.salePrice} size="xs" color="#374151" />
                     </div>
                   </div>
 
@@ -915,7 +818,7 @@ export function GestionStock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
@@ -939,6 +842,16 @@ export function GestionStock() {
               </div>
 
               <div className="p-6 space-y-4">
+                {/* Photo du produit */}
+                <ImagePickerField
+                  label="Photo du produit"
+                  value={newStock.image.startsWith('data:') || newStock.image.startsWith('http') ? newStock.image : ''}
+                  onChange={(url) => setNewStock({ ...newStock, image: url })}
+                  primaryColor="#C46210"
+                  shape="rect"
+                  size={96}
+                />
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Nom du produit</label>
                   <input
@@ -960,20 +873,14 @@ export function GestionStock() {
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#C46210] focus:outline-none"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unité</label>
-                    <select
-                      value={newStock.unit}
-                      onChange={(e) => setNewStock({ ...newStock, unit: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#C46210] focus:outline-none"
-                    >
-                      <option value="kg">kg</option>
-                      <option value="L">L</option>
-                      <option value="tas">tas</option>
-                      <option value="régimes">régimes</option>
-                      <option value="sac">sac</option>
-                    </select>
-                  </div>
+                  <SelectWithAutre
+                    label="Unité"
+                    value={newStock.unit}
+                    onChange={(v) => setNewStock({ ...newStock, unit: v })}
+                    options={['kg', 'L', 'tas', 'régimes', 'sac', 'tonne', 'carton']}
+                    primaryColor="#C46210"
+                    placeholder="Ex: bouteille, caisse..."
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -999,18 +906,14 @@ export function GestionStock() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Catégorie</label>
-                  <select
-                    value={newStock.category}
-                    onChange={(e) => setNewStock({ ...newStock, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#C46210] focus:outline-none"
-                  >
-                    {categories.filter(c => c.id !== 'tous').map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
-                    ))}
-                  </select>
-                </div>
+                <SelectWithAutre
+                  label="Catégorie"
+                  value={newStock.category}
+                  onChange={(v) => setNewStock({ ...newStock, category: v })}
+                  options={categories.filter(c => c.id !== 'tous').map(cat => cat.id)}
+                  primaryColor="#C46210"
+                  placeholder="Ex: épices, condiments..."
+                />
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Seuil d'alerte</label>
@@ -1043,7 +946,7 @@ export function GestionStock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowEditModal(false)}
           >
             <motion.div
@@ -1175,26 +1078,23 @@ export function GestionStock() {
                     <div className="px-4 pb-4 pt-2 space-y-2">
                       <div className="flex items-center justify-between py-2 border-b border-orange-100">
                         <span className="text-sm text-gray-500">Prix d'achat</span>
-                        <span className="font-bold text-gray-800">{selectedStock.purchasePrice.toLocaleString('fr-FR')} FCFA</span>
+                        <Montant value={selectedStock.purchasePrice} size="sm" color="#1f2937" />
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-orange-100">
                         <span className="text-sm text-gray-500">Prix de vente</span>
-                        <span className="font-bold text-gray-800">{selectedStock.salePrice.toLocaleString('fr-FR')} FCFA</span>
+                        <Montant value={selectedStock.salePrice} size="sm" color="#1f2937" />
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-orange-100">
                         <span className="text-sm text-gray-500">Bénéfice unitaire</span>
-                        <span className="font-bold" style={{ color: '#C46210' }}>
-                          +{(selectedStock.salePrice - selectedStock.purchasePrice).toLocaleString('fr-FR')} FCFA
-                        </span>
+                        <Montant value={selectedStock.salePrice - selectedStock.purchasePrice} size="sm" color="#C46210" showPlus />
                       </div>
                       <div className="flex items-center justify-between py-2 px-3 rounded-2xl" style={{ backgroundColor: '#C4621011' }}>
                         <span className="text-sm font-bold text-gray-600">Valeur totale stock</span>
                         <motion.span
-                          className="font-bold text-green-600"
                           animate={{ scale: [1, 1.04, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          {(selectedStock.quantity * selectedStock.salePrice).toLocaleString('fr-FR')} FCFA
+                          <Montant value={selectedStock.quantity * selectedStock.salePrice} size="sm" color="#16a34a" />
                         </motion.span>
                       </div>
                     </div>
@@ -1228,7 +1128,7 @@ export function GestionStock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
             onClick={() => setShowFilterModal(false)}
           >
             <motion.div
@@ -1330,7 +1230,7 @@ export function GestionStock() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end px-4 pb-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end px-4 pb-4"
               onClick={() => setShowValueModal(false)}
             >
               <motion.div
@@ -1373,9 +1273,9 @@ export function GestionStock() {
                         </div>
                         <p className="text-xs font-semibold text-gray-700">Valeur d'achat</p>
                       </div>
-                      <p className="text-xl font-bold text-red-600">
-                        {totalPurchaseValue.toLocaleString('fr-FR')} FCFA
-                      </p>
+                      <MontantCard accentColor="#EF4444" className="rounded-xl">
+                        <Montant value={totalPurchaseValue} size="xl" color="#dc2626" />
+                      </MontantCard>
                       <p className="text-xs text-gray-500 mt-1">Investissement total</p>
                     </motion.div>
 
@@ -1392,9 +1292,9 @@ export function GestionStock() {
                         </div>
                         <p className="text-xs font-semibold text-gray-700">Valeur de vente</p>
                       </div>
-                      <p className="text-xl font-bold text-green-600">
-                        {totalSaleValue.toLocaleString('fr-FR')} FCFA
-                      </p>
+                      <MontantCard accentColor="#10B981" className="rounded-xl">
+                        <Montant value={totalSaleValue} size="xl" color="#16a34a" />
+                      </MontantCard>
                       <p className="text-xs text-gray-500 mt-1">Potentiel total</p>
                     </motion.div>
 
@@ -1411,9 +1311,9 @@ export function GestionStock() {
                         </div>
                         <p className="text-xs font-semibold text-gray-700">Marge totale</p>
                       </div>
-                      <p className="text-xl font-bold text-[#C46210]">
-                        {totalMargin.toLocaleString('fr-FR')} FCFA
-                      </p>
+                      <MontantCard accentColor="#C46210" className="rounded-xl">
+                        <Montant value={totalMargin} size="xl" color="#C46210" />
+                      </MontantCard>
                       <p className="text-xs text-gray-500 mt-1">Bénéfice potentiel</p>
                     </motion.div>
 
@@ -1545,16 +1445,16 @@ export function GestionStock() {
                       </div>
                       <div>
                         <p className="text-sm opacity-90">Ton bénéfice total</p>
-                        <p className="text-2xl font-bold">{totalMargin.toLocaleString('fr-FR')} FCFA</p>
+                        <Montant value={totalMargin} size="xl" color="white" />
                       </div>
                     </div>
                     <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
                       <p className="text-xs opacity-90 mb-1">Si tu vends tout ton stock aux prix actuels :</p>
                       <p className="font-semibold text-sm">
-                        Tu gagneras <span className="text-yellow-300">{roi} FCFA</span> pour chaque <span className="text-yellow-300">100 FCFA</span> que tu as investi
+                        Tu gagneras <span className="text-yellow-300">{roi} <span className="text-xs font-bold opacity-80">FCFA</span></span> pour chaque <span className="text-yellow-300">100 <span className="text-xs font-bold opacity-80">FCFA</span></span> investi
                       </p>
                       <p className="text-xs opacity-75 mt-2">
-                        Investissement : {totalPurchaseValue.toLocaleString('fr-FR')} FCFA
+                        Investissement : <Montant value={totalPurchaseValue} size="xs" color="rgba(255,255,255,0.9)" />
                       </p>
                     </div>
                   </motion.div>

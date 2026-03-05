@@ -1,4 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router';
+import { ImagePickerField } from '../shared/ImagePickerField';
+import { SelectWithAutre } from '../shared/SelectWithAutre';
+import { Montant, MontantCard } from '../shared/Montant';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search, Mic, MicOff, X, Plus, ChevronRight, ArrowLeft,
@@ -11,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 import { useApp } from '../../contexts/AppContext';
+import { useModalRegister } from '../../contexts/ModalContext';
 import { NotificationButton } from '../marchand/NotificationButton';
 import { toast } from 'sonner';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
@@ -161,8 +166,7 @@ function ProduitCardGrid({ produit, index, onAction, actionLabel, onSecondary, s
           <span className="truncate">{produit.village}</span>
         </div>
         <p className="text-xl font-bold mb-1" style={{ color: C }}>
-          {produit.prixUnitaire.toLocaleString()} FCFA
-          <span className="text-[10px] text-gray-500 font-normal ml-1">/{produit.unite}</span>
+          <Montant value={produit.prixUnitaire} unit={produit.unite} size="lg" color={C} />
         </p>
         <p className="text-[10px] text-gray-400 mb-3">
           {produit.quantite.toLocaleString()} {produit.unite} dispo.
@@ -242,8 +246,7 @@ function ProduitCoopCardGrid({ produit, index, onRetirer }: {
           </p>
         )}
         <p className="text-xl font-bold mb-0.5" style={{ color: C }}>
-          {produit.prixUnitaire.toLocaleString()} FCFA
-          <span className="text-[10px] text-gray-500 font-normal ml-1">/{produit.unite}</span>
+          <Montant value={produit.prixUnitaire} unit={produit.unite} size="lg" color={C} />
         </p>
         {produit.prixOrigine && (
           <p className="text-[10px] text-gray-400 mb-2">
@@ -357,10 +360,12 @@ function CommandeRecueCard({ commande, index, onAccepter, onRefuser, onDetails }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 export function MarcheHub() {
-  const { speak, setIsModalOpen } = useApp();
+  const { speak } = useApp();
+  const location = useLocation();
 
-  // ── Vue principale
-  const [vue, setVue] = useState<TabVue>('achats');
+  // ── Vue principale - Initialisée depuis location.state si présent
+  const initialVue = (location.state as any)?.vue === 'ventes' ? 'ventes' : 'achats';
+  const [vue, setVue] = useState<TabVue>(initialVue);
 
   // ── Sous-tabs
   const [tabAchat,      setTabAchat]      = useState<TabAchat>('marketplace');
@@ -386,12 +391,8 @@ export function MarcheHub() {
   const [cmdNegocier,       setCmdNegocier]       = useState<CmdMarche | null>(null);
   const [showNouvelleAnnonce, setShowNouvelleAnnonce] = useState(false);
 
-  // ── Sync modal
-  useEffect(() => {
-    const any = showPublierModal || !!selectedCmdMarche || showNegocierModal || showNouvelleAnnonce;
-    setIsModalOpen(any);
-  }, [showPublierModal, selectedCmdMarche, showNegocierModal, showNouvelleAnnonce, setIsModalOpen]);
-  useEffect(() => () => { setIsModalOpen(false); }, [setIsModalOpen]);
+  // ── Sync modal via ModalContext
+  useModalRegister(showPublierModal || !!selectedCmdMarche || showNegocierModal || showNouvelleAnnonce);
 
   // ── KPIs
   const commandesVersProducteurs = useMemo(() =>
@@ -1004,7 +1005,7 @@ function ModalPublierSurCoop({ produit, onClose, onPublier }: {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end" onClick={onClose}>
       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26 }}
         onClick={e => e.stopPropagation()}
@@ -1130,8 +1131,8 @@ function ModalPublierSurCoop({ produit, onClose, onPublier }: {
         <div className="px-5 py-4 border-t border-gray-100 bg-white grid grid-cols-2 gap-3">
           {step > 1 && (
             <motion.button onClick={() => setStep(s => s - 1)} whileTap={{ scale: 0.97 }}
-              className="py-3.5 rounded-2xl border-2 border-gray-200 text-sm font-bold text-gray-700 flex items-center justify-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Retour
+              className="py-3.5 rounded-2xl border-2 border-gray-200 text-sm font-bold text-gray-700 flex items-center justify-center gap-2 whitespace-nowrap">
+              <ArrowLeft className="w-4 h-4 flex-shrink-0" /> Retour
             </motion.button>
           )}
           {step < 2 ? (
@@ -1175,6 +1176,7 @@ function ModalNouvelleAnnonce({ onClose, onPublier }: {
   const [unite,     setUnite]     = useState('kg');
   const [prix,      setPrix]      = useState('');
   const [qualite,   setQualite]   = useState<'A'|'B'|'C'>('A');
+  const [image,     setImage]     = useState('');
 
   const doPublier = () => {
     if (!produit || !quantite || !prix) { toast.error('Remplis tous les champs obligatoires'); return; }
@@ -1186,13 +1188,14 @@ function ModalNouvelleAnnonce({ onClose, onPublier }: {
       vendeurType: 'cooperative', vendeurNom: 'Coop Agricole du Bélier', vendeurId: 'COOP-001',
       village: 'Yamoussoukro', region: 'Bélier', telephone: '+225 27 30 20 30',
       scoreVendeur: 91, datePublication: new Date().toISOString().split('T')[0],
+      image: image || undefined,
     };
     onPublier(nouveau);
   };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end" onClick={onClose}>
       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26 }}
         onClick={e => e.stopPropagation()}
@@ -1210,6 +1213,16 @@ function ModalNouvelleAnnonce({ onClose, onPublier }: {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Photo du produit */}
+          <ImagePickerField
+            label="Photo du produit (facultatif)"
+            value={image}
+            onChange={setImage}
+            primaryColor={C_OP}
+            shape="rect"
+            size={88}
+          />
+
           {[
             { label: 'Nom du produit', val: produit, set: setProduit, ph: 'Ex : Riz local, Ignames...', req: true },
             { label: 'Catégorie', val: categorie, set: setCategorie, ph: 'Ex : Céréales, Tubercules...' },
@@ -1231,13 +1244,14 @@ function ModalNouvelleAnnonce({ onClose, onPublier }: {
                 className="w-full px-4 h-12 rounded-2xl border-2 border-gray-200 text-sm focus:outline-none bg-white"
                 onFocus={e => (e.target.style.borderColor = C_OP)} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5">Unité</label>
-              <select value={unite} onChange={e => setUnite(e.target.value)}
-                className="w-full px-4 h-12 rounded-2xl border-2 border-gray-200 text-sm focus:outline-none bg-white">
-                {['kg', 'tonne', 'régimes', 'sac', 'litre'].map(u => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
+            <SelectWithAutre
+              label="Unité"
+              value={unite}
+              onChange={setUnite}
+              options={['kg', 'tonne', 'régimes', 'sac', 'litre', 'carton']}
+              primaryColor={C_OP}
+              placeholder="Ex: barrique, panier..."
+            />
           </div>
 
           <div>
@@ -1290,7 +1304,7 @@ function ModalNegocier({ commande, onClose, onEnvoyer }: {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end" onClick={onClose}>
       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26 }}
         onClick={e => e.stopPropagation()}
@@ -1363,7 +1377,7 @@ function DrawerDetailCmdMarche({ commande, onClose, onAccepter, onRefuser }: {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end" onClick={onClose}>
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end" onClick={onClose}>
       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26 }}
         onClick={e => e.stopPropagation()}

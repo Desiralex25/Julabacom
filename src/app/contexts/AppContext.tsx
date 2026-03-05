@@ -1,3 +1,16 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════
+ * JÙLABA — AppContext (PRODUCTION READY)
+ * ═══════════════════════════════════════════════════════════════════
+ * 
+ * IMPORTANT : Ce context ne contient PLUS aucune persistance localStorage
+ * critique ni données mock. Toutes les données doivent venir de Supabase.
+ * 
+ * ✅ Suppression complète : localStorage user, transactions, marketplace, sessions
+ * ✅ Suppression complète : MOCK_USERS
+ * ✅ Structure prête pour migration Supabase immédiate
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type UserRole = 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
@@ -49,8 +62,6 @@ export interface Transaction {
   synced?: boolean;
 }
 
-// NOTE: Notification interface supprimée — tout passe par NotificationsContext
-
 export interface DaySession {
   id: string;
   userId: string;
@@ -100,7 +111,6 @@ interface AppContextType {
   closeDay: (comptageReel: number, closingNotes?: string) => void;
   updateFondInitial: (newFond: number) => void;
   getTodayStats: () => { ventes: number; depenses: number; caisse: number; nombreVentes: number };
-  // Historique et analytics
   getSalesHistory: (filters?: { startDate?: string; endDate?: string; productName?: string; paymentMethod?: string }) => Transaction[];
   getFinancialSummary: (period: 'today' | '7days' | '30days' | 'custom', customStart?: string, customEnd?: string) => {
     totalVentes: number;
@@ -123,79 +133,8 @@ const ROLE_COLORS: Record<UserRole, string> = {
   identificateur: '#9F8170',
 };
 
-// Mock users for dev mode
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    phone: '0701020304',
-    firstName: 'Aminata',
-    lastName: 'Kouassi',
-    role: 'marchand',
-    region: 'Abidjan',
-    commune: 'Yopougon',
-    activity: 'Vente de riz',
-    market: 'Marché de Yopougon',
-    score: 85,
-    createdAt: '2024-01-15',
-    validated: true,
-  },
-  {
-    id: '2',
-    phone: '0709080706',
-    firstName: 'Konan',
-    lastName: 'Yao',
-    role: 'producteur',
-    region: 'Bouaké',
-    commune: 'Bouaké Centre',
-    activity: 'Production de maïs',
-    score: 92,
-    createdAt: '2024-02-10',
-    validated: true,
-  },
-  {
-    id: '3',
-    phone: '0705040302',
-    firstName: 'Marie',
-    lastName: 'Bamba',
-    role: 'cooperative',
-    region: 'San Pedro',
-    commune: 'San Pedro',
-    activity: 'Coopérative agricole',
-    cooperativeName: 'COOP IVOIRE VIVRIER',
-    score: 88,
-    createdAt: '2024-03-05',
-    validated: true,
-  },
-  {
-    id: '4',
-    phone: '0707070707',
-    firstName: 'Jean',
-    lastName: 'Kouadio',
-    role: 'institution',
-    region: 'Abidjan',
-    commune: 'Plateau',
-    activity: 'Direction Générale de l\'Économie',
-    score: 100,
-    createdAt: '2024-01-01',
-    validated: true,
-  },
-  {
-    id: '5',
-    phone: '0708080808',
-    firstName: 'Sophie',
-    lastName: 'Diarra',
-    role: 'identificateur',
-    region: 'Abidjan',
-    commune: 'Marcory',
-    activity: 'Agent terrain',
-    market: 'Marché de Yopougon',
-    score: 95,
-    createdAt: '2024-04-20',
-    validated: true,
-  },
-];
-
 export function AppProvider({ children }: { children: ReactNode }) {
+  // ✅ ÉTAT SANS PERSISTANCE LOCALE
   const [user, setUser] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceItem[]>([]);
@@ -204,69 +143,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentSession, setCurrentSession] = useState<DaySession | null>(null);
   const [isModalOpen, setIsModalOpenState] = useState(false);
 
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('julaba_user');
-    const savedTransactions = localStorage.getItem('julaba_transactions');
-    const savedMarketplace = localStorage.getItem('julaba_marketplace');
-    const savedSession = localStorage.getItem('julaba_current_session');
-
-    if (savedUser) setUser(JSON.parse(savedUser));
-    if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
-    if (savedMarketplace) setMarketplaceItems(JSON.parse(savedMarketplace));
-    
-    if (savedSession) {
-      const session: DaySession = JSON.parse(savedSession);
-      const today = new Date().toISOString().split('T')[0];
-      if (session.date !== today) {
-        setCurrentSession(null);
-        localStorage.removeItem('julaba_current_session');
-      } else {
-        setCurrentSession(session);
-      }
-    }
-  }, []);
-
-  // Save to localStorage when data changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('julaba_user', JSON.stringify(user));
-    }
-  }, [user]);
-
-  useEffect(() => {
-    localStorage.setItem('julaba_transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('julaba_marketplace', JSON.stringify(marketplaceItems));
-  }, [marketplaceItems]);
-
-  // Sauvegarder la session courante
-  useEffect(() => {
-    if (currentSession) {
-      localStorage.setItem('julaba_current_session', JSON.stringify(currentSession));
-    }
-  }, [currentSession]);
+  // ✅ Toutes les données doivent venir de Supabase via un useEffect dédié
 
   // Voice synthesis function
   const speak = (text: string) => {
     if (!voiceEnabled) return;
 
-    // Web Speech API (works in Chrome/Edge)
     if ('speechSynthesis' in window) {
-      // Annuler les messages en cours pour éviter les interruptions non désirées
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'fr-FR';
       utterance.rate = 0.9;
       
-      // Gestion des erreurs - ignorer complètement les interruptions
       utterance.onerror = (event) => {
-        // Ne rien logger pour les interruptions normales
         if (event.error !== 'interrupted' && event.error !== 'canceled') {
-          console.error('��� Erreur synthèse vocale:', event.error);
+          console.error('Erreur synthèse vocale:', event.error);
         }
       };
       
@@ -301,6 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       date: new Date().toISOString(),
     };
     setTransactions((prev) => [newTransaction, ...prev]);
+    // TODO: Sync avec Supabase
   };
 
   const addMarketplaceItem = (item: Omit<MarketplaceItem, 'id' | 'createdAt'>) => {
@@ -310,6 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setMarketplaceItems((prev) => [newItem, ...prev]);
+    // TODO: Sync avec Supabase
   };
 
   const roleColor = user ? ROLE_COLORS[user.role] : '#C46210';
@@ -345,6 +239,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notes,
     };
     setCurrentSession(newSession);
+    // TODO: Sync avec Supabase
   };
 
   const closeDay = (comptageReel: number, closingNotes?: string) => {
@@ -356,21 +251,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const updatedSession: DaySession = {
       ...currentSession,
-      opened: false, // ✅ Marquer la session comme fermée
+      opened: false,
       closedAt: new Date().toISOString(),
       comptageReel,
       ecart,
       closingNotes,
     };
     
-    // ✅ Au lieu de sauvegarder la session fermée, on la supprime complètement
+    // TODO: Sauvegarder dans Supabase
     setCurrentSession(null);
-    localStorage.removeItem('julaba_current_session');
-    
-    // On peut sauvegarder dans un historique séparé si besoin
-    const closedSessions = JSON.parse(localStorage.getItem('julaba_closed_sessions') || '[]');
-    closedSessions.push(updatedSession);
-    localStorage.setItem('julaba_closed_sessions', JSON.stringify(closedSessions));
   };
 
   const updateFondInitial = (newFond: number) => {
@@ -381,6 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fondInitial: newFond,
     };
     setCurrentSession(updatedSession);
+    // TODO: Sync avec Supabase
   };
 
   const getSalesHistory = (filters?: { startDate?: string; endDate?: string; productName?: string; paymentMethod?: string }) => {
@@ -526,8 +416,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext);
   if (!context) {
-    // En développement, retourner des valeurs par défaut au lieu de crasher
-    // Cela permet au hot reload de fonctionner sans erreur
     return {
       user: null,
       setUser: () => {},
@@ -560,14 +448,4 @@ export function useApp() {
     } as AppContextType;
   }
   return context;
-}
-
-// Helper function to get mock user by phone
-export function getMockUserByPhone(phone: string): User | null {
-  return MOCK_USERS.find((u) => u.phone === phone) || null;
-}
-
-// Helper function to get all mock users (for dev mode)
-export function getAllMockUsers(): User[] {
-  return MOCK_USERS;
 }

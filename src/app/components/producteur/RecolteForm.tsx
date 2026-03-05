@@ -3,20 +3,20 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sprout, MapPin, Calendar, Camera, ImagePlus, Trash2, Scale, ChevronDown, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import imgTomate from 'figma:asset/3f404bf155a6eee4cc2737b6af97a7c631b87222.png';
-import imgAubergine from 'figma:asset/6ce6df54809849e879a06eaf7918a55ca163820f.png';
-import imgPiment from 'figma:asset/d54203781be4a457752de89ea0db6890f85d988e.png';
-import imgGombo from 'figma:asset/95307b3732ef40ca9d8bd6624da7c522d9948462.png';
-import imgManioc from 'figma:asset/a8dd641535ef5323445a866d2e4bd615e27fc174.png';
-import imgIgname from 'figma:asset/3455362570027e36c9a85017824295c213e28df6.png';
-import imgMais from 'figma:asset/e1a0b089a99b00606487505dfc216319053c9041.png';
-import imgRiz from 'figma:asset/56b3634c65cdeb27356c50771cd1f9dcc7896111.png';
-import imgBanane from 'figma:asset/92dc960457fec2eabe1d823033adf5fa3c460d5a.png';
-import imgOignon from 'figma:asset/c3ae45cebe4fdb00d42876b5d0ceefb1dc8f4f6a.png';
-import imgAvocat from 'figma:asset/4d72e34496aa54e4e0690caf465e524ccfaba086.png';
-import imgAutre from 'figma:asset/258632942d5c4b19368d2b4708d1d8028773eb5e.png';
+const imgTomate    = '/images/produit-tomate.svg';
+const imgAubergine = '/images/produit-aubergine.svg';
+const imgPiment    = '/images/produit-piment.svg';
+const imgGombo     = '/images/produit-gombo.svg';
+const imgManioc    = '/images/produit-manioc.svg';
+const imgIgname    = '/images/produit-igname.svg';
+const imgMais      = '/images/produit-mais.svg';
+const imgRiz       = '/images/produit-riz.svg';
+const imgBanane    = '/images/produit-banane.svg';
+const imgOignon    = '/images/produit-oignon.svg';
+const imgAvocat    = '/images/produit-avocat.svg';
+const imgAutre     = '/images/produit-autre.svg';
 
-// ── Icônes SVG inline pour chaque culture ────��─────────────────────────────
+// ── Icônes SVG inline pour chaque culture ─────────────────────────────────
 function IconTomate({ color }: { color: string }) {
   return (
     <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-9 h-9">
@@ -255,7 +255,7 @@ export function RecolteForm() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 380, damping: 36 }}
-            className="fixed bottom-0 left-0 right-0 z-[201] bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-[210] bg-white rounded-t-3xl shadow-2xl overflow-hidden"
             style={{ maxHeight: '95dvh' }}
           >
             {/* ── Header vert ── */}
