@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFFDE7"/>
+  <path d="M100 280 Q120 180 200 140 Q280 180 300 280 Q250 260 200 265 Q150 260 100 280Z" fill="#F9A825"/>
+  <path d="M110 275 Q130 185 200 148 Q270 185 290 275 Q250 258 200 262 Q150 258 110 275Z" fill="#FBC02D"/>
+  <ellipse cx="155" cy="180" rx="18" ry="10" fill="rgba(255,255,255,0.25)"/>
+  <path d="M190 145 Q185 120 175 105" stroke="#388E3C" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M210 145 Q215 120 225 105" stroke="#2E7D32" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M200 143 Q200 118 200 103" stroke="#43A047" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#F57F17">Banane</text>
+</svg>

@@ -1,0 +1,95 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   🔶 JÙLABA - ACCÈS RAPIDE AU BACK-OFFICE                        ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+
+📍 ÉTAPE 1 : CRÉER LE SUPER ADMIN (Une seule fois)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL : https://julabacom.vercel.app/create-super-admin
+
+Formulaire :
+┌──────────────────────────────────────┐
+│ Téléphone   : +225 [0700000001]      │
+│ Prénom      : [Ton Prénom]           │
+│ Nom         : [Ton Nom]              │
+│ Mot de passe: [••••••••] (min 8)     │
+│                                      │
+│ [👑 Créer le Super Admin]            │
+└──────────────────────────────────────┘
+
+
+📍 ÉTAPE 2 : SE CONNECTER AU BACK-OFFICE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+URL : https://julabacom.vercel.app/backoffice/login
+
+Identifiants :
+┌──────────────────────────────────────┐
+│ Téléphone   : +225 [0700000001]      │
+│ Mot de passe: [ton_mot_de_passe]     │
+│                                      │
+│ [        Continuer →        ]        │
+└──────────────────────────────────────┘
+
+→ Redirection automatique vers /backoffice/dashboard
+
+
+🎯 C'EST TOUT ! 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Après connexion, tu as accès aux 14 modules :
+✅ Dashboard      ✅ Acteurs        ✅ Institutions   ✅ Enrôlement
+✅ Supervision    ✅ Zones          ✅ Commissions    ✅ Academy
+✅ Missions       ✅ Rapports       ✅ Notifications  ✅ Audit
+✅ Profil         ✅ Paramètres
+
+
+⚠️  IMPORTANT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• La route /create-super-admin est DÉSACTIVÉE après la 1ère création
+• Maximum 5 tentatives de connexion (blocage 15 min après)
+• Utilise "Mot de passe oublié" si besoin
+• Les tokens expirent après 1 heure (rafraîchis automatiquement)
+
+
+📚 DOCUMENTATION COMPLÈTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📄 Instructions détaillées  : /BACKOFFICE_LOGIN_INSTRUCTIONS.md
+🚀 Quick Start             : /QUICK_START_BACKOFFICE.md
+🏗️  Architecture           : /ARCHITECTURE_AUTH.md
+📖 README complet          : /README_BACKOFFICE_ACCESS.md
+✅ Tests                   : /TESTING_CHECKLIST.md
+🌐 URLs de référence       : /URLS_REFERENCE.md
+
+
+💡 ASTUCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Marque-pages ces 2 URLs dans ton navigateur :
+
+🔖 https://julabacom.vercel.app/backoffice/login
+🔖 https://julabacom.vercel.app/backoffice/dashboard
+
+
+🆘 EN CAS DE PROBLÈME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Vérifie la console du navigateur (F12)
+2. Vérifie les logs Supabase Edge Functions
+3. Réinitialise le cache :
+   localStorage.clear(); location.reload();
+
+
+═══════════════════════════════════════════════════════════════════
+
+         Plateforme Nationale d'Inclusion Économique
+                    des Acteurs Vivriers
+
+                   Version 1.0.0 - Mars 2026
+
+═══════════════════════════════════════════════════════════════════

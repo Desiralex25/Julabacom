@@ -368,7 +368,7 @@ export function ScoreResumeCard({
 
               {/* Mini graphique */}
               <div className="w-16 h-8">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={32}>
                   <LineChart data={chartData}>
                     <Line
                       type="monotone"

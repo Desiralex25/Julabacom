@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" fill="none">
+  <rect width="800" height="200" rx="16" fill="#F5F5F5"/>
+  <!-- Titre -->
+  <text x="400" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#9E9E9E" letter-spacing="3">NOS PARTENAIRES</text>
+  <rect x="100" y="42" width="600" height="1" fill="#E0E0E0"/>
+  <!-- Logos partenaires stylisés -->
+  <!-- Banque Mondiale -->
+  <rect x="60" y="60" width="140" height="90" rx="12" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <circle cx="130" cy="90" r="22" fill="#003087"/>
+  <rect x="72" y="118" width="116" height="3" rx="1.5" fill="#003087" opacity="0.7"/>
+  <text x="130" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#555">Banque Mondiale</text>
+  <!-- FAO -->
+  <rect x="220" y="60" width="140" height="90" rx="12" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <rect x="250" y="75" width="80" height="50" rx="8" fill="#009A44"/>
+  <text x="290" y="108" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="white">FAO</text>
+  <text x="290" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#555">Nations Unies</text>
+  <!-- MINAGRI -->
+  <rect x="380" y="60" width="140" height="90" rx="12" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <rect x="390" y="70" width="20" height="38" fill="#F96A00"/>
+  <rect x="410" y="70" width="20" height="38" fill="white"/>
+  <rect x="430" y="70" width="20" height="38" fill="#009A00"/>
+  <text x="450" y="130" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#555">Ministère Agri.</text>
+  <!-- Orange CI -->
+  <rect x="540" y="60" width="140" height="90" rx="12" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <circle cx="580" cy="95" r="28" fill="#FF6600"/>
+  <circle cx="580" cy="95" r="18" fill="#FF6600" stroke="black" stroke-width="8"/>
+  <circle cx="580" cy="95" r="12" fill="#FF6600"/>
+  <text x="620" y="98" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#FF6600">Orange</text>
+  <text x="590" y="140" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" fill="#555">Côte d'Ivoire</text>
+</svg>

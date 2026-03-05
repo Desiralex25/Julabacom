@@ -307,4 +307,65 @@ Tous droits réservés © 2024
 
 ---
 
+## 👑 Back-Office Central (Super Admin)
+
+### 🎯 Accès Rapide
+
+**Créer le Super Admin** (une seule fois) :
+```
+https://julabacom.vercel.app/create-super-admin
+```
+
+**Se Connecter au Back-Office** :
+```
+https://julabacom.vercel.app/backoffice/login
+```
+
+### 📊 Les 14 Modules
+
+Le Back-Office Central offre une vue d'ensemble complète de la plateforme :
+
+| Module | Description |
+|--------|-------------|
+| 📊 **Dashboard** | Vue d'ensemble avec KPIs en temps réel |
+| 👥 **Acteurs** | Gestion de tous les utilisateurs |
+| 🏢 **Institutions** | Partenaires institutionnels |
+| 📝 **Enrôlement** | Nouveaux enregistrements |
+| 🔍 **Supervision** | Monitoring en temps réel |
+| 🗺️ **Zones** | Gestion territoriale |
+| 💰 **Commissions** | Système de rémunération |
+| 🎓 **Academy** | Formation & contenus |
+| 🎯 **Missions** | Gamification |
+| 📊 **Rapports** | Analytics avancés |
+| 🔔 **Notifications** | Centre de messages |
+| 🛡️ **Audit** | Logs & traçabilité |
+| 👤 **Profil** | Compte personnel |
+| ⚙️ **Paramètres** | Configuration système |
+
+### 🔐 Système RBAC (4 Rôles)
+
+- **Super Admin** : Accès complet (100%)
+- **Admin National** : Supervision nationale (~80%)
+- **Gestionnaire de Zone** : Supervision régionale (~60%)
+- **Analyste** : Consultation rapports (~40%)
+
+### 📚 Documentation Complète
+
+Pour plus de détails sur l'accès et la configuration du Back-Office :
+
+- 🚀 **Démarrage rapide** : [`START_HERE.md`](/START_HERE.md)
+- 📖 **Documentation complète** : [`INDEX_DOCUMENTATION.md`](/INDEX_DOCUMENTATION.md)
+- 🏗️ **Architecture** : [`ARCHITECTURE_AUTH.md`](/ARCHITECTURE_AUTH.md)
+- ✅ **Tests** : [`TESTING_CHECKLIST.md`](/TESTING_CHECKLIST.md)
+
+### 🔒 Sécurité
+
+- ✅ Authentification Supabase Auth
+- ✅ Mots de passe cryptés (bcrypt)
+- ✅ Tokens JWT sécurisés
+- ✅ Limitation de tentatives (5 max)
+- ✅ Audit trail complet
+
+---
+
 **Ton djè est calé** 🇨🇮

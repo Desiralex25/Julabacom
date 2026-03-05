@@ -18,6 +18,7 @@ import { Identifications } from './components/identificateur/Identifications';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { Onboarding } from './components/auth/Onboarding';
 import { Login } from './components/auth/Login';
+import { LoginPassword } from './components/auth/LoginPassword';
 import { Welcome } from './components/auth/Welcome';
 import { BODashboard } from './components/backoffice/BODashboard';
 import { BOActeurs } from './components/backoffice/BOActeurs';
@@ -88,12 +89,12 @@ import { NouvelleIdentification } from './components/identificateur/NouvelleIden
 import { FicheIdentificationDynamique } from './components/identificateur/FicheIdentificationDynamique';
 import { SupportPage } from './components/shared/SupportPage';
 import { BOSupport } from './components/backoffice/BOSupport';
-import { BOLogin } from './components/backoffice/BOLogin';
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import AuthTestPage from './pages/AuthTestPage';
 import TestTantie from './pages/TestTantie';
 import TestElevenLabs from './pages/TestElevenLabs';
 import DatabaseViewer from './pages/DatabaseViewer';
+import CreateSuperAdmin from './pages/CreateSuperAdmin';
 
 export const router = createBrowserRouter([
   {
@@ -101,7 +102,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Login />,
+        element: <LoginPassword />,
       },
       {
         path: '/onboarding',
@@ -113,7 +114,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/login',
-        element: <Login />,
+        element: <LoginPassword />,
       },
       {
         path: '/supabase-test',
@@ -134,6 +135,10 @@ export const router = createBrowserRouter([
       {
         path: '/database',
         element: <DatabaseViewer />,
+      },
+      {
+        path: '/create-super-admin',
+        element: <CreateSuperAdmin />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {
@@ -252,13 +257,13 @@ export const router = createBrowserRouter([
       // ── BACK-OFFICE CENTRAL ─────────────────────────
       {
         path: '/backoffice/login',
-        element: <BOLogin />,
+        element: <LoginPassword />,
       },
       {
         path: '/backoffice',
         element: <BORoot />,
         children: [
-          { index: true, element: <Navigate to="/backoffice/login" replace /> },
+          { index: true, element: <Navigate to="/backoffice/dashboard" replace /> },
           { path: 'dashboard', element: <BODashboard /> },
           { path: 'acteurs', element: <BOActeurs /> },
           { path: 'acteurs/:id', element: <BOActeurDetail /> },

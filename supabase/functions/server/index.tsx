@@ -289,6 +289,124 @@ app.post("/make-server-488793d3/auth/login", async (c) => {
 });
 
 /**
+ * POST /create-super-admin - Créer le premier compte Super Admin
+ * Body: { phone, password, firstName, lastName }
+ * ⚠️ Route de bootstrap - À utiliser une seule fois pour créer le premier admin
+ */
+app.post("/make-server-488793d3/auth/create-super-admin", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone, password, firstName, lastName } = body;
+
+    // Validation des champs obligatoires
+    if (!phone || !password || !firstName || !lastName) {
+      return c.json({ 
+        error: 'Champs obligatoires manquants',
+        required: ['phone', 'password', 'firstName', 'lastName']
+      }, 400);
+    }
+
+    // Vérifier si un Super Admin existe déjà
+    const { data: existingSuperAdmin } = await supabase
+      .from('users_julaba')
+      .select('phone')
+      .eq('role', 'super_admin')
+      .limit(1);
+
+    if (existingSuperAdmin && existingSuperAdmin.length > 0) {
+      return c.json({ 
+        error: 'Un compte Super Admin existe déjà',
+        message: 'Pour des raisons de sécurité, un seul Super Admin initial peut être créé via cette route'
+      }, 403);
+    }
+
+    // Vérifier si le téléphone existe déjà
+    const { data: existingUser } = await supabase
+      .from('users_julaba')
+      .select('phone')
+      .eq('phone', phone)
+      .single();
+
+    if (existingUser) {
+      return c.json({ error: 'Ce numéro de téléphone est déjà enregistré' }, 409);
+    }
+
+    // Créer l'utilisateur dans Supabase Auth
+    const authEmail = `${phone}@julaba.local`;
+    
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: authEmail,
+      password: password,
+      email_confirm: true,
+      user_metadata: {
+        phone,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'super_admin'
+      }
+    });
+
+    if (authError) {
+      console.log('Supabase Auth super admin creation error:', authError);
+      return c.json({ 
+        error: 'Erreur lors de la création du compte Super Admin',
+        details: authError.message 
+      }, 500);
+    }
+
+    // Créer le profil Super Admin dans users_julaba
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users_julaba')
+      .insert({
+        auth_user_id: authData.user.id,
+        phone,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'super_admin',
+        region: 'National',
+        commune: 'Abidjan',
+        activity: 'Administration',
+        market: null,
+        cooperative_name: null,
+        institution_name: 'JÙLABA Back-Office',
+        score: 100,
+        validated: true,
+        verified_phone: true
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.log('Super Admin profile creation error:', profileError);
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return c.json({ 
+        error: 'Erreur lors de la création du profil Super Admin',
+        details: profileError.message 
+      }, 500);
+    }
+
+    return c.json({
+      success: true,
+      message: 'Compte Super Admin créé avec succès',
+      user: {
+        id: userProfile.id,
+        phone: userProfile.phone,
+        firstName: userProfile.first_name,
+        lastName: userProfile.last_name,
+        role: userProfile.role
+      }
+    });
+
+  } catch (error) {
+    console.log('Create super admin error:', error);
+    return c.json({ 
+      error: 'Erreur serveur lors de la création du Super Admin',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+/**
  * GET /me - Récupérer le profil de l'utilisateur connecté
  * Header: Authorization: Bearer {accessToken}
  */
@@ -378,6 +496,161 @@ app.post("/make-server-488793d3/auth/logout", async (c) => {
 
   } catch (error) {
     console.log('Logout error:', error);
+    return c.json({ 
+      error: 'Erreur serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// GESTION DES MOTS DE PASSE
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * POST /check-phone-for-reset - Vérifier si un numéro existe et retourner l'identificateur
+ * Body: { phone }
+ */
+app.post("/make-server-488793d3/auth/check-phone-for-reset", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone } = body;
+
+    if (!phone) {
+      return c.json({ error: 'Numéro de téléphone requis' }, 400);
+    }
+
+    // Vérifier si l'utilisateur existe
+    const { data: user, error: userError } = await supabase
+      .from('users_julaba')
+      .select('id, phone, first_name, last_name, created_by')
+      .eq('phone', phone)
+      .single();
+
+    if (userError || !user) {
+      return c.json({ 
+        exists: false,
+        message: 'Ce numéro n\'est pas enregistré'
+      });
+    }
+
+    // Récupérer les informations de l'identificateur rattaché
+    let identificateurName = null;
+    if (user.created_by) {
+      const { data: identificateur } = await supabase
+        .from('users_julaba')
+        .select('first_name, last_name')
+        .eq('id', user.created_by)
+        .single();
+
+      if (identificateur) {
+        identificateurName = `${identificateur.first_name} ${identificateur.last_name}`;
+      }
+    }
+
+    return c.json({
+      exists: true,
+      identificateur: identificateurName || 'Identificateur non trouvé',
+      message: identificateurName 
+        ? `Contacte ${identificateurName} pour réinitialiser ton mot de passe`
+        : 'Contacte ton identificateur pour réinitialiser ton mot de passe'
+    });
+
+  } catch (error) {
+    console.log('Check phone for reset error:', error);
+    return c.json({ 
+      error: 'Erreur serveur',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+/**
+ * POST /reset-user-password - Réinitialiser le mot de passe d'un utilisateur (identificateur uniquement)
+ * Header: Authorization: Bearer {accessToken}
+ * Body: { userId, newPassword }
+ */
+app.post("/make-server-488793d3/auth/reset-user-password", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'Token d\'authentification manquant' }, 401);
+    }
+
+    // Vérifier que l'utilisateur connecté est un identificateur ou admin
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    
+    if (authError || !user) {
+      return c.json({ error: 'Token invalide ou expiré' }, 401);
+    }
+
+    const { data: currentUser } = await supabase
+      .from('users_julaba')
+      .select('role')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!currentUser || !['identificateur', 'super_admin', 'admin'].includes(currentUser.role)) {
+      return c.json({ 
+        error: 'Accès refusé. Seuls les identificateurs et administrateurs peuvent réinitialiser les mots de passe.'
+      }, 403);
+    }
+
+    const body = await c.req.json();
+    const { userId, newPassword } = body;
+
+    if (!userId || !newPassword) {
+      return c.json({ 
+        error: 'ID utilisateur et nouveau mot de passe requis'
+      }, 400);
+    }
+
+    // Validation du mot de passe (minimum 6 caractères)
+    if (newPassword.length < 6) {
+      return c.json({ 
+        error: 'Le mot de passe doit contenir au moins 6 caractères'
+      }, 400);
+    }
+
+    // Récupérer l'auth_user_id de l'utilisateur cible
+    const { data: targetUser, error: targetError } = await supabase
+      .from('users_julaba')
+      .select('auth_user_id, phone, first_name, last_name')
+      .eq('id', userId)
+      .single();
+
+    if (targetError || !targetUser) {
+      return c.json({ error: 'Utilisateur introuvable' }, 404);
+    }
+
+    // Mettre à jour le mot de passe dans Supabase Auth
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      targetUser.auth_user_id,
+      { password: newPassword }
+    );
+
+    if (updateError) {
+      console.log('Password update error:', updateError);
+      return c.json({ 
+        error: 'Erreur lors de la réinitialisation du mot de passe',
+        details: updateError.message
+      }, 500);
+    }
+
+    return c.json({
+      success: true,
+      message: `Mot de passe réinitialisé pour ${targetUser.first_name} ${targetUser.last_name}`,
+      user: {
+        id: userId,
+        phone: targetUser.phone,
+        firstName: targetUser.first_name,
+        lastName: targetUser.last_name
+      }
+    });
+
+  } catch (error) {
+    console.log('Reset password error:', error);
     return c.json({ 
       error: 'Erreur serveur',
       details: error instanceof Error ? error.message : 'Erreur inconnue'

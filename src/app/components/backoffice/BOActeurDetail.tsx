@@ -5,10 +5,13 @@ import {
   ArrowLeft, Phone, MapPin, Calendar, Shield, TrendingUp,
   CheckCircle2, XCircle, Clock, AlertCircle, Edit2,
   UserX, RotateCcw, Key, UserCog, FileText, Activity,
-  Wallet, Star, ChevronRight, X, Save, Paperclip, Download,
+  Wallet, Star, ChevronRight, X, Save, Paperclip, Download, Eye, EyeOff,
 } from 'lucide-react';
 import { useBackOffice, BORoleType } from '../../contexts/BackOfficeContext';
 import { toast } from 'sonner';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
+
+const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -80,6 +83,10 @@ export function BOActeurDetail() {
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [newRole, setNewRole] = useState('');
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   const acteur = acteurs.find(a => a.id === id);
   if (!acteur) return (
@@ -107,8 +114,8 @@ export function BOActeurDetail() {
       updateActeurStatut(acteur.id, 'actif', 'VALIDATION forcée BO');
       toast.success('Validation forcée effectuée');
     } else if (action === 'reset_mdp') {
-      if (boUser) addAuditLog({ action: 'RESET mot de passe', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: `${acteur.prenoms} ${acteur.nom}`, ip: '127.0.0.1', module: 'Acteurs' });
-      toast.info('Mot de passe réinitialisé — SMS envoyé');
+      // Ouvrir le modal pour saisir le nouveau mot de passe
+      setShowResetPasswordModal(true);
     }
     setShowConfirm(null);
   };
@@ -128,6 +135,69 @@ export function BOActeurDetail() {
     toast.success(`Type changé vers "${newRole}" — synchronisé`);
     setShowRoleModal(false);
     setNewRole('');
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword) {
+      toast.error('Entre un nouveau mot de passe');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    setResetPasswordLoading(true);
+
+    try {
+      const accessToken = localStorage.getItem('julaba_access_token');
+      
+      const response = await fetch(`${API_URL}/auth/reset-user-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          userId: acteur.id,
+          newPassword: newPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        toast.error(result.error || 'Erreur lors de la réinitialisation');
+        setResetPasswordLoading(false);
+        return;
+      }
+
+      // Ajouter un log d'audit
+      if (boUser) addAuditLog({
+        action: 'RESET mot de passe',
+        utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
+        roleBO: boUser.role,
+        acteurImpacte: `${acteur.prenoms} ${acteur.nom}`,
+        ip: '127.0.0.1',
+        module: 'Acteurs'
+      });
+
+      toast.success('Mot de passe réinitialisé avec succès');
+      setShowResetPasswordModal(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      console.error('Error resetting password:', err);
+      toast.error('Erreur lors de la réinitialisation');
+    } finally {
+      setResetPasswordLoading(false);
+    }
   };
 
   const confirmConfig: Record<string, { title: string; message: string; danger: boolean }> = {
@@ -490,6 +560,73 @@ export function BOActeurDetail() {
                   style={{ backgroundColor: '#F97316' }}
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   <Save className="w-4 h-4" /> Confirmer
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Réinitialiser Mot de Passe */}
+      <AnimatePresence>
+        {showResetPasswordModal && (
+          <motion.div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowResetPasswordModal(false)}>
+            <motion.div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2"
+              style={{ borderColor: BO_PRIMARY }}
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-black text-gray-900 text-lg">Réinitialiser le mot de passe</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">{acteur.prenoms} {acteur.nom}</p>
+                </div>
+                <button onClick={() => setShowResetPasswordModal(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                  <X className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Saisis un nouveau mot de passe pour cet utilisateur. Minimum 6 caractères.
+              </p>
+
+              {/* Nouveau mot de passe */}
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-gray-600 mb-2">Nouveau mot de passe</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 caractères"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-[#E6A817] focus:outline-none text-sm"
+                />
+              </div>
+
+              {/* Confirmer mot de passe */}
+              <div className="mb-5">
+                <label className="block text-xs font-bold text-gray-600 mb-2">Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Resaisis le mot de passe"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-[#E6A817] focus:outline-none text-sm"
+                />
+              </div>
+
+              {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-red-600 font-medium mb-4">Les mots de passe ne correspondent pas</p>
+              )}
+
+              <div className="flex gap-3">
+                <button onClick={() => setShowResetPasswordModal(false)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 font-bold text-gray-700">Annuler</button>
+                <motion.button onClick={handleResetPassword}
+                  disabled={resetPasswordLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
+                  className="flex-1 py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: BO_PRIMARY }}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                  <Key className="w-4 h-4" /> {resetPasswordLoading ? 'Réinitialisation...' : 'Réinitialiser'}
                 </motion.button>
               </div>
             </motion.div>

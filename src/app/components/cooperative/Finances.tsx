@@ -378,7 +378,7 @@ export function Finances() {
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4">Évolution des transactions (7j)</h2>
         <div className="h-48 min-h-[192px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={192}>
             <LineChart data={transactionsData}>
               <Line 
                 type="monotone" 
@@ -412,7 +412,7 @@ export function Finances() {
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4">Commissions mensuelles</h2>
         <div className="h-48 min-h-[192px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={192}>
             <BarChart data={commissionsData}>
               <Bar 
                 dataKey="montant" 

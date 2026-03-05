@@ -59,31 +59,36 @@ export async function sendSMS(phone: string, message: string): Promise<WassoyaSM
     message = message.substring(0, 160);
   }
 
-  // Formater le numéro au format international Wassoya: 2250700000000
-  let formattedPhone = phone;
-  if (phone.startsWith('0')) {
-    // 0701020304 → 2250701020304
-    formattedPhone = `225${phone.substring(1)}`;
-  } else if (phone.startsWith('+225')) {
-    // +2250701020304 → 2250701020304
-    formattedPhone = phone.substring(1);
-  } else if (phone.startsWith('225')) {
-    // Déjà au bon format: 2250701020304
-    formattedPhone = phone;
+  // Formater le numéro au format international Wassoya: 2250XXXXXXXXX
+  let formattedPhone = phone.replace(/\s+/g, ''); // Enlever les espaces
+  
+  if (formattedPhone.startsWith('0')) {
+    // Format local: 0701020304 → 2250701020304
+    formattedPhone = `225${formattedPhone}`;
+  } else if (formattedPhone.startsWith('+225')) {
+    // International avec +: +2250701020304 → 2250701020304
+    formattedPhone = formattedPhone.substring(1);
+  } else if (formattedPhone.startsWith('225')) {
+    // Déjà au format international: 2250701020304
+    formattedPhone = formattedPhone;
+  } else if (formattedPhone.match(/^\d{10}$/)) {
+    // Numéro à 10 chiffres sans indicatif (7287892982) → ajouter 225 + 0
+    formattedPhone = `2250${formattedPhone}`;
   } else {
     console.error(`❌ Format de numéro invalide: ${phone}`);
     return {
       success: false,
-      error: `Format de numéro invalide: ${phone}`
+      error: `Format de numéro invalide: ${phone}. Formats acceptés: 0701020304, +2250701020304, 2250701020304, ou 7287892982`
     };
   }
 
-  // Valider le format du numéro (doit être 225 + 10 chiffres)
-  if (!formattedPhone.match(/^225\d{10}$/)) {
+  // Valider le format final (doit être 2250 + 10 chiffres = 14 chiffres total)
+  if (!formattedPhone.match(/^2250\d{9}$/)) {
     console.error(`❌ Numéro invalide après formatage: ${formattedPhone}`);
+    console.error(`⚠️ Attendu: 2250XXXXXXXXX (14 chiffres commençant par 2250)`);
     return {
       success: false,
-      error: `Numéro invalide: doit être au format 2250XXXXXXXXX`
+      error: `Numéro invalide: doit être au format 2250XXXXXXXXX (reçu: ${formattedPhone})`
     };
   }
 
@@ -162,14 +167,16 @@ export async function sendSMS(phone: string, message: string): Promise<WassoyaSM
  */
 export function isValidIvoryCoastPhone(phone: string): boolean {
   // Formats acceptés:
-  // - 0701020304 (local)
+  // - 0701020304 (local avec 0)
+  // - 7287892982 (local sans 0 - 10 chiffres)
   // - +2250701020304 (international avec +)
   // - 2250701020304 (international sans +)
   
   const patterns = [
     /^0[0-9]{9}$/,           // 0701020304
-    /^\+225[0-9]{10}$/,      // +2250701020304
-    /^225[0-9]{10}$/,        // 2250701020304
+    /^[0-9]{10}$/,           // 7287892982 (10 chiffres sans 0)
+    /^\+2250[0-9]{9}$/,      // +2250701020304
+    /^2250[0-9]{9}$/,        // 2250701020304
   ];
 
   return patterns.some(pattern => pattern.test(phone));

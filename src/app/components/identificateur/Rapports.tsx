@@ -657,7 +657,7 @@ export function Rapports() {
                   <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="h-64 min-h-[256px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={256}>
                     <BarChart data={performanceHebdo}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="jour" stroke="#9CA3AF" />
@@ -685,7 +685,7 @@ export function Rapports() {
                   <Activity className="w-5 h-5" style={{ color: '#9F8170' }} />
                 </div>
                 <div className="h-64 min-h-[256px]">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={256}>
                     <LineChart data={performanceMensuelle}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <XAxis dataKey="semaine" stroke="#9CA3AF" />
