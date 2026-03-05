@@ -109,7 +109,18 @@ app.post("/make-server-488793d3/auth/signup", async (c) => {
     }
 
     // Vérifier que le rôle est valide
-    const validRoles = ['marchand', 'producteur', 'cooperative', 'institution', 'identificateur', 'consommateur'];
+    const validRoles = [
+      'marchand', 
+      'producteur', 
+      'cooperative', 
+      'institution', 
+      'identificateur', 
+      'consommateur',
+      'super_admin',
+      'admin_national',
+      'gestionnaire_zone',
+      'analyste'
+    ];
     if (!validRoles.includes(role)) {
       return c.json({ 
         error: 'Rôle invalide',
@@ -370,6 +381,7 @@ app.post("/make-server-488793d3/auth/create-super-admin", async (c) => {
         cooperative_name: null,
         institution_name: 'JÙLABA Back-Office',
         score: 100,
+        validated: true,
         verified_phone: true
       })
       .select()
