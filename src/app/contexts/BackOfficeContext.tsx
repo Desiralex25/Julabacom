@@ -240,7 +240,20 @@ interface BackOfficeContextType {
 const BackOfficeContext = createContext<BackOfficeContextType | null>(null);
 
 export function BackOfficeProvider({ children }: { children: ReactNode }) {
-  const [boUser, setBOUser] = useState<BOUser | null>(null);
+  // ✅ PERSISTANCE : Charger boUser depuis localStorage au démarrage
+  const [boUser, setBOUser] = useState<BOUser | null>(() => {
+    const stored = localStorage.getItem('julaba_bo_user');
+    return stored ? JSON.parse(stored) : null;
+  });
+  
+  // ✅ Sauvegarder boUser dans localStorage quand il change
+  React.useEffect(() => {
+    if (boUser) {
+      localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
+    } else {
+      localStorage.removeItem('julaba_bo_user');
+    }
+  }, [boUser]);
   
   // ✅ NETTOYAGE PHASE 2 : Suppression de toutes les données mock
   // TODO: Charger depuis Supabase

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mic, ArrowRight, CheckCircle, Eye, EyeOff, X, AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
+import { useBackOffice } from '../../contexts/BackOfficeContext';
 import { Button } from '../ui/button';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
@@ -23,6 +24,7 @@ export function LoginPassword() {
   const navigate = useNavigate();
   const { setUser: setAppUser } = useApp();
   const { setUser: setUserProfile } = useUser();
+  const { setBOUser } = useBackOffice();
   
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -237,8 +239,27 @@ export function LoginPassword() {
       resetAttempts(phone);
       const user = result.user;
       
-      setAppUser(user);
-      setUserProfile(user);
+      // ✅ Vérifier si c'est un rôle Back-Office
+      const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
+      const isBackOffice = boRoles.includes(user.role);
+      
+      if (isBackOffice) {
+        // ✅ Définir l'utilisateur Back-Office
+        setBOUser({
+          id: user.id,
+          nom: user.lastName,
+          prenom: user.firstName,
+          email: `${user.phone}@julaba.ci`, // Email temporaire basé sur le téléphone
+          role: user.role,
+          region: user.region,
+          lastLogin: new Date().toISOString(),
+          actif: true
+        });
+      } else {
+        // Utilisateur terrain normal
+        setAppUser(user);
+        setUserProfile(user);
+      }
 
       if (result.accessToken) {
         localStorage.setItem('julaba_access_token', result.accessToken);
@@ -257,7 +278,10 @@ export function LoginPassword() {
           'institution': '/institution',
           'identificateur': '/identificateur',
           'consommateur': '/consommateur',
-          'super_admin': '/backoffice/dashboard'
+          'super_admin': '/backoffice/dashboard',
+          'admin_national': '/backoffice/dashboard',
+          'gestionnaire_zone': '/backoffice/dashboard',
+          'analyste': '/backoffice/dashboard'
         };
         
         const route = roleRoutes[user.role] || '/marchand';
