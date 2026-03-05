@@ -7,10 +7,10 @@ import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
-const logoOrange = '/images/logo-orange.png';
-const logoTonDje = '/images/logo-tondje.png';
-const logoJulaba = '/images/logo-julaba.png';
-const tantieSagesseImg = '/images/tantie-sagesse.png';
+import logoJulabaBlanc from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
+const logoOrange = '/images/logo-orange.svg';
+const logoTonDje = '/images/logo-tondje.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 export function Login() {
   const navigate = useNavigate();
@@ -336,8 +336,8 @@ export function Login() {
           className="text-center mb-4"
         >
           <img 
-            src={logoJulaba} 
-            alt="JULABA" 
+            src={logoJulabaBlanc} 
+            alt="JÙLABA" 
             className="h-20 w-auto mx-auto"
           />
         </motion.div>
