@@ -370,7 +370,6 @@ app.post("/make-server-488793d3/auth/create-super-admin", async (c) => {
         cooperative_name: null,
         institution_name: 'JÙLABA Back-Office',
         score: 100,
-        validated: true,
         verified_phone: true
       })
       .select()

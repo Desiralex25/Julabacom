@@ -95,6 +95,7 @@ import TestTantie from './pages/TestTantie';
 import TestElevenLabs from './pages/TestElevenLabs';
 import DatabaseViewer from './pages/DatabaseViewer';
 import CreateSuperAdmin from './pages/CreateSuperAdmin';
+import DiagnosticDB from './pages/DiagnosticDB';
 
 export const router = createBrowserRouter([
   {
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
       {
         path: '/create-super-admin',
         element: <CreateSuperAdmin />,
+      },
+      {
+        path: '/diagnostic-db',
+        element: <DiagnosticDB />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {

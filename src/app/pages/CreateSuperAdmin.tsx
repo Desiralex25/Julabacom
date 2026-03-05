@@ -41,7 +41,11 @@ export default function CreateSuperAdmin() {
       const result = await response.json();
 
       if (!response.ok || result.error) {
-        setError(result.error || 'Erreur lors de la création');
+        const errorMsg = result.details 
+          ? `${result.error}: ${result.details}` 
+          : result.error || 'Erreur lors de la création';
+        console.error('❌ Erreur création Super Admin:', result);
+        setError(errorMsg);
         setIsLoading(false);
         return;
       }
@@ -49,8 +53,8 @@ export default function CreateSuperAdmin() {
       setSuccess(true);
       console.log('✅ Super Admin créé:', result.user);
     } catch (err) {
-      console.error('Error creating super admin:', err);
-      setError('Erreur de connexion au serveur');
+      console.error('❌ Error creating super admin:', err);
+      setError(`Erreur de connexion au serveur: ${err instanceof Error ? err.message : 'Inconnu'}`);
     } finally {
       setIsLoading(false);
     }
