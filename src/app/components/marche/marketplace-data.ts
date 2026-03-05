@@ -96,7 +96,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 01 23 45',
     scoreVendeur: 88,
     datePublication: '2026-03-01',
-    image: '/images/produit-riz.svg',
+    image: '/images/produit-riz.png',
   },
   {
     id: 'pp2',
@@ -114,7 +114,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 34 56 78',
     scoreVendeur: 74,
     datePublication: '2026-03-02',
-    image: '/images/produit-igname.svg',
+    image: '/images/produit-igname.png',
   },
   {
     id: 'pp3',
@@ -132,7 +132,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 01 45 67 89',
     scoreVendeur: 61,
     datePublication: '2026-03-02',
-    image: '/images/produit-tomate.svg',
+    image: '/images/produit-tomate.png',
   },
   {
     id: 'pp4',
@@ -150,7 +150,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 56 78 90',
     scoreVendeur: 82,
     datePublication: '2026-03-03',
-    image: '/images/produit-mais.svg',
+    image: '/images/produit-mais.png',
   },
   {
     id: 'pp5',
@@ -168,7 +168,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 67 89 01',
     scoreVendeur: 55,
     datePublication: '2026-02-28',
-    image: '/images/produit-plantain.svg',
+    image: '/images/produit-plantain.png',
   },
   {
     id: 'pp6',
@@ -186,7 +186,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 01 78 90 12',
     scoreVendeur: 67,
     datePublication: '2026-03-01',
-    image: '/images/produit-manioc.svg',
+    image: '/images/produit-manioc.png',
   },
   {
     id: 'pp7',
@@ -204,7 +204,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 07 89 01 23',
     scoreVendeur: 79,
     datePublication: '2026-03-03',
-    image: '/images/produit-arachide.svg',
+    image: '/images/produit-arachide.png',
   },
   {
     id: 'pp8',
@@ -222,7 +222,7 @@ export const PRODUITS_PRODUCTEURS: ProduitMarche[] = [
     telephone: '+225 05 90 12 34',
     scoreVendeur: 43,
     datePublication: '2026-03-02',
-    image: '/images/produit-gombo.svg',
+    image: '/images/produit-gombo.png',
   },
 ];
 
@@ -248,7 +248,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-02',
-    image: '/images/produit-riz.svg',
+    image: '/images/produit-riz.png',
   },
   {
     id: 'pc2',
@@ -268,7 +268,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-03',
-    image: '/images/produit-igname.svg',
+    image: '/images/produit-igname.png',
   },
   {
     id: 'pc3',
@@ -288,7 +288,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-03',
-    image: '/images/produit-mais.svg',
+    image: '/images/produit-mais.png',
   },
   {
     id: 'pc4',
@@ -308,7 +308,7 @@ export const PRODUITS_COOPERATIVE: ProduitMarche[] = [
     telephone: '+225 27 30 20 30',
     scoreVendeur: 91,
     datePublication: '2026-03-04',
-    image: '/images/produit-arachide.svg',
+    image: '/images/produit-arachide.png',
   },
 ];
 

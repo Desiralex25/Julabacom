@@ -15,7 +15,7 @@ import {
   AchatsGroupesModal,
   VentesGroupeesModal,
 } from './CooperativeModals';
-const tantieSagesseImgCooperative = '/images/tantie-sagesse-cooperative.svg';
+const tantieSagesseImgCooperative = '/images/tantie-sagesse-cooperative.png';
 
 export function CooperativeHome() {
   const navigate = useNavigate();

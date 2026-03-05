@@ -1,4 +1,4 @@
-const partenairesSrc = '/images/partenaires.svg';
+const partenairesSrc = '/images/partenaires.png';
 import { motion } from 'motion/react';
 
 /**

@@ -59,16 +59,16 @@ const categories = [
 ];
 
 const mockStocks: Stock[] = [
-  { id: '1', name: 'Riz local', image: '/images/produit-riz.svg', quantity: 850, unit: 'kg', purchasePrice: 600, salePrice: 700, threshold: 200, category: 'cereales', collectedFrom: 'Kouassi Jean', lastCollection: '25 Fév 2026' },
-  { id: '2', name: 'Tomates', image: '/images/produit-tomate.svg', quantity: 120, unit: 'kg', purchasePrice: 300, salePrice: 400, threshold: 150, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
-  { id: '3', name: 'Oignons', image: '/images/produit-oignon.svg', quantity: 450, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 100, category: 'legumes', collectedFrom: 'Traoré Marie', lastCollection: '24 Fév 2026' },
-  { id: '4', name: 'Ignames', image: '/images/produit-igname.svg', quantity: 680, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 300, category: 'tubercules', collectedFrom: 'Koné Ibrahim', lastCollection: '23 Fév 2026' },
-  { id: '5', name: 'Plantain', image: '/images/produit-plantain.svg', quantity: 75, unit: 'régimes', purchasePrice: 250, salePrice: 350, threshold: 100, category: 'fruits', collectedFrom: 'Diabaté Fatou', lastCollection: '26 Fév 2026' },
-  { id: '6', name: 'Piment', image: '/images/produit-piment.svg', quantity: 30, unit: 'kg', purchasePrice: 2000, salePrice: 2800, threshold: 50, category: 'epices', collectedFrom: 'Ouattara Aminata', lastCollection: '25 Fév 2026' },
-  { id: '7', name: 'Gombo', image: '/images/produit-gombo.svg', quantity: 180, unit: 'kg', purchasePrice: 1200, salePrice: 1600, threshold: 80, category: 'legumes', collectedFrom: 'Bamba Karim', lastCollection: '27 Fév 2026' },
-  { id: '8', name: 'Maïs', image: '/images/produit-mais.svg', quantity: 520, unit: 'kg', purchasePrice: 400, salePrice: 550, threshold: 200, category: 'cereales', collectedFrom: 'Coulibaly Jean', lastCollection: '24 Fév 2026' },
-  { id: '9', name: 'Aubergines', image: '/images/produit-aubergine.svg', quantity: 220, unit: 'kg', purchasePrice: 650, salePrice: 850, threshold: 100, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
-  { id: '10', name: 'Manioc', image: '/images/produit-manioc.svg', quantity: 750, unit: 'kg', purchasePrice: 300, salePrice: 420, threshold: 400, category: 'tubercules', collectedFrom: 'Traoré Ibrahim', lastCollection: '23 Fév 2026' },
+  { id: '1', name: 'Riz local', image: '/images/produit-riz.png', quantity: 850, unit: 'kg', purchasePrice: 600, salePrice: 700, threshold: 200, category: 'cereales', collectedFrom: 'Kouassi Jean', lastCollection: '25 Fév 2026' },
+  { id: '2', name: 'Tomates', image: '/images/produit-tomate.png', quantity: 120, unit: 'kg', purchasePrice: 300, salePrice: 400, threshold: 150, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
+  { id: '3', name: 'Oignons', image: '/images/produit-oignon.png', quantity: 450, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 100, category: 'legumes', collectedFrom: 'Traoré Marie', lastCollection: '24 Fév 2026' },
+  { id: '4', name: 'Ignames', image: '/images/produit-igname.png', quantity: 680, unit: 'kg', purchasePrice: 350, salePrice: 450, threshold: 300, category: 'tubercules', collectedFrom: 'Koné Ibrahim', lastCollection: '23 Fév 2026' },
+  { id: '5', name: 'Plantain', image: '/images/produit-plantain.png', quantity: 75, unit: 'régimes', purchasePrice: 250, salePrice: 350, threshold: 100, category: 'fruits', collectedFrom: 'Diabaté Fatou', lastCollection: '26 Fév 2026' },
+  { id: '6', name: 'Piment', image: '/images/produit-piment.png', quantity: 30, unit: 'kg', purchasePrice: 2000, salePrice: 2800, threshold: 50, category: 'epices', collectedFrom: 'Ouattara Aminata', lastCollection: '25 Fév 2026' },
+  { id: '7', name: 'Gombo', image: '/images/produit-gombo.png', quantity: 180, unit: 'kg', purchasePrice: 1200, salePrice: 1600, threshold: 80, category: 'legumes', collectedFrom: 'Bamba Karim', lastCollection: '27 Fév 2026' },
+  { id: '8', name: 'Maïs', image: '/images/produit-mais.png', quantity: 520, unit: 'kg', purchasePrice: 400, salePrice: 550, threshold: 200, category: 'cereales', collectedFrom: 'Coulibaly Jean', lastCollection: '24 Fév 2026' },
+  { id: '9', name: 'Aubergines', image: '/images/produit-aubergine.png', quantity: 220, unit: 'kg', purchasePrice: 650, salePrice: 850, threshold: 100, category: 'legumes', collectedFrom: 'Yao Akissi', lastCollection: '26 Fév 2026' },
+  { id: '10', name: 'Manioc', image: '/images/produit-manioc.png', quantity: 750, unit: 'kg', purchasePrice: 300, salePrice: 420, threshold: 400, category: 'tubercules', collectedFrom: 'Traoré Ibrahim', lastCollection: '23 Fév 2026' },
 ];
 
 export function Stock() {

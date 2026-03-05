@@ -7,10 +7,10 @@ import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
-const logoOrange = '/images/logo-orange.svg';
-const logoTonDje = '/images/logo-tondje.svg';
-const logoJulaba = '/images/logo-julaba.svg';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const logoOrange = '/images/logo-orange.png';
+const logoTonDje = '/images/logo-tondje.png';
+const logoJulaba = '/images/logo-julaba.png';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 
 export function Login() {
   const navigate = useNavigate();

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-const bgMarket = '/images/bg-market.svg';
-const bgMarketplace = '/images/bg-marketplace.svg';
-const bgTantie = '/images/bg-tantie.svg';
-const bgOffline = '/images/bg-offline.svg';
-const logoJulaba = '/images/logo-julaba.svg';
-const bgCotisations = '/images/bg-cotisations.svg';
-const logoSplash = '/images/logo-julaba-splash.svg';
-const bgVirtualMarket = '/images/bg-virtual-market.svg';
+const bgMarket = '/images/bg-market.png';
+const bgMarketplace = '/images/bg-marketplace.png';
+const bgTantie = '/images/bg-tantie.png';
+const bgOffline = '/images/bg-offline.png';
+const logoJulaba = '/images/logo-julaba.png';
+const bgCotisations = '/images/bg-cotisations.png';
+const logoSplash = '/images/logo-julaba-splash.png';
+const bgVirtualMarket = '/images/bg-virtual-market.png';
 
 // ONBOARDING V3 - ANIMATIONS DYNAMIQUES 2025
 export function Onboarding() {

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" rx="32" fill="#FFF3F0"/>
+  <circle cx="200" cy="210" r="110" fill="#E53935"/>
+  <circle cx="200" cy="210" r="105" fill="#EF5350"/>
+  <!-- Reflet -->
+  <ellipse cx="165" cy="175" rx="30" ry="20" fill="rgba(255,255,255,0.3)"/>
+  <!-- Tige et feuilles -->
+  <rect x="194" y="95" width="12" height="30" rx="6" fill="#2E8B57"/>
+  <path d="M200 100 Q175 80 165 65 Q185 78 200 100Z" fill="#43A047"/>
+  <path d="M200 100 Q225 80 235 65 Q215 78 200 100Z" fill="#2E8B57"/>
+  <path d="M200 100 Q195 75 200 60 Q205 75 200 100Z" fill="#43A047"/>
+  <!-- Lignes de texture -->
+  <path d="M200 120 Q240 160 235 210" stroke="rgba(180,0,0,0.2)" stroke-width="3" fill="none"/>
+  <path d="M200 120 Q160 160 165 210" stroke="rgba(180,0,0,0.2)" stroke-width="3" fill="none"/>
+  <text x="200" y="370" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#B71C1C">Tomates</text>
+</svg>

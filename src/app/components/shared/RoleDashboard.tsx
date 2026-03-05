@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 import { RoleConfig } from '../../config/roleConfig';
 import { CompactProfileCard } from './CompactProfileCard';
 import { WalletCard } from '../wallet/WalletCard';

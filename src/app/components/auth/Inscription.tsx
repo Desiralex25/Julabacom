@@ -6,8 +6,8 @@ import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-const logoJulaba = '/images/logo-julaba.svg';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const logoJulaba = '/images/logo-julaba.png';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 
 const ROLE_COLORS = {
   marchand: '#C46210',

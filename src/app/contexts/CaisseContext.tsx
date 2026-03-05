@@ -96,16 +96,16 @@ const CMU_RATE = 0.02; // 2% pour CMU
 
 // Produits par défaut pour la Côte d'Ivoire
 const DEFAULT_PRODUCTS: Product[] = [
-  { id: '1', name: 'Riz local', category: 'Cereales', price: 650, unit: 'kg', stock: 150, image: '/images/produit-riz.svg' },
-  { id: '2', name: 'Tomates', category: 'Legumes', price: 350, unit: 'kg', stock: 45, image: '/images/produit-tomate.svg' },
-  { id: '3', name: 'Oignons', category: 'Legumes', price: 400, unit: 'kg', stock: 80, image: '/images/produit-oignon.svg' },
-  { id: '4', name: 'Huile', category: 'Epices', price: 1500, unit: 'L', stock: 25, image: '/images/produit-huile.svg' },
-  { id: '5', name: 'Ignames', category: 'Tubercules', price: 400, unit: 'kg', stock: 120, image: '/images/produit-igname.svg' },
-  { id: '6', name: 'Plantain', category: 'Fruits', price: 300, unit: 'régimes', stock: 15, image: '/images/produit-plantain.svg' },
-  { id: '7', name: 'Piment', category: 'Epices', price: 200, unit: 'tas', stock: 8, image: '/images/produit-piment.svg' },
-  { id: '8', name: 'Gombo', category: 'Legumes', price: 150, unit: 'tas', stock: 30, image: '/images/produit-gombo.svg' },
-  { id: '9', name: 'Maïs', category: 'Cereales', price: 500, unit: 'kg', stock: 100, image: '/images/produit-mais.svg' },
-  { id: '10', name: 'Aubergines', category: 'Legumes', price: 800, unit: 'kg', stock: 35, image: '/images/produit-aubergine.svg' },
+  { id: '1', name: 'Riz local', category: 'Cereales', price: 650, unit: 'kg', stock: 150, image: '/images/produit-riz.png' },
+  { id: '2', name: 'Tomates', category: 'Legumes', price: 350, unit: 'kg', stock: 45, image: '/images/produit-tomate.png' },
+  { id: '3', name: 'Oignons', category: 'Legumes', price: 400, unit: 'kg', stock: 80, image: '/images/produit-oignon.png' },
+  { id: '4', name: 'Huile', category: 'Epices', price: 1500, unit: 'L', stock: 25, image: '/images/produit-huile.png' },
+  { id: '5', name: 'Ignames', category: 'Tubercules', price: 400, unit: 'kg', stock: 120, image: '/images/produit-igname.png' },
+  { id: '6', name: 'Plantain', category: 'Fruits', price: 300, unit: 'régimes', stock: 15, image: '/images/produit-plantain.png' },
+  { id: '7', name: 'Piment', category: 'Epices', price: 200, unit: 'tas', stock: 8, image: '/images/produit-piment.png' },
+  { id: '8', name: 'Gombo', category: 'Legumes', price: 150, unit: 'tas', stock: 30, image: '/images/produit-gombo.png' },
+  { id: '9', name: 'Maïs', category: 'Cereales', price: 500, unit: 'kg', stock: 100, image: '/images/produit-mais.png' },
+  { id: '10', name: 'Aubergines', category: 'Legumes', price: 800, unit: 'kg', stock: 35, image: '/images/produit-aubergine.png' },
 ];
 
 export function CaisseProvider({ children }: { children: ReactNode }) {

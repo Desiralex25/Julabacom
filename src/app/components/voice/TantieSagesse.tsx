@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-const tantieSagesseAvatar = '/images/tantie-sagesse.svg';
+const tantieSagesseAvatar = '/images/tantie-sagesse.png';
 
 interface TantieSagesseProps {
   isVisible: boolean;

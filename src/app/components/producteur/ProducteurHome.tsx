@@ -15,7 +15,7 @@ import {
   DeclareRecolteModal,
 } from './ProducteurModals';
 import { buildAlertesProducteur } from '../shared/AlertesBanner';
-const tantieSagesseImgProducteur = '/images/tantie-sagesse-producteur.svg';
+const tantieSagesseImgProducteur = '/images/tantie-sagesse-producteur.png';
 
 export function ProducteurHome() {
   const navigate = useNavigate();

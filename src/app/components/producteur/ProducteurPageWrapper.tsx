@@ -4,7 +4,7 @@ import { Mic, X, MessageCircle, Edit, Mic2 } from 'lucide-react';
 import { Navigation } from '../layout/Navigation';
 
 // Import image Tantie Sagesse
-const tantieSagesseImg = '/images/tantie-sagesse-producteur.svg';
+const tantieSagesseImg = '/images/tantie-sagesse-producteur.png';
 
 interface ProducteurPageWrapperProps {
   children: ReactNode;

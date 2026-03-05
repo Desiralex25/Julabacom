@@ -61,16 +61,16 @@ const sortOptions = [
 ];
 
 const mockStocks: Stock[] = [
-  { id: '1', name: 'Tomates', image: '/images/produit-tomate.svg', quantity: 1200, unit: 'kg', productionCost: 600, salePrice: 750, threshold: 500, category: 'legumes' },
-  { id: '2', name: 'Aubergines locales', image: '/images/produit-aubergine.svg', quantity: 350, unit: 'kg', productionCost: 650, salePrice: 800, threshold: 200, category: 'legumes' },
-  { id: '3', name: 'Oignons', image: '/images/produit-oignon.svg', quantity: 800, unit: 'kg', productionCost: 700, salePrice: 900, threshold: 300, category: 'legumes' },
-  { id: '4', name: 'Piment frais', image: '/images/produit-piment.svg', quantity: 80, unit: 'kg', productionCost: 2000, salePrice: 2500, threshold: 100, category: 'epices' },
-  { id: '5', name: 'Ignames', image: '/images/produit-igname.svg', quantity: 320, unit: 'kg', productionCost: 500, salePrice: 600, threshold: 250, category: 'tubercules' },
-  { id: '6', name: 'Plantain', image: '/images/produit-plantain.svg', quantity: 450, unit: 'régimes', productionCost: 2000, salePrice: 2500, threshold: 200, category: 'fruits' },
-  { id: '7', name: 'Gombo frais', image: '/images/produit-gombo.svg', quantity: 25, unit: 'kg', productionCost: 1200, salePrice: 1500, threshold: 50, category: 'legumes' },
-  { id: '8', name: 'Maïs grain', image: '/images/produit-mais.svg', quantity: 600, unit: 'kg', productionCost: 350, salePrice: 500, threshold: 400, category: 'cereales' },
-  { id: '9', name: 'Manioc', image: '/images/produit-manioc.svg', quantity: 600, unit: 'kg', productionCost: 300, salePrice: 400, threshold: 400, category: 'tubercules' },
-  { id: '10', name: 'Riz local', image: '/images/produit-riz.svg', quantity: 150, unit: 'kg', productionCost: 550, salePrice: 650, threshold: 50, category: 'cereales' },
+  { id: '1', name: 'Tomates', image: '/images/produit-tomate.png', quantity: 1200, unit: 'kg', productionCost: 600, salePrice: 750, threshold: 500, category: 'legumes' },
+  { id: '2', name: 'Aubergines locales', image: '/images/produit-aubergine.png', quantity: 350, unit: 'kg', productionCost: 650, salePrice: 800, threshold: 200, category: 'legumes' },
+  { id: '3', name: 'Oignons', image: '/images/produit-oignon.png', quantity: 800, unit: 'kg', productionCost: 700, salePrice: 900, threshold: 300, category: 'legumes' },
+  { id: '4', name: 'Piment frais', image: '/images/produit-piment.png', quantity: 80, unit: 'kg', productionCost: 2000, salePrice: 2500, threshold: 100, category: 'epices' },
+  { id: '5', name: 'Ignames', image: '/images/produit-igname.png', quantity: 320, unit: 'kg', productionCost: 500, salePrice: 600, threshold: 250, category: 'tubercules' },
+  { id: '6', name: 'Plantain', image: '/images/produit-plantain.png', quantity: 450, unit: 'régimes', productionCost: 2000, salePrice: 2500, threshold: 200, category: 'fruits' },
+  { id: '7', name: 'Gombo frais', image: '/images/produit-gombo.png', quantity: 25, unit: 'kg', productionCost: 1200, salePrice: 1500, threshold: 50, category: 'legumes' },
+  { id: '8', name: 'Maïs grain', image: '/images/produit-mais.png', quantity: 600, unit: 'kg', productionCost: 350, salePrice: 500, threshold: 400, category: 'cereales' },
+  { id: '9', name: 'Manioc', image: '/images/produit-manioc.png', quantity: 600, unit: 'kg', productionCost: 300, salePrice: 400, threshold: 400, category: 'tubercules' },
+  { id: '10', name: 'Riz local', image: '/images/produit-riz.png', quantity: 150, unit: 'kg', productionCost: 550, salePrice: 650, threshold: 50, category: 'cereales' },
 ];
 
 export function Stocks() {

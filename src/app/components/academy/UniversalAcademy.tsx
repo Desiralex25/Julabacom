@@ -28,7 +28,7 @@ import {
   getQuestionsForChapter,
 } from './academyQuestions';
 import { ROLE_COLORS } from './academyConfig';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 
 // ── Icon registry ────────────────────────────────────────────────────────────
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {

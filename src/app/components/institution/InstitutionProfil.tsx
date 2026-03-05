@@ -95,7 +95,7 @@ export function InstitutionProfil() {
       type: 'carte-identite',
       title: 'Carte d\'identité',
       status: 'verified' as DocumentStatus,
-      imageUrl: '/images/doc-cni.svg',
+      imageUrl: '/images/doc-cni.png',
       uploadedAt: '2024-01-15T10:00:00Z',
       verifiedAt: '2024-01-15T14:30:00Z',
       verifiedBy: 'Jean Koffi - Bureau Abidjan',

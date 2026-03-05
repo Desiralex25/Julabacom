@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sprout, MapPin, Calendar, Camera, ImagePlus, Trash2, Scale, ChevronDown, RefreshCw } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-const imgTomate    = '/images/produit-tomate.svg';
-const imgAubergine = '/images/produit-aubergine.svg';
-const imgPiment    = '/images/produit-piment.svg';
-const imgGombo     = '/images/produit-gombo.svg';
-const imgManioc    = '/images/produit-manioc.svg';
-const imgIgname    = '/images/produit-igname.svg';
-const imgMais      = '/images/produit-mais.svg';
-const imgRiz       = '/images/produit-riz.svg';
-const imgBanane    = '/images/produit-banane.svg';
-const imgOignon    = '/images/produit-oignon.svg';
-const imgAvocat    = '/images/produit-avocat.svg';
-const imgAutre     = '/images/produit-autre.svg';
+const imgTomate    = '/images/produit-tomate.png';
+const imgAubergine = '/images/produit-aubergine.png';
+const imgPiment    = '/images/produit-piment.png';
+const imgGombo     = '/images/produit-gombo.png';
+const imgManioc    = '/images/produit-manioc.png';
+const imgIgname    = '/images/produit-igname.png';
+const imgMais      = '/images/produit-mais.png';
+const imgRiz       = '/images/produit-riz.png';
+const imgBanane    = '/images/produit-banane.png';
+const imgOignon    = '/images/produit-oignon.png';
+const imgAvocat    = '/images/produit-avocat.png';
+const imgAutre     = '/images/produit-autre.png';
 
 // ── Icônes SVG inline pour chaque culture ─────────────────────────────────
 function IconTomate({ color }: { color: string }) {

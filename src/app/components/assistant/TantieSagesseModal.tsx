@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, MessageCircle, Mic, Keyboard, Headphones } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useNavigate } from 'react-router';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 
 interface TantieSagesseModalProps {
   isOpen: boolean;

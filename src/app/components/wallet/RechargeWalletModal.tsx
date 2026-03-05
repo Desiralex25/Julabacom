@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowLeft, Check } from 'lucide-react';
 
 // Import des logos Mobile Money
-const logoOrange = '/images/logo-orange-money.svg';
-const logoMTN = '/images/logo-mtn.svg';
-const logoMoov = '/images/logo-moov.svg';
-const logoWave = '/images/logo-wave.svg';
+const logoOrange = '/images/logo-orange-money.png';
+const logoMTN = '/images/logo-mtn.png';
+const logoMoov = '/images/logo-moov.png';
+const logoWave = '/images/logo-wave.png';
 
 interface RechargeWalletModalProps {
   isOpen: boolean;

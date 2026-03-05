@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 import { getPageClasses, RESPONSIVE_IMAGES, RESPONSIVE_GRIDS } from '../../config/responsive';
 import { Montant, MontantCard } from '../shared/Montant';
 

@@ -16,7 +16,7 @@ import {
   ScoreModal,
   ResumeModal,
 } from './MarchandModals';
-const tantieSagesseImgMarchand = '/images/tantie-sagesse.svg';
+const tantieSagesseImgMarchand = '/images/tantie-sagesse.png';
 
 export function MarchandHome() {
   const navigate = useNavigate();

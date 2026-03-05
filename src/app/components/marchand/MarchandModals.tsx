@@ -12,17 +12,17 @@ import { useApp } from '../../contexts/AppContext';
 import { Montant, MontantCard } from '../shared/Montant';
 
 // Import des images de billets CFA
-const billet500 = '/images/billet-500.svg';
-const billet1000 = '/images/billet-1000.svg';
-const billet2000 = '/images/billet-2000.svg';
-const billet5000 = '/images/billet-5000.svg';
-const billet10000 = '/images/billet-10000.svg';
+const billet500 = '/images/billet-500.png';
+const billet1000 = '/images/billet-1000.png';
+const billet2000 = '/images/billet-2000.png';
+const billet5000 = '/images/billet-5000.png';
+const billet10000 = '/images/billet-10000.png';
 
 // Import des images de pièces CFA
-const piece25 = '/images/piece-25.svg';
-const piece50 = '/images/piece-50.svg';
-const piece100 = '/images/piece-100.svg';
-const piece200 = '/images/piece-200.svg';
+const piece25 = '/images/piece-25.png';
+const piece50 = '/images/piece-50.png';
+const piece100 = '/images/piece-100.png';
+const piece200 = '/images/piece-200.png';
 
 // ✨ ==== COMPOSANTS DE BASE ==== ✨
 

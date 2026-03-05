@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-const logoJulaba = '/images/logo-julaba.svg';
+const logoJulaba = '/images/logo-julaba.png';
 
 export function Welcome() {
   const navigate = useNavigate();

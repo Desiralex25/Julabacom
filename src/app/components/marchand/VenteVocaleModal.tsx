@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { useStock } from '../../contexts/StockContext';
-const tantieSagesseImg = '/images/tantie-sagesse-vente.svg';
+const tantieSagesseImg = '/images/tantie-sagesse-vente.png';
 
 interface VenteVocaleModalProps {
   isOpen: boolean;
@@ -306,7 +306,7 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(/images/bg-marche-vente.svg)`,
+            backgroundImage: `url(/images/bg-marche-vente.png)`,
             filter: 'blur(12px) brightness(0.7)',
           }}
         />

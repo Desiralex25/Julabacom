@@ -29,11 +29,13 @@ const ROLE_COLORS: Record<BORoleType, string> = {
   analyste: '#8B5CF6',
 };
 
+// ⚠️ SÉCURITÉ : Mots de passe depuis variables d'environnement
+// Configurez ces variables dans Vercel : Settings > Environment Variables
 const DEMO_ACCOUNTS: { email: string; role: BORoleType; password: string }[] = [
-  { email: 'superadmin@julaba.ci', role: 'super_admin', password: 'admin123' },
-  { email: 'admin.national@julaba.ci', role: 'admin_national', password: 'admin123' },
-  { email: 'gestionnaire.abidjan@julaba.ci', role: 'gestionnaire_zone', password: 'admin123' },
-  { email: 'analyste@julaba.ci', role: 'analyste', password: 'admin123' },
+  { email: 'superadmin@julaba.ci', role: 'super_admin', password: import.meta.env.VITE_BO_SUPERADMIN_PASSWORD || 'admin123' },
+  { email: 'admin.national@julaba.ci', role: 'admin_national', password: import.meta.env.VITE_BO_ADMIN_PASSWORD || 'admin123' },
+  { email: 'gestionnaire.abidjan@julaba.ci', role: 'gestionnaire_zone', password: import.meta.env.VITE_BO_GESTIONNAIRE_PASSWORD || 'admin123' },
+  { email: 'analyste@julaba.ci', role: 'analyste', password: import.meta.env.VITE_BO_ANALYSTE_PASSWORD || 'admin123' },
 ];
 
 export function BOLogin() {

@@ -52,18 +52,18 @@ import { NotificationButton } from '../marchand/NotificationButton';
 const COLOR = '#2E8B57';
 
 const PRODUITS_ICONS: { id: string; img: string }[] = [
-  { id: 'Tomate',          img: '/images/produit-tomate.svg'    },
-  { id: 'Aubergine',       img: '/images/produit-aubergine.svg' },
-  { id: 'Piment',          img: '/images/produit-piment.svg'    },
-  { id: 'Gombo',           img: '/images/produit-gombo.svg'     },
-  { id: 'Manioc',          img: '/images/produit-manioc.svg'    },
-  { id: 'Igname',          img: '/images/produit-igname.svg'    },
-  { id: 'Maïs',            img: '/images/produit-mais.svg'      },
-  { id: 'Riz',             img: '/images/produit-riz.svg'       },
-  { id: 'Banane plantain', img: '/images/produit-plantain.svg'  },
-  { id: 'Oignon',          img: '/images/produit-oignon.svg'    },
-  { id: 'Avocat',          img: '/images/produit-avocat.svg'    },
-  { id: 'Autre',           img: '/images/produit-autre.svg'     },
+  { id: 'Tomate',          img: '/images/produit-tomate.png'    },
+  { id: 'Aubergine',       img: '/images/produit-aubergine.png' },
+  { id: 'Piment',          img: '/images/produit-piment.png'    },
+  { id: 'Gombo',           img: '/images/produit-gombo.png'     },
+  { id: 'Manioc',          img: '/images/produit-manioc.png'    },
+  { id: 'Igname',          img: '/images/produit-igname.png'    },
+  { id: 'Maïs',            img: '/images/produit-mais.png'      },
+  { id: 'Riz',             img: '/images/produit-riz.png'       },
+  { id: 'Banane plantain', img: '/images/produit-plantain.png'  },
+  { id: 'Oignon',          img: '/images/produit-oignon.png'    },
+  { id: 'Avocat',          img: '/images/produit-avocat.png'    },
+  { id: 'Autre',           img: '/images/produit-autre.png'     },
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-001',
     produit: 'Riz local',
-    image: '/images/produit-riz.svg',
+    image: '/images/produit-riz.png',
     acheteur: 'Koffi Marchand',
     telephone: '07 00 11 22',
     localite: 'Abidjan',
@@ -151,7 +151,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-002',
     produit: 'Plantain',
-    image: '/images/produit-plantain.svg',
+    image: '/images/produit-plantain.png',
     acheteur: 'Aminata Coop.',
     telephone: '05 44 55 66',
     localite: 'Yamoussoukro',
@@ -169,7 +169,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-003',
     produit: 'Tomates',
-    image: '/images/produit-tomate.svg',
+    image: '/images/produit-tomate.png',
     acheteur: 'Ibrahim Grossiste',
     telephone: '01 33 44 55',
     localite: 'Bouaké',
@@ -187,7 +187,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-004',
     produit: 'Maïs',
-    image: '/images/produit-mais.svg',
+    image: '/images/produit-mais.png',
     acheteur: 'Fatoumata SARL',
     telephone: '07 77 88 99',
     localite: 'San-Pédro',
@@ -205,7 +205,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-005',
     produit: 'Gombo',
-    image: '/images/produit-gombo.svg',
+    image: '/images/produit-gombo.png',
     acheteur: 'Moussa Restaurant',
     telephone: '05 22 33 44',
     localite: 'Abidjan',
@@ -223,7 +223,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-006',
     produit: 'Mangue',
-    image: '/images/produit-mangue.svg',
+    image: '/images/produit-mangue.png',
     acheteur: 'Yao Export',
     telephone: '01 66 77 88',
     localite: 'Korhogo',
@@ -241,7 +241,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-007',
     produit: 'Ananas',
-    image: '/images/produit-ananas.svg',
+    image: '/images/produit-ananas.png',
     acheteur: 'Diabaté Coop.',
     telephone: '07 11 22 33',
     localite: 'Abengourou',
@@ -259,7 +259,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-008',
     produit: 'Oignons',
-    image: '/images/produit-oignon.svg',
+    image: '/images/produit-oignon.png',
     acheteur: 'Soro Épicerie',
     telephone: '05 55 66 77',
     localite: 'Man',
@@ -277,7 +277,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-009',
     produit: 'Ignames',
-    image: '/images/produit-igname.svg',
+    image: '/images/produit-igname.png',
     acheteur: 'Koné Grossiste',
     telephone: '01 44 55 66',
     localite: 'Daloa',
@@ -295,7 +295,7 @@ const mockCommandes: Commande[] = [
   {
     id: 'CMD-010',
     produit: 'Riz local',
-    image: '/images/produit-riz.svg',
+    image: '/images/produit-riz.png',
     acheteur: 'Touré Import',
     telephone: '07 88 99 00',
     localite: 'Abidjan',
@@ -518,7 +518,7 @@ export function ProducteurCommandes() {
       return {
         id: c.id,
         produit: c.productName,
-        image: '/images/produit-autre.svg',
+        image: '/images/produit-autre.png',
         acheteur: c.buyerName,
         telephone: '',
         localite: '',
@@ -589,7 +589,7 @@ export function ProducteurCommandes() {
     const nouvelle: Commande = {
       id: `CMD-${Date.now()}`,
       produit: newForm.produit,
-      image: newProduitImage || '/images/produit-autre.svg',
+      image: newProduitImage || '/images/produit-autre.png',
       acheteur: newForm.acheteur,
       telephone: newForm.telephone,
       localite: newForm.localite,

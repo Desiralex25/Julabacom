@@ -4,7 +4,7 @@ import { Montant, MontantCard } from '../shared/Montant';
 import { Volume2, Users, Package, TrendingUp, ArrowRight, Calendar, Edit, XCircle, ChevronDown } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-const tantieSagesseImg = '/images/tantie-sagesse-cooperative.svg';
+const tantieSagesseImg = '/images/tantie-sagesse-cooperative.png';
 import { RESPONSIVE_IMAGES, RESPONSIVE_GRIDS } from '../../config/responsive';
 
 interface CooperativeDashboardProps {

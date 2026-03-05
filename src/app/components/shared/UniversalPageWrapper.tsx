@@ -5,7 +5,7 @@ import { Navigation } from '../layout/Navigation';
 import { getRoleColor } from '../../config/roleConfig';
 
 // Import image Tantie Sagesse
-const tantieSagesseImg = '/images/tantie-sagesse.svg';
+const tantieSagesseImg = '/images/tantie-sagesse.png';
 
 interface UniversalPageWrapperProps {
   role: 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';

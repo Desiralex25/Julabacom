@@ -34,7 +34,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-const tantieSagesseImg = '/images/tantie-sagesse-institution.svg';
+const tantieSagesseImg = '/images/tantie-sagesse-institution.png';
 
 const PRIMARY_COLOR = '#712864';
 

@@ -11,11 +11,11 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import { useUser } from '../../contexts/UserContext';
 
 // Import des images Tantie Sagesse
-const tantieSagesseIcon = '/images/tantie-sagesse-icon.svg';
-const tantieSagesseCooperativeIcon = '/images/tantie-sagesse-icon-cooperative.svg';
-const tantieSagesseProducteurIcon = '/images/tantie-sagesse-icon-producteur.svg';
-const tantieSagesseInstitutionIcon = '/images/tantie-sagesse-icon-institution.svg';
-const tantieSagesseIdentificateurIcon = '/images/tantie-sagesse-icon-identificateur.svg';
+const tantieSagesseIcon = '/images/tantie-sagesse-icon.png';
+const tantieSagesseCooperativeIcon = '/images/tantie-sagesse-icon-cooperative.png';
+const tantieSagesseProducteurIcon = '/images/tantie-sagesse-icon-producteur.png';
+const tantieSagesseInstitutionIcon = '/images/tantie-sagesse-icon-institution.png';
+const tantieSagesseIdentificateurIcon = '/images/tantie-sagesse-icon-identificateur.png';
 
 interface BottomBarProps {
   role: 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';

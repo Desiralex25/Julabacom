@@ -10,7 +10,7 @@ import { Navigation } from '../layout/Navigation';
 import { FormulaireNouveauDossier } from './FormulaireNouveauDossier';
 import { ScoreResumeCard } from '../shared/ScoreResumeCard';
 import { TantieSagesseCard } from '../shared/TantieSagesseCard';
-const tantieSagesseImg = '/images/tantie-sagesse-identificateur.svg';
+const tantieSagesseImg = '/images/tantie-sagesse-identificateur.png';
 import { ACTEURS_DATA } from '../../data/acteursData';
 
 const PRIMARY_COLOR = '#9F8170';
