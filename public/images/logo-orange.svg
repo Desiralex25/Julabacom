@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 60" fill="none">
-  <rect width="160" height="60" rx="8" fill="#FF6600"/>
-  <circle cx="35" cy="30" r="18" fill="black"/>
-  <circle cx="35" cy="30" r="12" fill="#FF6600"/>
-  <text x="95" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="white">Orange</text>
-</svg>
