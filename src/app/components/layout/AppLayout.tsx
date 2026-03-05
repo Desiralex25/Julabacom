@@ -17,7 +17,7 @@ export function AppLayout() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate('/');
     }
   }, [user, navigate]);
 

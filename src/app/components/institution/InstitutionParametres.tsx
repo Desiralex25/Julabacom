@@ -386,7 +386,7 @@ export function InstitutionParametres() {
         isOpen={showConfirmLogout}
         title="Se déconnecter ?"
         message="Vous serez redirigé vers la page de connexion Jùlaba."
-        onConfirm={() => { speak('Déconnexion en cours'); navigate('/login'); }}
+        onConfirm={() => { speak('Déconnexion en cours'); navigate('/'); }}
         onClose={() => setShowConfirmLogout(false)}
       />
     </div>

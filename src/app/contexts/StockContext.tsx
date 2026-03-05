@@ -1,151 +1,161 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { useUser } from './UserContext';
-import { useNotifications } from './NotificationsContext';
-
-// ── Types ────────────────────────────────────────────────────
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as stocksApi from '../../imports/stocks-api';
+import { DEV_MODE, devLog } from '../config/devMode';
 
 export interface StockItem {
   id: string;
-  name: string;
-  category: string;
-  unit: string;
-  quantity: number;
-  purchasePrice: number;
-  salePrice: number;
-  seuilAlerte: number; // seuil en dessous duquel on alerte
-  image?: string;
-}
-
-export interface Sale {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  category?: string;
-  purchasePrice?: number;
-  paymentMethod?: string;
+  marchandId: string;
+  produit: string;
+  quantite: number;
+  unite: string;
+  prixUnitaire: number;
+  derniereModification: string;
 }
 
 interface StockContextType {
+  stocks: StockItem[];
   stock: StockItem[];
-  getStock: () => StockItem[];
-  addProduct: (item: Omit<StockItem, 'id'>) => void;
-  updateProduct: (id: string, updates: Partial<StockItem>) => void;
-  deleteProduct: (id: string) => void;
-  recordSale: (sale: Sale) => void;
-  reapprovisionner: (productId: string, quantite: number) => void;
-  getStockFaible: () => StockItem[];
+  loading: boolean;
+
+  addStock: (data: Omit<StockItem, 'id' | 'derniereModification'>) => Promise<void>;
+  updateStock: (id: string, data: Partial<StockItem>) => Promise<void>;
+  deleteStock: (id: string) => Promise<void>;
+  getStockByProduit: (produit: string) => StockItem | undefined;
+  getStockTotal: () => number;
+  getStockFaible: (seuil?: number) => StockItem[];
   getValeurTotaleStock: () => number;
+  getStock: () => StockItem[];
+  addProduct: (data: Omit<StockItem, 'id' | 'derniereModification'>) => Promise<void>;
+  recordSale: (produit: string, quantite: number) => Promise<void>;
+
+  refreshStocks: () => Promise<void>;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
-// ── Données initiales ────────────────────────────────────────
-
-// ✅ MOCK_STOCK SUPPRIMÉ - Migration Supabase
-
-// ── Provider ─────────────────────────────────────────────────
-
 export function StockProvider({ children }: { children: ReactNode }) {
-  const { user } = useUser();
-  const notifications = useNotifications();
+  const [stocks, setStocks] = useState<StockItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const storageKey = user?.id ? `julaba_stock_${user.id}` : null;
+  const loadStocks = async () => {
+    if (DEV_MODE) {
+      devLog('StockContext', 'Mode dev - skip API call');
+      return;
+    }
+    try {
+      setLoading(true);
+      const { stocks: data } = await stocksApi.fetchStocks();
 
-  const [stock, setStock] = useState<StockItem[]>([]);
+      const stockList: StockItem[] = data.map((s: any) => ({
+        id: s.id,
+        marchandId: s.marchand_id,
+        produit: s.produit,
+        quantite: s.quantite,
+        unite: s.unite,
+        prixUnitaire: s.prix_unitaire,
+        derniereModification: s.updated_at,
+      }));
 
-  // TODO: Charger depuis Supabase au mount et lors du changement d'utilisateur
-  // ✅ localStorage SUPPRIMÉ
-  // useEffect(() => {
-  //   if (user?.id) {
-  //     const loadStock = async () => {
-  //       const { data } = await supabase.from('stock').select('*').eq('userId', user.id);
-  //       setStock(data || []);
-  //     };
-  //     loadStock();
-  //   } else {
-  //     setStock([]);
-  //   }
-  // }, [user?.id]);
-
-  // ── Détection automatique stocks faibles ─────────────────
-  // On garde un ref pour ne pas re-déclencher la même alerte sans cesse
-  const alertedRef = useRef<Set<string>>(new Set());
+      setStocks(stockList);
+    } catch (error) {
+      console.error('Error loading stocks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!user?.id || user.role !== 'marchand') return;
+    loadStocks();
+  }, []);
 
-    stock.forEach(item => {
-      if (item.quantity <= item.seuilAlerte && !alertedRef.current.has(item.id)) {
-        alertedRef.current.add(item.id);
-        notifications.triggerStockFaible(
-          user.id,
-          item.name,
-          item.quantity,
-          item.unit
-        );
-      }
-      // Ré-autoriser l'alerte si le stock est reconstitué (> seuil * 2)
-      if (item.quantity > item.seuilAlerte * 2) {
-        alertedRef.current.delete(item.id);
-      }
-    });
-  }, [stock, user?.id, user?.role]);
-
-  // ── Actions ──────────────────────────────────────────────
-
-  const getStock = (): StockItem[] => stock;
-
-  const addProduct = (item: Omit<StockItem, 'id'>) => {
-    const newItem: StockItem = { ...item, id: `prod-${Date.now()}` };
-    setStock(prev => [...prev, newItem]);
+  const addStock = async (data: Omit<StockItem, 'id' | 'derniereModification'>) => {
+    try {
+      await stocksApi.createStock({
+        produit: data.produit,
+        quantite: data.quantite,
+        unite: data.unite,
+        prix_unitaire: data.prixUnitaire,
+      });
+      await loadStocks();
+    } catch (error) {
+      console.error('Error adding stock:', error);
+      throw error;
+    }
   };
 
-  const updateProduct = (id: string, updates: Partial<StockItem>) => {
-    setStock(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  const updateStock = async (id: string, data: Partial<StockItem>) => {
+    try {
+      await stocksApi.updateStock(id, {
+        quantite: data.quantite,
+        prix_unitaire: data.prixUnitaire,
+      });
+      await loadStocks();
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      throw error;
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    setStock(prev => prev.filter(item => item.id !== id));
+  const deleteStock = async (id: string) => {
+    try {
+      await stocksApi.deleteStock(id);
+      setStocks(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+      console.error('Error deleting stock:', error);
+      throw error;
+    }
   };
 
-  const recordSale = (sale: Sale) => {
-    setStock(prev =>
-      prev.map(item =>
-        item.id === sale.productId
-          ? { ...item, quantity: Math.max(0, item.quantity - sale.quantity) }
-          : item
-      )
-    );
+  const getStockByProduit = (produit: string): StockItem | undefined => {
+    return stocks.find(s => s.produit === produit);
   };
 
-  const reapprovisionner = (productId: string, quantite: number) => {
-    setStock(prev =>
-      prev.map(item =>
-        item.id === productId
-          ? { ...item, quantity: item.quantity + quantite }
-          : item
-      )
-    );
-    // Ré-autoriser l'alerte pour ce produit
-    alertedRef.current.delete(productId);
+  const getStockTotal = (): number => {
+    return stocks.reduce((sum, s) => sum + s.quantite * s.prixUnitaire, 0);
   };
 
-  const getStockFaible = () => stock.filter(item => item.quantity <= item.seuilAlerte);
+  const getStockFaible = (seuil: number = 5): StockItem[] => {
+    return stocks.filter(s => s.quantite <= seuil);
+  };
 
-  const getValeurTotaleStock = () =>
-    stock.reduce((total, item) => total + item.quantity * item.salePrice, 0);
+  const getValeurTotaleStock = (): number => {
+    return stocks.reduce((sum, s) => sum + s.quantite * s.prixUnitaire, 0);
+  };
+
+  const getStock = (): StockItem[] => {
+    return stocks;
+  };
+
+  const addProduct = async (data: Omit<StockItem, 'id' | 'derniereModification'>) => {
+    return addStock(data);
+  };
+
+  const recordSale = async (produit: string, quantite: number) => {
+    const item = stocks.find(s => s.produit === produit);
+    if (item) {
+      await updateStock(item.id, { quantite: Math.max(0, item.quantite - quantite) });
+    }
+  };
+
+  const refreshStocks = async () => {
+    await loadStocks();
+  };
 
   const value: StockContextType = {
-    stock,
-    getStock,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    recordSale,
-    reapprovisionner,
+    stocks,
+    stock: stocks,
+    loading,
+    addStock,
+    updateStock,
+    deleteStock,
+    getStockByProduit,
+    getStockTotal,
     getStockFaible,
     getValeurTotaleStock,
+    getStock,
+    addProduct,
+    recordSale,
+    refreshStocks,
   };
 
   return <StockContext.Provider value={value}>{children}</StockContext.Provider>;
@@ -154,17 +164,7 @@ export function StockProvider({ children }: { children: ReactNode }) {
 export function useStock() {
   const context = useContext(StockContext);
   if (!context) {
-    return {
-      stock: [],
-      getStock: () => [],
-      addProduct: () => {},
-      updateProduct: () => {},
-      deleteProduct: () => {},
-      recordSale: () => {},
-      reapprovisionner: () => {},
-      getStockFaible: () => [],
-      getValeurTotaleStock: () => 0,
-    } as StockContextType;
+    throw new Error('useStock must be used within StockProvider');
   }
   return context;
 }

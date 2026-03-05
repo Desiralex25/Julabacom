@@ -227,7 +227,7 @@ export function CooperativeProfil() {
     speak('Déconnexion en cours');
     userLogout();
     setTimeout(() => {
-      navigate('/login');
+      navigate('/');
     }, 1000);
   };
 

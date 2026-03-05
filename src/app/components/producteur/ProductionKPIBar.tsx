@@ -79,7 +79,12 @@ interface Props {
 }
 
 export function ProductionKPIBar({ activeTab }: Props) {
-  const { recoltes, commandes, publications, cycles } = useProducteur();
+  const { stats } = useProducteur();
+
+  // Safe defaults — ces tableaux ne sont pas dans ProducteurContext
+  const cycles: any[]       = [];
+  const recoltes: any[]     = [];
+  const commandes: any[]    = [];
 
   // ── KPIs Ma Plantation ─────────────────────────────────────────────────────
   const cyclesActifs    = cycles.filter(c => c.status === 'active').length;

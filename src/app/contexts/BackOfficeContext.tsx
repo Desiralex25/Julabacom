@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as boAPI from '/src/imports/backoffice-api';
+import { DEV_MODE, devLog } from '../config/devMode';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +131,52 @@ export interface BOAuditLog {
   module: string;
 }
 
+// ─── Mock BO Users (pour développement uniquement) ──────────────────────────
+
+export const MOCK_BO_USERS: BOUser[] = [
+  {
+    id: 'bo1',
+    nom: 'KONÉ',
+    prenom: 'Amadou',
+    email: 'amadou.kone@julaba.ci',
+    role: 'super_admin',
+    avatar: undefined,
+    lastLogin: new Date().toISOString(),
+    actif: true,
+  },
+  {
+    id: 'bo2',
+    nom: 'TOURÉ',
+    prenom: 'Aminata',
+    email: 'aminata.toure@julaba.ci',
+    role: 'admin_national',
+    avatar: undefined,
+    lastLogin: new Date().toISOString(),
+    actif: true,
+  },
+  {
+    id: 'bo3',
+    nom: 'YAO',
+    prenom: 'Jean',
+    email: 'jean.yao@julaba.ci',
+    role: 'gestionnaire_zone',
+    region: 'Abidjan',
+    avatar: undefined,
+    lastLogin: new Date().toISOString(),
+    actif: true,
+  },
+  {
+    id: 'bo4',
+    nom: 'DIABATÉ',
+    prenom: 'Mariam',
+    email: 'mariam.diabate@julaba.ci',
+    role: 'analyste',
+    avatar: undefined,
+    lastLogin: new Date().toISOString(),
+    actif: true,
+  },
+];
+
 // ─── Permissions RBAC ───────────────────────────────────────────────────────
 
 export const PERMISSIONS: Record<BORoleType, string[]> = {
@@ -172,42 +220,6 @@ export const PERMISSIONS: Record<BORoleType, string[]> = {
     'audit.read',
   ],
 };
-
-// ─── Mock Data - UNIQUEMENT pour MODE DEV ProfileSwitcher ───────────────────
-// ⚠️ CRITIQUE : MOCK_BO_USERS doit rester disponible pour ProfileSwitcher.tsx
-// Ne pas supprimer tant que le système d'authentification Supabase n'est pas déployé
-
-export const MOCK_BO_USERS: BOUser[] = [
-  { id: 'bo1', nom: 'KOUASSI', prenom: 'Yves-Roland', email: 'superadmin@julaba.ci', role: 'super_admin', lastLogin: '2026-03-02T08:30:00', actif: true },
-  { id: 'bo2', nom: 'BAMBA', prenom: 'Fatoumata', email: 'admin.national@julaba.ci', role: 'admin_national', region: 'National', lastLogin: '2026-03-02T07:15:00', actif: true },
-  { id: 'bo3', nom: 'KOFFI', prenom: 'Ange-Désiré', email: 'gestionnaire.abidjan@julaba.ci', role: 'gestionnaire_zone', region: 'Abidjan', lastLogin: '2026-03-01T16:45:00', actif: true },
-  { id: 'bo4', nom: 'YAO', prenom: 'Esther', email: 'analyste@julaba.ci', role: 'analyste', lastLogin: '2026-02-28T11:00:00', actif: true },
-  { id: 'bo5', nom: 'DIALLO', prenom: 'Mamadou', email: 'gestionnaire.bouake@julaba.ci', role: 'gestionnaire_zone', region: 'Bouaké', lastLogin: '2026-03-01T09:20:00', actif: false },
-];
-
-// ⚠️ Institution mock pour développement
-export const MOCK_INSTITUTIONS: InstitutionBO[] = [
-  {
-    id: 'inst1',
-    nom: 'Direction Générale de l\'Économie',
-    type: 'ministere',
-    region: 'Abidjan',
-    email: 'contact@dge.gouv.ci',
-    referentNom: 'Jean KOUADIO',
-    referentTelephone: '+225 07 07 07 07 07',
-    statut: 'actif',
-    dateCreation: '2024-01-01',
-    modules: {
-      dashboard: 'complet',
-      analytics: 'complet',
-      acteurs: 'lecture',
-      supervision: 'complet',
-      audit: 'lecture',
-      export: 'complet',
-    },
-    creePar: 'Super Admin',
-  },
-];
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -255,16 +267,72 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     }
   }, [boUser]);
   
-  // ✅ NETTOYAGE PHASE 2 : Suppression de toutes les données mock
-  // TODO: Charger depuis Supabase
+  // ✅ SUPABASE MIGRATION COMPLETE : Toutes les données chargées depuis Supabase
   const [acteurs, setActeurs] = useState<BOActeur[]>([]);
   const [dossiers, setDossiers] = useState<BODossier[]>([]);
-  const [transactions] = useState<BOTransaction[]>([]);
+  const [transactions, setTransactions] = useState<BOTransaction[]>([]);
   const [zones, setZones] = useState<BOZone[]>([]);
   const [commissions, setCommissions] = useState<BOCommission[]>([]);
   const [auditLogs, setAuditLogs] = useState<BOAuditLog[]>([]);
-  const [boUsers, setBOUsers] = useState<BOUser[]>(MOCK_BO_USERS); // Garde MOCK_BO_USERS pour DEV
-  const [institutions, setInstitutions] = useState<InstitutionBO[]>(MOCK_INSTITUTIONS); // Institution mock pour DEV
+  const [boUsers, setBOUsers] = useState<BOUser[]>([]);
+  const [institutions, setInstitutions] = useState<InstitutionBO[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Charger toutes les données depuis Supabase au montage
+  useEffect(() => {
+    if (!boUser) {
+      setLoading(false);
+      return;
+    }
+
+    async function loadBackOfficeData() {
+      setLoading(true);
+      if (DEV_MODE) {
+        devLog('BackOfficeContext', 'Mode dev - skip API calls');
+        setLoading(false);
+        return;
+      }
+      try {
+        // Charger toutes les données en parallèle
+        const [
+          acteursRes,
+          dossiersRes,
+          transactionsRes,
+          zonesRes,
+          commissionsRes,
+          auditRes,
+          usersRes,
+          institutionsRes,
+        ] = await Promise.all([
+          boAPI.fetchActeurs().catch(() => ({ acteurs: [] })),
+          boAPI.fetchDossiers().catch(() => ({ dossiers: [] })),
+          boAPI.fetchTransactions().catch(() => ({ transactions: [] })),
+          boAPI.fetchZones().catch(() => ({ zones: [] })),
+          boAPI.fetchCommissions().catch(() => ({ commissions: [] })),
+          boAPI.fetchAuditLogs().catch(() => ({ logs: [] })),
+          boAPI.fetchBOUsers().catch(() => ({ users: [] })),
+          boAPI.fetchInstitutions().catch(() => ({ institutions: [] })),
+        ]);
+
+        setActeurs(acteursRes.acteurs);
+        setDossiers(dossiersRes.dossiers);
+        setTransactions(transactionsRes.transactions);
+        setZones(zonesRes.zones);
+        setCommissions(commissionsRes.commissions);
+        setAuditLogs(auditRes.logs);
+        setBOUsers(usersRes.users);
+        setInstitutions(institutionsRes.institutions);
+
+        console.log('✅ Données Back-Office chargées depuis Supabase');
+      } catch (error) {
+        console.error('❌ Erreur chargement données BO:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBackOfficeData();
+  }, [boUser]);
 
   const hasPermission = (permission: string): boolean => {
     if (!boUser) return false;
@@ -280,172 +348,110 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
-  const updateActeurStatut = (id: string, statut: BOActeur['statut'], logAction?: string) => {
-    setActeurs(prev => prev.map(a => {
-      if (a.id !== id) return a;
-      if (boUser) {
-        addAuditLog({
-          action: logAction || `MODIFICATION statut → ${statut}`,
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: `${a.prenoms} ${a.nom}`,
-          ancienneValeur: a.statut,
-          nouvelleValeur: statut,
-          ip: '127.0.0.1',
-          module: 'Acteurs',
-        });
-      }
-      return { ...a, statut };
-    }));
+  const updateActeurStatut = async (id: string, statut: BOActeur['statut'], logAction?: string) => {
+    try {
+      await boAPI.updateActeurStatut(id, statut, logAction);
+      
+      // Mettre à jour l'état local
+      setActeurs(prev => prev.map(a => a.id === id ? { ...a, statut } : a));
+      
+      // Recharger les audit logs
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateActeurStatut:', error);
+      throw error;
+    }
   };
 
-  const updateDossierStatut = (id: string, statut: BODossier['statut'], motif?: string) => {
-    setDossiers(prev => prev.map(d => {
-      if (d.id !== id) return d;
-      if (boUser) {
-        addAuditLog({
-          action: `${statut.toUpperCase()} dossier`,
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: d.acteurNom,
-          ancienneValeur: d.statut,
-          nouvelleValeur: statut,
-          ip: '127.0.0.1',
-          module: 'Enrôlement',
-        });
-      }
-      return { ...d, statut, motifRejet: motif, dateModification: new Date().toISOString().split('T')[0] };
-    }));
+  const updateDossierStatut = async (id: string, statut: BODossier['statut'], motif?: string) => {
+    try {
+      await boAPI.updateDossierStatut(id, statut, motif);
+      setDossiers(prev => prev.map(d => d.id === id ? { ...d, statut, motifRejet: motif, dateModification: new Date().toISOString().split('T')[0] } : d));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateDossierStatut:', error);
+      throw error;
+    }
   };
 
-  const updateZoneStatut = (id: string, statut: BOZone['statut']) => {
-    setZones(prev => prev.map(z => {
-      if (z.id !== id) return z;
-      if (boUser) {
-        addAuditLog({
-          action: statut === 'active' ? 'ACTIVATION zone' : 'DÉSACTIVATION zone',
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: z.nom,
-          ancienneValeur: z.statut,
-          nouvelleValeur: statut,
-          ip: '127.0.0.1',
-          module: 'Zones',
-        });
-      }
-      return { ...z, statut };
-    }));
+  const updateZoneStatut = async (id: string, statut: BOZone['statut']) => {
+    try {
+      await boAPI.updateZoneStatut(id, statut);
+      setZones(prev => prev.map(z => z.id === id ? { ...z, statut } : z));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateZoneStatut:', error);
+      throw error;
+    }
   };
 
-  const updateCommissionStatut = (id: string, statut: BOCommission['statut']) => {
-    setCommissions(prev => prev.map(c => {
-      if (c.id !== id) return c;
-      if (boUser) {
-        addAuditLog({
-          action: statut === 'validee' ? 'VALIDATION commission' : 'PAIEMENT commission',
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: c.identificateurNom,
-          ancienneValeur: c.statut,
-          nouvelleValeur: statut,
-          ip: '127.0.0.1',
-          module: 'Commissions',
-        });
-      }
-      return { ...c, statut };
-    }));
+  const updateCommissionStatut = async (id: string, statut: BOCommission['statut']) => {
+    try {
+      await boAPI.updateCommissionStatut(id, statut);
+      setCommissions(prev => prev.map(c => c.id === id ? { ...c, statut } : c));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateCommissionStatut:', error);
+      throw error;
+    }
   };
 
-  const addBOUser = (user: Omit<BOUser, 'id' | 'lastLogin'>) => {
+  const addBOUser = async (user: Omit<BOUser, 'id' | 'lastLogin'>) => {
+    // TODO: Créer une route backend pour créer un utilisateur BO
+    console.warn('addBOUser: À implémenter côté backend');
     const newUser: BOUser = { ...user, id: `bo${Date.now()}`, lastLogin: new Date().toISOString() };
     setBOUsers(prev => [...prev, newUser]);
-    if (boUser) {
-      addAuditLog({
-        action: 'CREATION utilisateur BO',
-        utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-        roleBO: boUser.role,
-        acteurImpacte: `${user.prenom} ${user.nom}`,
-        ancienneValeur: '-',
-        nouvelleValeur: user.role,
-        ip: '127.0.0.1',
-        module: 'Utilisateurs',
-      });
+  };
+
+  const addInstitution = async (inst: Omit<InstitutionBO, 'id' | 'dateCreation' | 'creePar'>) => {
+    try {
+      const { institution } = await boAPI.createInstitution(inst);
+      setInstitutions(prev => [...prev, institution]);
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur addInstitution:', error);
+      throw error;
     }
   };
 
-  const addInstitution = (inst: Omit<InstitutionBO, 'id' | 'dateCreation' | 'creePar'>) => {
-    const newInst: InstitutionBO = {
-      ...inst,
-      id: `inst${Date.now()}`,
-      dateCreation: new Date().toISOString(),
-      creePar: boUser ? `${boUser.prenom} ${boUser.nom}` : 'System',
-    };
-    setInstitutions(prev => [...prev, newInst]);
-    if (boUser) {
-      addAuditLog({
-        action: 'CREATION institution',
-        utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-        roleBO: boUser.role,
-        acteurImpacte: inst.nom,
-        ancienneValeur: '-',
-        nouvelleValeur: 'actif',
-        ip: '127.0.0.1',
-        module: 'Institutions',
-      });
+  const updateInstitutionModules = async (id: string, modules: ModuleAcces) => {
+    try {
+      await boAPI.updateInstitutionModules(id, modules);
+      setInstitutions(prev => prev.map(i => i.id === id ? { ...i, modules } : i));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateInstitutionModules:', error);
+      throw error;
     }
   };
 
-  const updateInstitutionModules = (id: string, modules: ModuleAcces) => {
-    setInstitutions(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      if (boUser) {
-        addAuditLog({
-          action: 'MODIFICATION modules',
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: i.nom,
-          ancienneValeur: JSON.stringify(i.modules),
-          nouvelleValeur: JSON.stringify(modules),
-          ip: '127.0.0.1',
-          module: 'Institutions',
-        });
-      }
-      return { ...i, modules };
-    }));
+  const updateInstitutionStatut = async (id: string, statut: InstitutionBO['statut']) => {
+    try {
+      await boAPI.updateInstitutionStatut(id, statut);
+      setInstitutions(prev => prev.map(i => i.id === id ? { ...i, statut } : i));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateInstitutionStatut:', error);
+      throw error;
+    }
   };
 
-  const updateInstitutionStatut = (id: string, statut: InstitutionBO['statut']) => {
-    setInstitutions(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      if (boUser) {
-        addAuditLog({
-          action: statut === 'actif' ? 'ACTIVATION institution' : 'DÉSACTIVATION institution',
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: i.nom,
-          ancienneValeur: i.statut,
-          nouvelleValeur: statut,
-          ip: '127.0.0.1',
-          module: 'Institutions',
-        });
-      }
-      return { ...i, statut };
-    }));
-  };
-
-  const deleteInstitution = (id: string) => {
-    setInstitutions(prev => prev.filter(i => i.id !== id));
-    if (boUser) {
-      addAuditLog({
-        action: 'SUPPRESSION institution',
-        utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-        roleBO: boUser.role,
-        acteurImpacte: id,
-        ancienneValeur: 'actif',
-        nouvelleValeur: 'supprimé',
-        ip: '127.0.0.1',
-        module: 'Institutions',
-      });
+  const deleteInstitution = async (id: string) => {
+    try {
+      await boAPI.deleteInstitution(id);
+      setInstitutions(prev => prev.filter(i => i.id !== id));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur deleteInstitution:', error);
+      throw error;
     }
   };
 

@@ -20,9 +20,9 @@ const tantieSagesseImgProducteur = '/images/tantie-sagesse-producteur.png';
 export function ProducteurHome() {
   const navigate = useNavigate();
   const { user, speak, setIsModalOpen } = useApp();
-  const { stats, alertes } = useProducteur();
+  const { stats } = useProducteur();
   
-  const alertesBanner = buildAlertesProducteur(alertes);
+  const alertesBanner = buildAlertesProducteur();
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isJourneeExpanded, setIsJourneeExpanded] = useState(false);
@@ -44,16 +44,18 @@ export function ProducteurHome() {
   const roleConfig = getRoleConfig('producteur');
 
   const dashboardStats = {
-    kpi1Value: stats.productionTotale,
-    kpi2Value: stats.revenusTotaux,
+    kpi1Value: stats?.recoltesTotales ?? 0,
+    kpi2Value: stats?.revenusTotal ?? 0,
   };
 
   const handleListenMessage = () => {
-    let message = '';
-    if (stats.productionTotale > 0 && stats.revenusTotaux === 0) {
-      message = `Tu as ${stats.productionTotale.toLocaleString()} kilogrammes de production. Commence à vendre !`;
-    } else if (stats.productionTotale > 0 && stats.revenusTotaux > 0) {
-      message = `Bravo ! Tu as ${stats.productionTotale.toLocaleString()} kilogrammes produits et ${stats.revenusTotaux.toLocaleString()} francs CFA de revenus`;
+    let message = ''
+    const production = stats?.recoltesTotales ?? 0;
+    const revenus = stats?.revenusTotal ?? 0;
+    if (production > 0 && revenus === 0) {
+      message = `Tu as ${production.toLocaleString()} kilogrammes de production. Commence à vendre !`;
+    } else if (production > 0 && revenus > 0) {
+      message = `Bravo ! Tu as ${production.toLocaleString()} kilogrammes produits et ${revenus.toLocaleString()} francs CFA de revenus`;
     } else {
       message = `Bonjour ${user?.firstName} ! Crée ton premier cycle agricole pour démarrer`;
     }
@@ -62,13 +64,13 @@ export function ProducteurHome() {
 
   const customGreeting = (
     <>
-      {stats.productionTotale > 0 && stats.revenusTotaux === 0 && (
-        `Tu as ${stats.productionTotale.toLocaleString()} kg de production. Commence à vendre !`
+      {(stats?.recoltesTotales ?? 0) > 0 && (stats?.revenusTotal ?? 0) === 0 && (
+        `Tu as ${(stats?.recoltesTotales ?? 0).toLocaleString()} kg de production. Commence à vendre !`
       )}
-      {stats.productionTotale > 0 && stats.revenusTotaux > 0 && (
-        `Bravo ! ${stats.productionTotale.toLocaleString()} kg produits et ${stats.revenusTotaux.toLocaleString()} FCFA de revenus`
+      {(stats?.recoltesTotales ?? 0) > 0 && (stats?.revenusTotal ?? 0) > 0 && (
+        `Bravo ! ${(stats?.recoltesTotales ?? 0).toLocaleString()} kg produits et ${(stats?.revenusTotal ?? 0).toLocaleString()} FCFA de revenus`
       )}
-      {stats.productionTotale === 0 && (
+      {(stats?.recoltesTotales ?? 0) === 0 && (
         `Bonjour ${user?.firstName} ! ${roleConfig.greeting}`
       )}
     </>

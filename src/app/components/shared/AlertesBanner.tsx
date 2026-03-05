@@ -194,7 +194,7 @@ export function AlertesBanner({ alertes, role, compact = false }: AlertesBannerP
 
 // ── Helpers pour construire les alertes par rôle ───────────────
 
-export function buildAlertesProducteur(alertes: {
+export function buildAlertesProducteur(alertes?: {
   recoltesProches: { id: string; culture: string; dateRecolteEstimee: Date }[];
   stocksFaibles: { id: string; cycleId: string; quantiteReelle: number; stockDisponible: number }[];
   commandesRetard: { id: string }[];
@@ -202,7 +202,9 @@ export function buildAlertesProducteur(alertes: {
 }): Alerte[] {
   const result: Alerte[] = [];
 
-  alertes.recoltesProches.forEach(c => {
+  if (!alertes) return result;
+
+  alertes.recoltesProches?.forEach(c => {
     const jours = Math.floor((c.dateRecolteEstimee.getTime() - Date.now()) / 86400000);
     result.push({
       id: `recolte-${c.id}`,
@@ -216,7 +218,7 @@ export function buildAlertesProducteur(alertes: {
     });
   });
 
-  alertes.stocksFaibles.forEach(r => {
+  alertes.stocksFaibles?.forEach(r => {
     const pct = Math.round((r.stockDisponible / r.quantiteReelle) * 100);
     result.push({
       id: `stock-faible-${r.id}`,
@@ -230,7 +232,7 @@ export function buildAlertesProducteur(alertes: {
     });
   });
 
-  if (alertes.commandesRetard.length > 0) {
+  if (alertes.commandesRetard && alertes.commandesRetard.length > 0) {
     result.push({
       id: 'commandes-retard',
       type: 'commande_retard',
@@ -243,7 +245,7 @@ export function buildAlertesProducteur(alertes: {
     });
   }
 
-  if (alertes.paiementsAttente.length > 0) {
+  if (alertes.paiementsAttente && alertes.paiementsAttente.length > 0) {
     result.push({
       id: 'paiements-attente',
       type: 'paiement_attente',
@@ -298,7 +300,7 @@ export function buildAlertesMarchand(stockFaible: { id: string; name: string; qu
 
 // ── Alertes Coopérative ────────────────────────────────────────
 
-export function buildAlertesCooperative(data: {
+export function buildAlertesCooperative(data?: {
   membresInactifs: { id: string; nom: string; prenom: string }[];
   cotisationsImpayees: { id: string; nom: string; prenom: string }[];
   commandesEnCours: number;
@@ -306,9 +308,12 @@ export function buildAlertesCooperative(data: {
   seuilSoldeBas?: number; // défaut 50000 FCFA
 }): Alerte[] {
   const result: Alerte[] = [];
+  
+  if (!data) return result;
+  
   const seuil = data.seuilSoldeBas ?? 50000;
 
-  if (data.cotisationsImpayees.length > 0) {
+  if (data.cotisationsImpayees && data.cotisationsImpayees.length > 0) {
     result.push({
       id: 'cotisations-impayees',
       type: 'paiement_attente',
@@ -321,7 +326,7 @@ export function buildAlertesCooperative(data: {
     });
   }
 
-  if (data.membresInactifs.length > 0) {
+  if (data.membresInactifs && data.membresInactifs.length > 0) {
     result.push({
       id: 'membres-inactifs',
       type: 'generique',

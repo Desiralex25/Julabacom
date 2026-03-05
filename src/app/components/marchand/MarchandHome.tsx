@@ -21,10 +21,8 @@ const tantieSagesseImgMarchand = '/images/tantie-sagesse.png';
 export function MarchandHome() {
   const navigate = useNavigate();
   const { user, speak, currentSession, getTodayStats } = useApp();
-  const { getStockFaible } = useStock();
-  
-  const alertesMarchand = buildAlertesMarchand(getStockFaible());
-  
+  const stockCtx = useStock();
+
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isJourneeExpanded, setIsJourneeExpanded] = useState(false);
   const [showOpenDayModal, setShowOpenDayModal] = useState(false);
@@ -39,6 +37,10 @@ export function MarchandHome() {
 
   const roleConfig = getRoleConfig('marchand');
   const stats = getTodayStats();
+
+  const alertesMarchand = buildAlertesMarchand(
+    typeof stockCtx.getStockFaible === 'function' ? stockCtx.getStockFaible() : []
+  );
 
   const dashboardStats = {
     kpi1Value: stats.ventes,

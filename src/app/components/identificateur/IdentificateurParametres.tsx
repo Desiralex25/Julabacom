@@ -407,7 +407,7 @@ export function IdentificateurParametres() {
         isOpen={showLogout}
         title="Se déconnecter ?"
         message="Vous serez redirigé vers la page de connexion Jùlaba."
-        onConfirm={() => { speak('Déconnexion'); navigate('/login'); }}
+        onConfirm={() => { speak('Déconnexion'); navigate('/'); }}
         onClose={() => setShowLogout(false)}
       />
     </div>

@@ -158,7 +158,7 @@ export function TantieSagesse({ floating = true, onAction }: TantieSagesseProps)
 
       case 'logout':
         speak('Déconnexion confirmée');
-        setTimeout(() => navigate('/login'), 1000);
+        setTimeout(() => navigate('/'), 1000);
         break;
 
       // Cotisations

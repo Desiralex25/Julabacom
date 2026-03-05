@@ -37,6 +37,8 @@ export function LoginPassword() {
   const [forgotPhone, setForgotPhone] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [showDevButton, setShowDevButton] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -348,9 +350,29 @@ export function LoginPassword() {
     return formatted;
   };
 
+  const handleLogoClick = () => {
+    if (!import.meta.env.DEV) return; // Seulement en mode dev
+    
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+    
+    if (newCount >= 5) {
+      setShowDevButton(true);
+      setLogoClickCount(0);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#C46210] flex flex-col items-center p-4 relative overflow-hidden">
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {import.meta.env.DEV && showDevButton && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ProfileSwitcher />
+        </motion.div>
+      )}
 
       <div className="w-full max-w-md flex flex-col items-center flex-grow justify-center">
         {/* Logo */}
@@ -362,7 +384,8 @@ export function LoginPassword() {
           <img 
             src={logoJulabaBlanc} 
             alt="JÙLABA" 
-            className="h-20 w-auto mx-auto"
+            className="h-20 w-auto mx-auto cursor-pointer"
+            onClick={handleLogoClick}
           />
         </motion.div>
 
@@ -656,8 +679,8 @@ export function LoginPassword() {
       <div className="w-full text-center py-6 mt-auto">
         <button
           onClick={() => {
-            localStorage.removeItem('julaba_skip_onboarding');
-            navigate('/onboarding');
+            localStorage.removeItem('julaba_completed_onboarding');
+            window.location.href = '/';
           }}
           className="text-white text-sm font-medium hover:underline opacity-80"
         >

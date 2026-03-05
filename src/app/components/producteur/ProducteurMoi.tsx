@@ -66,7 +66,7 @@ export function ProducteurMoi() {
   const navigate = useNavigate();
   const { speak, setIsModalOpen } = useApp();
   const { user, updateUser, logout: userLogout } = useUser();
-  const { cycles, recoltes, publications } = useProducteur();
+  const { stats } = useProducteur();
   
   const [isEditing, setIsEditing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -83,9 +83,13 @@ export function ProducteurMoi() {
   const [showDocumentModal, setShowDocumentModal] = useState<string | null>(null);
   const roleColor = '#2E8B57';
 
-  // Stats Producteur
+  // Stats Producteur - Données mockées pour le moment
+  const cycles: any[] = [];
+  const recoltes: any[] = [];
+  const publications: any[] = [];
+  
   const cyclesActifs = cycles.filter(c => c.statut === 'En cours').length;
-  const totalRecoltes = recoltes.length;
+  const totalRecoltes = stats?.recoltesTotales || 0;
   const totalProductions = cycles.reduce((sum, c) => sum + (c.quantiteRecoltee || 0), 0);
   const totalVentes = publications.filter(p => p.statut === 'Vendu').length;
 
@@ -199,7 +203,7 @@ export function ProducteurMoi() {
     speak('Déconnexion en cours');
     userLogout();
     setTimeout(() => {
-      navigate('/login');
+      navigate('/');
     }, 1000);
   };
 

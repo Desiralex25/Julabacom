@@ -1,9 +1,7 @@
 /**
- * ═══════════════════════════════════════════════════════════════════
- * JÙLABA — ProfileSwitcher (MODE DEV UNIQUEMENT)
- * ═══════════════════════════════════════════════════════════════════
+ * JULABA -- ProfileSwitcher (MODE DEV UNIQUEMENT)
  * 
- * Composant de développement permettant l'accès rapide à tous les profils
+ * Composant de developpement permettant l'acces rapide a tous les profils
  * utilisateurs et au Back-Office sans authentification.
  */
 
@@ -12,26 +10,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
-import { Users, X, Code, Crown, Globe, MapPin, BarChart3, ChevronRight, Store, Leaf, UsersRound, Building2, Scan } from 'lucide-react';
+import { X, Code, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useBackOffice, MOCK_BO_USERS, BORoleType } from '../../contexts/BackOfficeContext';
 import { DEV_MOCK_USERS } from '../../data/mockUsers';
 
-const BO_PRIMARY = '#E6A817';
-const BO_DARK = '#3B3C36';
-
-const BO_ROLES: { role: BORoleType; label: string; desc: string; icon: any; color: string }[] = [
-  { role: 'super_admin', label: 'Super Admin', desc: 'Accès total', icon: Crown, color: '#E6A817' },
-  { role: 'admin_national', label: 'Admin National', desc: 'Gestion nationale', icon: Globe, color: '#3B82F6' },
-  { role: 'gestionnaire_zone', label: 'Gestionnaire Zone', desc: 'Zone Abidjan', icon: MapPin, color: '#10B981' },
-  { role: 'analyste', label: 'Analyste', desc: 'Lecture seule', icon: BarChart3, color: '#8B5CF6' },
-];
-
-const PROFILE_COLORS: Record<string, { color: string; icon: any }> = {
-  'marchand': { color: '#10B981', icon: Store },
-  'producteur': { color: '#F59E0B', icon: Leaf },
-  'cooperative': { color: '#8B5CF6', icon: UsersRound },
-  'institution': { color: '#3B82F6', icon: Building2 },
-  'identificateur': { color: '#EC4899', icon: Scan },
+const PROFILE_STYLES: Record<string, { borderColor: string; bgColor: string; avatarColor: string; roleColor: string; roleLabel: string }> = {
+  'marchand': { borderColor: '#F97316', bgColor: '#FFF7ED', avatarColor: '#10B981', roleColor: '#F97316', roleLabel: 'Marchand' },
+  'producteur': { borderColor: '#10B981', bgColor: '#ECFDF5', avatarColor: '#8B5CF6', roleColor: '#10B981', roleLabel: 'Producteur' },
+  'cooperative': { borderColor: '#3B82F6', bgColor: '#F0FDF4', avatarColor: '#10B981', roleColor: '#3B82F6', roleLabel: 'Cooperative' },
+  'institution': { borderColor: '#F59E0B', bgColor: '#FEFCE8', avatarColor: '#3B82F6', roleColor: '#F59E0B', roleLabel: 'Institution' },
+  'identificateur': { borderColor: '#8B5CF6', bgColor: '#FFF7ED', avatarColor: '#EF4444', roleColor: '#EC4899', roleLabel: 'Identificateur' },
 };
 
 export function ProfileSwitcher() {
@@ -40,21 +28,19 @@ export function ProfileSwitcher() {
   const { setUser: setUserProfile } = useUser();
   const { setBOUser } = useBackOffice();
   const [isOpen, setIsOpen] = useState(false);
-  const [showBO, setShowBO] = useState(false);
-  const [boLoading, setBoLoading] = useState<BORoleType | null>(null);
   const [profileLoading, setProfileLoading] = useState<string | null>(null);
+  const [boLoading, setBoLoading] = useState(false);
 
-  const handleBOAccess = async (role: BORoleType) => {
-    setBoLoading(role);
+  const handleBOAccess = async () => {
+    setBoLoading(true);
     await new Promise(r => setTimeout(r, 350));
-    const user = MOCK_BO_USERS.find(u => u.role === role);
+    const user = MOCK_BO_USERS.find(u => u.role === 'super_admin');
     if (user) {
       setBOUser(user);
       setIsOpen(false);
-      setShowBO(false);
       navigate('/backoffice/dashboard');
     }
-    setBoLoading(null);
+    setBoLoading(false);
   };
 
   const handleProfileSwitch = async (userId: string) => {
@@ -62,14 +48,9 @@ export function ProfileSwitcher() {
     await new Promise(r => setTimeout(r, 350));
     const user = DEV_MOCK_USERS.find(u => u.id === userId);
     if (user) {
-      console.log('[ProfileSwitcher] Switching to user:', user);
       setAppUser(user);
       setUserProfile(user);
-      console.log('[ProfileSwitcher] User set successfully');
       setIsOpen(false);
-      setShowBO(false);
-      
-      // Navigation selon le profil
       const routes: Record<string, string> = {
         'marchand': '/marchand',
         'producteur': '/producteur',
@@ -77,7 +58,6 @@ export function ProfileSwitcher() {
         'institution': '/institution',
         'identificateur': '/identificateur',
       };
-      console.log('[ProfileSwitcher] Navigating to:', routes[user.role]);
       navigate(routes[user.role] || '/');
     }
     setProfileLoading(null);
@@ -96,11 +76,11 @@ export function ProfileSwitcher() {
       {/* Bouton flottant Dev */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-4 z-[9999] w-12 h-12 rounded-full bg-purple-600 shadow-2xl flex items-center justify-center border-2 border-white"
+        className="fixed bottom-5 right-4 z-[9999] w-10 h-10 rounded-full bg-purple-600 shadow-lg flex items-center justify-center border-2 border-purple-400/50"
         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-        initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
+        initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.85, scale: 1 }} transition={{ delay: 0.5 }}
       >
-        <Code className="w-6 h-6 text-white" />
+        <Code className="w-4 h-4 text-white" />
       </motion.button>
 
       {/* Modal */}
@@ -108,125 +88,128 @@ export function ProfileSwitcher() {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-            onClick={() => { setIsOpen(false); setShowBO(false); }}
+            className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setIsOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border-2 border-amber-200"
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-6 text-white relative">
-                <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30">
-                  <X className="w-5 h-5" />
-                </button>
+              <div className="flex items-center justify-between p-5 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                    <Code className="w-6 h-6" />
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+                    <Code className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold">Mode Développeur</h2>
-                    <p className="text-sm text-white/80">Accès rapide profils</p>
+                    <h2 className="text-lg font-bold text-gray-900">Dev Mode</h2>
+                    <p className="text-xs text-gray-500">Changer de profil</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex border-b border-gray-200">
                 <button
-                  onClick={() => setShowBO(false)}
-                  className={`flex-1 py-3 text-sm font-semibold transition-colors ${!showBO ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+                  onClick={() => setIsOpen(false)}
+                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                 >
-                  Acteurs Jùlaba
-                </button>
-                <button
-                  onClick={() => setShowBO(true)}
-                  className={`flex-1 py-3 text-sm font-semibold transition-colors ${showBO ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
-                  style={{ color: showBO ? BO_PRIMARY : undefined, borderColor: showBO ? BO_PRIMARY : undefined }}
-                >
-                  Back-Office
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
 
-              {/* Content */}
-              <div className="p-6 max-h-[60vh] overflow-y-auto">
-                {!showBO ? (
-                  // Acteurs Jùlaba - ACTIVÉ
-                  <div className="space-y-3">
-                    {DEV_MOCK_USERS.map((user) => {
-                      const { color, icon: Icon } = PROFILE_COLORS[user.role] || { color: '#6B7280', icon: Users };
-                      return (
-                        <motion.button
-                          key={user.id}
-                          onClick={() => handleProfileSwitch(user.id)}
-                          disabled={profileLoading !== null}
-                          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-lg disabled:opacity-50"
-                          style={{
-                            borderColor: profileLoading === user.id ? color : '#E5E7EB',
-                            backgroundColor: profileLoading === user.id ? `${color}15` : 'white'
-                          }}
-                          whileHover={{ scale: profileLoading === null ? 1.02 : 1 }}
-                          whileTap={{ scale: profileLoading === null ? 0.98 : 1 }}
-                        >
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
-                            <Icon className="w-5 h-5" style={{ color }} />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="font-semibold text-gray-900">
-                              {user.firstName} {user.lastName}
-                            </div>
-                            <div className="text-xs text-gray-500 capitalize">
-                              {user.role === 'marchand' && 'Commerçant'}
-                              {user.role === 'producteur' && 'Producteur'}
-                              {user.role === 'cooperative' && 'Coopérative'}
-                              {user.role === 'institution' && 'Institution'}
-                              {user.role === 'identificateur' && 'Identificateur'}
-                              {' • '}
-                              {user.region}
-                            </div>
-                          </div>
-                          {profileLoading === user.id ? (
-                            <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  // Back-Office - ACTIF
-                  <div className="space-y-3">
-                    {BO_ROLES.map(({ role, label, desc, icon: Icon, color }) => (
-                      <motion.button
-                        key={role}
-                        onClick={() => handleBOAccess(role)}
-                        disabled={boLoading !== null}
-                        className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-lg disabled:opacity-50"
-                        style={{
-                          borderColor: boLoading === role ? color : '#E5E7EB',
-                          backgroundColor: boLoading === role ? `${color}15` : 'white'
-                        }}
-                        whileHover={{ scale: boLoading === null ? 1.02 : 1 }}
-                        whileTap={{ scale: boLoading === null ? 0.98 : 1 }}
+              {/* User Cards */}
+              <div className="px-4 pb-3 max-h-[55vh] overflow-y-auto space-y-3">
+                {DEV_MOCK_USERS.map((user, index) => {
+                  const style = PROFILE_STYLES[user.role] || { borderColor: '#6B7280', bgColor: '#F9FAFB', avatarColor: '#6B7280', roleColor: '#6B7280', roleLabel: user.role };
+                  const initial = user.firstName.charAt(0).toUpperCase();
+
+                  return (
+                    <motion.button
+                      key={user.id}
+                      onClick={() => handleProfileSwitch(user.id)}
+                      disabled={profileLoading !== null}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.06 }}
+                      className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-50"
+                      style={{
+                        borderColor: style.borderColor,
+                        backgroundColor: style.bgColor,
+                      }}
+                    >
+                      {/* Avatar Initial */}
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: style.avatarColor }}
                       >
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}20` }}>
-                          <Icon className="w-5 h-5" style={{ color }} />
+                        <span className="text-white text-lg font-bold">{initial}</span>
+                      </div>
+
+                      {/* Info gauche */}
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="font-bold text-gray-900 text-base">
+                          {user.firstName} {user.lastName}
                         </div>
-                        <div className="flex-1 text-left">
-                          <div className="font-semibold text-gray-900">{label}</div>
-                          <div className="text-xs text-gray-500">{desc}</div>
+                        <div className="text-sm font-semibold" style={{ color: style.roleColor }}>
+                          {style.roleLabel}
                         </div>
-                        {boLoading === role ? (
-                          <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {user.phone}
+                        </div>
+                      </div>
+
+                      {/* Info droite */}
+                      <div className="text-right shrink-0">
+                        {profileLoading === user.id ? (
+                          <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mx-auto" />
                         ) : (
-                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                          <>
+                            <div className="text-xs text-gray-500">{user.commune || user.region}</div>
+                            <div className="text-sm font-bold" style={{ color: style.borderColor }}>
+                              Score: {user.score}
+                            </div>
+                          </>
                         )}
-                      </motion.button>
-                    ))}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+
+                {/* Separator ADMINISTRATION */}
+                <div className="flex items-center gap-3 pt-3 pb-1">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs font-semibold text-gray-400 tracking-widest uppercase">Administration</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+
+                {/* Back-Office Central */}
+                <motion.button
+                  onClick={handleBOAccess}
+                  disabled={boLoading}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                  className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 bg-white hover:shadow-md active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-6 h-6 text-amber-500" />
                   </div>
-                )}
+                  <div className="flex-1 text-left">
+                    <div className="font-bold text-gray-900 text-base">Back-Office Central</div>
+                    <div className="text-xs text-gray-500">Acces admin sans connexion</div>
+                  </div>
+                  {boLoading ? (
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  )}
+                </motion.button>
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-3 border-t border-gray-100">
+                <p className="text-center text-xs text-gray-400">
+                  Mode developpeur - Visible uniquement en localhost
+                </p>
               </div>
             </motion.div>
           </motion.div>

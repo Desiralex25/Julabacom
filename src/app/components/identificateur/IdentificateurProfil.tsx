@@ -196,7 +196,7 @@ export function IdentificateurProfil() {
     speak('Déconnexion en cours');
     userLogout();
     setTimeout(() => {
-      navigate('/login');
+      navigate('/');
     }, 1000);
   };
 

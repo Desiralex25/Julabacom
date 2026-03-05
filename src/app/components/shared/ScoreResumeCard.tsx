@@ -393,7 +393,7 @@ export function ScoreResumeCard({
                       <p className="text-xs font-medium text-gray-700">{l.label}</p>
                     </div>
                     <p className={`text-sm font-bold ${l.textColor}`}>
-                      {dailySummary.ventes.toLocaleString()} {l.unit}
+                      {(dailySummary?.ventes ?? 0).toLocaleString()} {l.unit}
                     </p>
                   </div>
                 );
@@ -409,7 +409,7 @@ export function ScoreResumeCard({
                       <p className="text-xs font-medium text-gray-700">{l.label}</p>
                     </div>
                     <p className={`text-sm font-bold ${l.textColor}`}>
-                      {dailySummary.depenses.toLocaleString()} {l.unit}
+                      {(dailySummary?.depenses ?? 0).toLocaleString()} {l.unit}
                     </p>
                   </div>
                 );
@@ -441,7 +441,7 @@ export function ScoreResumeCard({
                       </p>
                     </div>
                     <p className={`text-sm font-bold ${l.textColor}`}>
-                      {dailySummary.caisse.toLocaleString()} {l.unit}
+                      {(dailySummary?.caisse ?? 0).toLocaleString()} {l.unit}
                     </p>
                   </div>
                 );

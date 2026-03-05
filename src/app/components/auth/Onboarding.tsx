@@ -48,10 +48,10 @@ export function Onboarding() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex items-center justify-center gap-3 bg-gradient-to-r from-[#C46210] to-[#A85108] text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow"
+              className="inline-flex items-center gap-2 text-[#C46210]/70 text-sm px-4 py-2 rounded-lg hover:text-[#C46210] hover:bg-[#C46210]/10 transition-all"
             >
-              <Phone className="w-5 h-5" />
-              <span>Appeler le support : {supportPhone}</span>
+              <Phone className="w-3.5 h-3.5" />
+              <span>{supportPhone}</span>
             </motion.a>
           )}
         </div>

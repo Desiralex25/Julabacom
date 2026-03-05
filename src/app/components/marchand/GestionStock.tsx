@@ -87,6 +87,7 @@ export function GestionStock() {
 
   // Convertir Product (CaisseContext) vers Stock (GestionStock) — fallback
   const productsToStocks = (): Stock[] => {
+    if (!products || !Array.isArray(products)) return [];
     return products.map(p => ({
       id: p.id,
       name: p.name,

@@ -4,6 +4,25 @@ import { logger } from "npm:hono/logger";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import * as kv from "./kv_store.tsx";
 import { sendSMS } from "./sms.ts";
+import * as bo from "./backoffice.ts";
+
+// Routes API
+import * as commandes from "./commandes.ts";
+import * as recoltes from "./recoltes.ts";
+import * as stocks from "./stocks.ts";
+import * as wallets from "./wallets.ts";
+import * as notifications from "./notifications.ts";
+import * as zones from "./zones.ts";
+import * as caisse from "./caisse.ts";
+import * as tickets from "./tickets.ts";
+import * as audit from "./audit.ts";
+import * as missions from "./missions.ts";
+import * as cooperatives from "./cooperatives.ts";
+import * as identifications from "./identifications.ts";
+import * as commissions from "./commissions.ts";
+import * as scores from "./scores.ts";
+import * as aiIntent from "./ai-intent.ts";
+import * as stt from "./stt.ts";
 
 const app = new Hono();
 
@@ -1117,6 +1136,159 @@ app.get("/make-server-488793d3/tts/voices", async (c) => {
       details: error instanceof Error ? error.message : 'Erreur inconnue'
     }, 500);
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROUTES API - TERRAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Commandes
+app.get("/make-server-488793d3/api/commandes", commandes.getCommandes);
+app.post("/make-server-488793d3/api/commandes", commandes.createCommande);
+app.patch("/make-server-488793d3/api/commandes/:id", commandes.updateCommande);
+app.delete("/make-server-488793d3/api/commandes/:id", commandes.deleteCommande);
+
+// Récoltes
+app.get("/make-server-488793d3/api/recoltes", recoltes.getRecoltes);
+app.post("/make-server-488793d3/api/recoltes", recoltes.createRecolte);
+app.patch("/make-server-488793d3/api/recoltes/:id", recoltes.updateRecolte);
+app.delete("/make-server-488793d3/api/recoltes/:id", recoltes.deleteRecolte);
+
+// Stocks
+app.get("/make-server-488793d3/api/stocks", stocks.getStocks);
+app.post("/make-server-488793d3/api/stocks", stocks.upsertStock);
+app.patch("/make-server-488793d3/api/stocks/:id", stocks.updateStock);
+app.delete("/make-server-488793d3/api/stocks/:id", stocks.deleteStock);
+
+// Wallets
+app.get("/make-server-488793d3/api/wallet", wallets.getWallet);
+app.post("/make-server-488793d3/api/wallet/credit", wallets.creditWallet);
+app.post("/make-server-488793d3/api/wallet/debit", wallets.debitWallet);
+app.get("/make-server-488793d3/api/wallet/transactions", wallets.getWalletTransactions);
+
+// Notifications
+app.get("/make-server-488793d3/api/notifications", notifications.getNotifications);
+app.post("/make-server-488793d3/api/notifications", notifications.createNotification);
+app.patch("/make-server-488793d3/api/notifications/:id/read", notifications.markAsRead);
+app.delete("/make-server-488793d3/api/notifications/:id", notifications.deleteNotification);
+
+// Zones
+app.get("/make-server-488793d3/api/zones", zones.getZones);
+app.get("/make-server-488793d3/api/zones/:id", zones.getZoneById);
+
+// Caisse
+app.get("/make-server-488793d3/api/caisse/session", caisse.getCurrentSession);
+app.post("/make-server-488793d3/api/caisse/session/open", caisse.openSession);
+app.post("/make-server-488793d3/api/caisse/session/close", caisse.closeSession);
+app.get("/make-server-488793d3/api/caisse/transactions", caisse.getTransactions);
+app.post("/make-server-488793d3/api/caisse/vente", caisse.createVente);
+app.post("/make-server-488793d3/api/caisse/depense", caisse.createDepense);
+app.get("/make-server-488793d3/api/caisse/stats", caisse.getStats);
+
+// Tickets
+app.get("/make-server-488793d3/api/tickets", tickets.getTickets);
+app.post("/make-server-488793d3/api/tickets", tickets.createTicket);
+app.patch("/make-server-488793d3/api/tickets/:id", tickets.updateTicket);
+
+// Audit
+app.get("/make-server-488793d3/api/audit", audit.getAuditLogs);
+app.post("/make-server-488793d3/api/audit", audit.createAuditLog);
+
+// Missions
+app.get("/make-server-488793d3/api/missions", missions.getMissions);
+app.post("/make-server-488793d3/api/missions", missions.createMission);
+app.patch("/make-server-488793d3/api/missions/:id", missions.updateMission);
+app.delete("/make-server-488793d3/api/missions/:id", missions.deleteMission);
+
+// Cooperatives
+app.get("/make-server-488793d3/api/cooperatives", cooperatives.getCooperatives);
+app.get("/make-server-488793d3/api/cooperatives/:id", cooperatives.getCooperativeById);
+app.post("/make-server-488793d3/api/cooperatives", cooperatives.createCooperative);
+app.patch("/make-server-488793d3/api/cooperatives/:id", cooperatives.updateCooperative);
+app.get("/make-server-488793d3/api/cooperatives/:id/membres", cooperatives.getMembres);
+app.post("/make-server-488793d3/api/cooperatives/:id/membres", cooperatives.addMembre);
+app.delete("/make-server-488793d3/api/cooperatives/:id/membres/:membreId", cooperatives.removeMembre);
+app.get("/make-server-488793d3/api/cooperatives/:id/tresorerie", cooperatives.getTresorerie);
+
+// Identifications
+app.get("/make-server-488793d3/api/identifications", identifications.getIdentifications);
+app.post("/make-server-488793d3/api/identifications", identifications.createIdentification);
+app.patch("/make-server-488793d3/api/identifications/:id", identifications.updateIdentification);
+
+// Commissions
+app.get("/make-server-488793d3/api/commissions", commissions.getCommissions);
+app.post("/make-server-488793d3/api/commissions", commissions.createCommission);
+app.patch("/make-server-488793d3/api/commissions/:id", commissions.updateCommission);
+
+// Scores
+app.get("/make-server-488793d3/api/scores", scores.getScores);
+app.post("/make-server-488793d3/api/scores", scores.updateScore);
+app.get("/make-server-488793d3/api/scores/history/:userId", scores.getScoreHistory);
+
+// AI Intent
+app.post("/make-server-488793d3/api/ai-intent", aiIntent.interpretIntent);
+app.get("/make-server-488793d3/api/ai-intent/intents", aiIntent.getAvailableIntents);
+
+// STT
+app.post("/make-server-488793d3/api/stt/transcribe", stt.transcribeAudio);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROUTES BACK-OFFICE
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Acteurs
+app.get("/make-server-488793d3/backoffice/acteurs", bo.getActeurs);
+app.patch("/make-server-488793d3/backoffice/acteurs/:id/statut", bo.updateActeurStatut);
+
+// Dossiers
+app.get("/make-server-488793d3/backoffice/dossiers", bo.getDossiers);
+app.patch("/make-server-488793d3/backoffice/dossiers/:id/statut", bo.updateDossierStatut);
+
+// Transactions
+app.get("/make-server-488793d3/backoffice/transactions", bo.getTransactions);
+
+// Zones
+app.get("/make-server-488793d3/backoffice/zones", bo.getZones);
+app.patch("/make-server-488793d3/backoffice/zones/:id/statut", bo.updateZoneStatut);
+
+// Commissions
+app.get("/make-server-488793d3/backoffice/commissions", bo.getCommissions);
+app.patch("/make-server-488793d3/backoffice/commissions/:id/statut", bo.updateCommissionStatut);
+
+// Audit
+app.get("/make-server-488793d3/backoffice/audit", bo.getAuditLogs);
+
+// Utilisateurs BO
+app.get("/make-server-488793d3/backoffice/users", bo.getBOUsers);
+
+// Institutions
+app.get("/make-server-488793d3/backoffice/institutions", bo.getInstitutions);
+app.post("/make-server-488793d3/backoffice/institutions", bo.createInstitution);
+app.patch("/make-server-488793d3/backoffice/institutions/:id/modules", bo.updateInstitutionModules);
+app.patch("/make-server-488793d3/backoffice/institutions/:id/statut", bo.updateInstitutionStatut);
+app.delete("/make-server-488793d3/backoffice/institutions/:id", bo.deleteInstitution);
+
+// ═══════════════════════════════════════════════════════════════════
+// GESTIONNAIRE D'ERREURS 404 - DOIT RETOURNER JSON
+// ═══════════════════════════════════════════════════════════════════
+app.notFound((c) => {
+  return c.json({ 
+    error: 'Route non trouvée',
+    path: c.req.path,
+    method: c.req.method
+  }, 404);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// GESTIONNAIRE D'ERREURS GLOBAL - DOIT RETOURNER JSON
+// ═══════════════════════════════════════════════════════════════════
+app.onError((err, c) => {
+  console.error('Erreur serveur:', err);
+  return c.json({ 
+    error: 'Erreur serveur',
+    message: err.message,
+    path: c.req.path
+  }, 500);
 });
 
 Deno.serve(app.fetch);

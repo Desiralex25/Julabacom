@@ -2,13 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, ArrowRight, Code, CheckCircle } from 'lucide-react';
+import { Mic, ArrowRight, Code, CheckCircle, Zap } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { sendOTP, verifyOTP } from '../../utils/api';
+import { DEV_MODE, DEV_CONFIG } from '../../config/devMode';
 
 const logoJulabaBlanc = '/images/logo-julaba-blanc.svg';
 const logoOrange = '/images/logo-orange.svg';

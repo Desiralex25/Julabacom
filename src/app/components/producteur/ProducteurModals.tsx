@@ -125,7 +125,7 @@ interface RecoltesModalProps {
 }
 
 export function RecoltesModal({ isOpen, onClose }: RecoltesModalProps) {
-  const { stats, recoltes } = useProducteur();
+  const { stats } = useProducteur();
   const navigate = useNavigate();
 
   return (
@@ -150,20 +150,20 @@ export function RecoltesModal({ isOpen, onClose }: RecoltesModalProps) {
           <div className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 border-2" style={{ borderColor: `${PRIMARY_COLOR}30` }}>
             <p className="text-sm font-semibold text-gray-600 mb-2">Total produit</p>
             <p className="text-4xl font-black mb-1" style={{ color: PRIMARY_COLOR }}>
-              {stats.productionTotale.toLocaleString()}
+              {(stats?.recoltesTotales ?? 0).toLocaleString()}
             </p>
-            <p className="text-lg font-bold text-gray-600">kilogrammes</p>
+            <p className="text-lg font-bold text-gray-600">récoltes</p>
           </div>
 
           {/* Stats détaillées */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-600 mb-1">Nombre de récoltes</p>
-              <p className="text-2xl font-black text-gray-900">{recoltes.length}</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Récoltes vendues</p>
+              <p className="text-2xl font-black text-gray-900">{stats?.recoltesVendues ?? 0}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-600 mb-1">Volume vendu</p>
-              <p className="text-2xl font-black text-gray-900">{stats.volumeVendu} kg</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Revenus</p>
+              <p className="text-2xl font-black text-gray-900">{((stats?.revenusTotal ?? 0) / 1000).toFixed(0)}K F</p>
             </div>
           </div>
 
@@ -212,20 +212,19 @@ export function VentesModal({ isOpen, onClose }: VentesModalProps) {
           {/* KPI Principal */}
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border-2 border-blue-200">
             <p className="text-sm font-semibold text-gray-600 mb-2">Total revenus</p>
-            <MontantCard accentColor="#3b82f6" className="rounded-xl">
-              <Montant value={stats.revenusTotaux} size="2xl" color="#2563eb" />
-            </MontantCard>
+            <p className="text-4xl font-black text-blue-600">{((stats?.revenusTotal ?? 0) / 1000).toFixed(0)}K</p>
+            <p className="text-lg font-bold text-gray-600">FCFA</p>
           </div>
 
           {/* Stats détaillées */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-600 mb-1">Taux conversion</p>
-              <p className="text-2xl font-black text-gray-900">{stats.tauxConversion}%</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Récoltes vendues</p>
+              <p className="text-2xl font-black text-gray-900">{stats?.recoltesVendues ?? 0}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-600 mb-1">Note moyenne</p>
-              <p className="text-2xl font-black text-gray-900">{stats.noteMoyenne}/5</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Commandes actives</p>
+              <p className="text-2xl font-black text-gray-900">{stats?.commandesEnCours ?? 0}</p>
             </div>
           </div>
 
@@ -273,30 +272,23 @@ export function ScoreModal({ isOpen, onClose }: ScoreModalProps) {
           {/* Score principal */}
           <div className="bg-gradient-to-br from-yellow-50 to-white rounded-2xl p-6 border-2 border-yellow-200 text-center">
             <p className="text-sm font-semibold text-gray-600 mb-2">Ton score</p>
-            <p className="text-5xl font-black text-yellow-600 mb-1">{stats.scoreProducteur}</p>
-            <p className="text-lg font-bold text-gray-600">/100</p>
-            
-            <div className="w-full bg-gray-100 rounded-full h-3 mt-4">
-              <div 
-                className="h-full rounded-full bg-yellow-500 transition-all"
-                style={{ width: `${stats.scoreProducteur}%` }}
-              />
-            </div>
+            <p className="text-5xl font-black text-yellow-600 mb-1">{stats?.recoltesVendues ?? 0}</p>
+            <p className="text-lg font-bold text-gray-600">récoltes vendues</p>
           </div>
 
           {/* Détails */}
           <div className="space-y-2">
             <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Respect délais</span>
-              <span className="text-sm font-black text-green-600">{stats.tauxRespectDelais}%</span>
+              <span className="text-sm font-medium text-gray-700">Récoltes totales</span>
+              <span className="text-sm font-black text-green-600">{stats?.recoltesTotales ?? 0}</span>
             </div>
             <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Délai livraison</span>
-              <span className="text-sm font-black text-gray-900">{stats.delaiMoyenLivraison} jours</span>
+              <span className="text-sm font-medium text-gray-700">Commandes en cours</span>
+              <span className="text-sm font-black text-gray-900">{stats?.commandesEnCours ?? 0}</span>
             </div>
             <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Note moyenne</span>
-              <span className="text-sm font-black text-yellow-600">{stats.noteMoyenne}/5</span>
+              <span className="text-sm font-medium text-gray-700">Revenus totaux</span>
+              <span className="text-sm font-black text-yellow-600">{((stats?.revenusTotal ?? 0) / 1000).toFixed(0)}K FCFA</span>
             </div>
           </div>
 
@@ -316,7 +308,7 @@ interface ResumeModalProps {
 }
 
 export function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
-  const { stats, cycles, recoltes, commandes } = useProducteur();
+  const { stats } = useProducteur();
   const navigate = useNavigate();
 
   return (
@@ -340,28 +332,24 @@ export function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           {/* Stats principales */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
-              <p className="text-xs font-semibold text-gray-600 mb-1">Production</p>
-              <p className="text-2xl font-black text-green-600">{stats.productionTotale} kg</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Récoltes totales</p>
+              <p className="text-2xl font-black text-green-600">{stats?.recoltesTotales ?? 0}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
               <p className="text-xs font-semibold text-gray-600 mb-1">Revenus</p>
-              <p className="text-2xl font-black text-blue-600">{(stats.revenusTotaux / 1000).toFixed(0)}K F</p>
+              <p className="text-2xl font-black text-blue-600">{((stats?.revenusTotal ?? 0) / 1000).toFixed(0)}K F</p>
             </div>
           </div>
 
           {/* Compteurs */}
           <div className="space-y-2">
             <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Cycles actifs</span>
-              <span className="text-sm font-black" style={{ color: PRIMARY_COLOR }}>{cycles.filter(c => c.status === 'active').length}</span>
+              <span className="text-sm font-medium text-gray-700">Récoltes vendues</span>
+              <span className="text-sm font-black" style={{ color: PRIMARY_COLOR }}>{stats?.recoltesVendues ?? 0}</span>
             </div>
             <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Récoltes déclarées</span>
-              <span className="text-sm font-black" style={{ color: PRIMARY_COLOR }}>{recoltes.length}</span>
-            </div>
-            <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-              <span className="text-sm font-medium text-gray-700">Commandes</span>
-              <span className="text-sm font-black" style={{ color: PRIMARY_COLOR }}>{commandes.length}</span>
+              <span className="text-sm font-medium text-gray-700">Commandes en cours</span>
+              <span className="text-sm font-black" style={{ color: PRIMARY_COLOR }}>{stats?.commandesEnCours ?? 0}</span>
             </div>
           </div>
 

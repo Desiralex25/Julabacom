@@ -1,15 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as zonesApi from '../../imports/zones-api';
+import { DEV_MODE, devLog } from '../config/devMode';
 
 export type ZoneType = 'marche' | 'village' | 'region';
 
 export interface Zone {
   id: string;
-  nom: string; // "Marché de Cocody", "Village Yamoussoukro", "Région du Bélier"
+  nom: string;
   type: ZoneType;
   nombreMarchands: number;
   nombreProducteurs: number;
   nombreIdentificateurs: number;
-  region: string; // Région administrative
+  region: string;
   commune?: string;
   createdAt: string;
   active: boolean;
@@ -27,6 +29,8 @@ export interface ZoneStats {
 
 interface ZoneContextType {
   zones: Zone[];
+  loading: boolean;
+  error: string | null;
   addZone: (zone: Omit<Zone, 'id' | 'createdAt'>) => void;
   updateZone: (id: string, updates: Partial<Zone>) => void;
   deleteZone: (id: string) => void;
@@ -34,137 +38,43 @@ interface ZoneContextType {
   getZonesByType: (type: ZoneType) => Zone[];
   getZonesByRegion: (region: string) => Zone[];
   getZoneStats: (zoneId: string) => ZoneStats | undefined;
+  refreshZones: () => Promise<void>;
 }
 
 const ZoneContext = createContext<ZoneContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'julaba_zones';
-
-// Zones par défaut - Marchés d'Abidjan et zones rurales
-const DEFAULT_ZONES: Zone[] = [
-  // Marchés urbains
-  {
-    id: '1',
-    nom: 'Marché de Cocody',
-    type: 'marche',
-    nombreMarchands: 45,
-    nombreProducteurs: 12,
-    nombreIdentificateurs: 3,
-    region: 'Abidjan',
-    commune: 'Cocody',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '2',
-    nom: "Marché d'Adjamé",
-    type: 'marche',
-    nombreMarchands: 78,
-    nombreProducteurs: 23,
-    nombreIdentificateurs: 5,
-    region: 'Abidjan',
-    commune: 'Adjamé',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '3',
-    nom: 'Marché de Yopougon',
-    type: 'marche',
-    nombreMarchands: 67,
-    nombreProducteurs: 18,
-    nombreIdentificateurs: 4,
-    region: 'Abidjan',
-    commune: 'Yopougon',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '4',
-    nom: 'Marché de Port-Bouët',
-    type: 'marche',
-    nombreMarchands: 34,
-    nombreProducteurs: 15,
-    nombreIdentificateurs: 2,
-    region: 'Abidjan',
-    commune: 'Port-Bouët',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  // Villages producteurs
-  {
-    id: '5',
-    nom: 'Village de Yamoussoukro',
-    type: 'village',
-    nombreMarchands: 8,
-    nombreProducteurs: 56,
-    nombreIdentificateurs: 2,
-    region: 'Yamoussoukro',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '6',
-    nom: 'Village de Korhogo',
-    type: 'village',
-    nombreMarchands: 5,
-    nombreProducteurs: 42,
-    nombreIdentificateurs: 2,
-    region: 'Savanes',
-    commune: 'Korhogo',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '7',
-    nom: 'Village de Bouaké',
-    type: 'village',
-    nombreMarchands: 12,
-    nombreProducteurs: 38,
-    nombreIdentificateurs: 2,
-    region: 'Gbêkê',
-    commune: 'Bouaké',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  // Régions agricoles
-  {
-    id: '8',
-    nom: 'Région du Bélier',
-    type: 'region',
-    nombreMarchands: 15,
-    nombreProducteurs: 124,
-    nombreIdentificateurs: 4,
-    region: 'Bélier',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-  {
-    id: '9',
-    nom: 'Région des Lacs',
-    type: 'region',
-    nombreMarchands: 18,
-    nombreProducteurs: 98,
-    nombreIdentificateurs: 3,
-    region: 'Lacs',
-    createdAt: '2024-01-01',
-    active: true,
-  },
-];
-
 export function ZoneProvider({ children }: { children: ReactNode }) {
-  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
-  // TODO: Charger les zones depuis Supabase
-  const [zones, setZones] = useState<Zone[]>(DEFAULT_ZONES);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // TODO: Charger depuis Supabase au démarrage
-  // React.useEffect(() => {
-  //   const loadZones = async () => {
-  //     const { data } = await supabase.from('zones').select('*');
-  //     if (data) setZones(data);
-  //   };
-  //   loadZones();
-  // }, []);
+  // Charger les zones depuis Supabase au démarrage
+  const loadZones = async () => {
+    if (DEV_MODE) {
+      devLog('ZoneContext', 'Mode dev - skip API call');
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { zones: data } = await zonesApi.fetchZones();
+      setZones(data);
+    } catch (err) {
+      console.error('Error loading zones:', err);
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadZones();
+  }, []);
+
+  const refreshZones = async () => {
+    await loadZones();
+  };
 
   const addZone = (zoneData: Omit<Zone, 'id' | 'createdAt'>) => {
     const newZone: Zone = {
@@ -201,7 +111,6 @@ export function ZoneProvider({ children }: { children: ReactNode }) {
     const zone = getZoneById(zoneId);
     if (!zone) return undefined;
 
-    // TODO: Calculer les stats réelles à partir des identifications
     return {
       zoneId: zone.id,
       zoneNom: zone.nom,
@@ -217,6 +126,8 @@ export function ZoneProvider({ children }: { children: ReactNode }) {
     <ZoneContext.Provider
       value={{
         zones,
+        loading,
+        error,
         addZone,
         updateZone,
         deleteZone,
@@ -224,6 +135,7 @@ export function ZoneProvider({ children }: { children: ReactNode }) {
         getZonesByType,
         getZonesByRegion,
         getZoneStats,
+        refreshZones,
       }}
     >
       {children}

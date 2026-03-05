@@ -1,10 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 const logoJulaba = '/images/logo-julaba.png';
 
-export function Welcome() {
-  const navigate = useNavigate();
+interface WelcomeProps {
+  onComplete?: () => void;
+}
+
+export function Welcome({ onComplete }: WelcomeProps) {
 
   return (
     <div
@@ -48,7 +50,7 @@ export function Welcome() {
         transition={{ delay: 0.6, duration: 0.5, ease: 'easeOut' }}
       >
         <motion.button
-          onClick={() => navigate('/login')}
+          onClick={() => onComplete?.()}
           className="w-full h-14 bg-white rounded-full text-lg font-bold shadow-lg"
           style={{ color: '#C46210' }}
           whileHover={{ scale: 1.03 }}

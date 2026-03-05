@@ -424,7 +424,7 @@ export function Parametres() {
         isOpen={showLogoutConfirm}
         title="Se déconnecter ?"
         message="Tu seras redirigé vers la page de connexion Jùlaba."
-        onConfirm={() => { speak('Déconnexion'); navigate('/login'); }}
+        onConfirm={() => { speak('Déconnexion'); navigate('/'); }}
         onClose={() => setShowLogoutConfirm(false)}
       />
     </div>

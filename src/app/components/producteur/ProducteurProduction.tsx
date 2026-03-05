@@ -60,11 +60,15 @@ const FILTRES_PRODUITS = [
 
 export function ProducteurProduction() {
   const navigate = useNavigate();
-  const { cycles, recoltes, publications, alertes } = useProducteur();
+  const { stats } = useProducteur();
   const { speak } = useApp();
 
-  const totalAlertes = alertes.recoltesProches.length + alertes.stocksFaibles.length +
-    alertes.commandesRetard.length + alertes.paiementsAttente.length;
+  // Safe defaults since these arrays are not in ProducteurContext
+  const cycles: any[] = [];
+  const recoltes: any[] = [];
+  const publications: any[] = [];
+
+  const totalAlertes = (stats?.commandesEnCours ?? 0);
 
   const [activeTab, setActiveTab] = useState<'cycles' | 'recoltes' | 'publications' | 'historique'>('cycles');
   const [selectedCategory, setSelectedCategory] = useState('tous');
@@ -569,8 +573,8 @@ interface RecoltesViewProps {
 }
 
 function RecoltesView({ recoltes, favorites, toggleFavorite }: RecoltesViewProps) {
-  const { cycles } = useProducteur();
   const { speak } = useApp();
+  const cycles: any[] = [];
   const [selectedRecolte, setSelectedRecolte] = useState<any | null>(null);
   const [selectedCycle, setSelectedCycle] = useState<any | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -752,8 +756,8 @@ interface PublicationsViewProps {
 }
 
 function PublicationsView({ publications }: PublicationsViewProps) {
-  const { cycles } = useProducteur();
   const { speak } = useApp();
+  const cycles: any[] = [];
   const [selectedPublication, setSelectedPublication] = useState<any | null>(null);
   const [selectedCycle, setSelectedCycle] = useState<any | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);

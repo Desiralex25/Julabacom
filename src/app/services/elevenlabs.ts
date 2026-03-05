@@ -120,8 +120,8 @@ export async function speak(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    console.error('❌ ElevenLabs TTS error:', errorMessage);
-    console.info('💡 Pour utiliser le fallback Web Speech API, appelez speakWithFallback() au lieu de speak()');
+    console.warn('⚠️ ElevenLabs TTS non disponible:', errorMessage);
+    console.info('💡 Utilisez speakWithFallback() pour basculer automatiquement sur Web Speech API');
     
     if (onError) onError(errorMessage);
     return false;

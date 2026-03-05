@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuditEvent, AuditAction, AuditEntityType } from '../types/julaba.types';
+import * as auditApi from '../../imports/audit-api';
+import { DEV_MODE, devLog } from '../config/devMode';
 
 interface AuditContextType {
   events: AuditEvent[];
+  loading: boolean;
   
-  // Logger événements
   logEvent: (
     userId: string,
     userRole: 'marchand' | 'producteur' | 'cooperative' | 'identificateur' | 'institution',
@@ -14,35 +16,66 @@ interface AuditContextType {
     entityId: string,
     metadata?: Record<string, any>,
     geolocation?: { latitude: number; longitude: number }
-  ) => void;
+  ) => Promise<void>;
   
-  // Récupération logs
   getEventsByUser: (userId: string) => AuditEvent[];
   getEventsByEntity: (entityType: AuditEntityType, entityId: string) => AuditEvent[];
   getEventsByAction: (action: AuditAction) => AuditEvent[];
   getRecentEvents: (limit?: number) => AuditEvent[];
   
-  // Exports
   exportAuditTrail: (userId?: string, startDate?: string, endDate?: string) => AuditEvent[];
+  
+  refreshAuditLogs: () => Promise<void>;
 }
 
 const AuditContext = createContext<AuditContextType | undefined>(undefined);
 
 export function AuditProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // TODO: Charger depuis Supabase
-  // ✅ localStorage SUPPRIMÉ
-  // useEffect(() => {
-  //   const loadData = async () => {
-  //     const { data } = await supabase.from('audit_trail').select('*').limit(1000);
-  //     setEvents(data || []);
-  //   };
-  //   loadData();
-  // }, []);
+  // Charger les logs d'audit depuis Supabase
+  const loadAuditLogs = async () => {
+    if (DEV_MODE) {
+      devLog('AuditContext', 'Mode dev - skip API call');
+      return;
+    }
+    try {
+      setLoading(true);
+      const { logs } = await auditApi.fetchAuditLogs();
+      
+      const eventsList: AuditEvent[] = logs.map((log: any) => ({
+        id: log.id,
+        timestamp: log.created_at,
+        userId: log.user_id || '',
+        userRole: log.role as any,
+        userName: log.user_id || 'System',
+        action: log.action as AuditAction,
+        entityType: log.entity_type as AuditEntityType,
+        entityId: log.entity_id || '',
+        metadata: log.metadata || {},
+        geolocation: undefined,
+        deviceInfo: '',
+      }));
 
-  // 📝 Logger un événement
-  const logEvent = (
+      setEvents(eventsList);
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAuditLogs();
+  }, []);
+
+  const refreshAuditLogs = async () => {
+    await loadAuditLogs();
+  };
+
+  // Logger un événement
+  const logEvent = async (
     userId: string,
     userRole: 'marchand' | 'producteur' | 'cooperative' | 'identificateur' | 'institution',
     userName: string,
@@ -55,25 +88,37 @@ export function AuditProvider({ children }: { children: ReactNode }) {
     const event: AuditEvent = {
       id: `AUD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
-      
       userId,
       userRole,
       userName,
-      
       action,
-      
       entityType,
       entityId,
-      
       metadata,
-      
       geolocation,
       deviceInfo: navigator.userAgent,
     };
 
+    // Ajouter localement
     setEvents([event, ...events]);
-    
 
+    // Sauvegarder dans Supabase
+    try {
+      await auditApi.createAuditLog({
+        action,
+        description: `${action} on ${entityType} ${entityId}`,
+        severity: 'info',
+        entity_type: entityType,
+        entity_id: entityId,
+        metadata: {
+          ...metadata,
+          geolocation,
+          deviceInfo: navigator.userAgent,
+        },
+      });
+    } catch (error) {
+      console.error('Error saving audit log to Supabase:', error);
+    }
   };
 
   // Récupération par utilisateur
@@ -96,7 +141,7 @@ export function AuditProvider({ children }: { children: ReactNode }) {
     return events.slice(0, limit);
   };
 
-  // Export audit trail (avec filtres)
+  // Export audit trail
   const exportAuditTrail = (
     userId?: string,
     startDate?: string,
@@ -109,11 +154,11 @@ export function AuditProvider({ children }: { children: ReactNode }) {
     }
 
     if (startDate) {
-      filtered = filtered.filter(e => new Date(e.timestamp) >= new Date(startDate));
+      filtered = filtered.filter(e => e.timestamp >= startDate);
     }
 
     if (endDate) {
-      filtered = filtered.filter(e => new Date(e.timestamp) <= new Date(endDate));
+      filtered = filtered.filter(e => e.timestamp <= endDate);
     }
 
     return filtered;
@@ -121,12 +166,14 @@ export function AuditProvider({ children }: { children: ReactNode }) {
 
   const value: AuditContextType = {
     events,
+    loading,
     logEvent,
     getEventsByUser,
     getEventsByEntity,
     getEventsByAction,
     getRecentEvents,
     exportAuditTrail,
+    refreshAuditLogs,
   };
 
   return <AuditContext.Provider value={value}>{children}</AuditContext.Provider>;

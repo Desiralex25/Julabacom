@@ -237,7 +237,7 @@ export function ProducteurParametres() {
         isOpen={showLogout}
         title="Se déconnecter ?"
         message="Tu seras redirigé vers la page de connexion Jùlaba."
-        onConfirm={() => { speak('Déconnexion'); navigate('/login'); }}
+        onConfirm={() => { speak('Déconnexion'); navigate('/'); }}
         onClose={() => setShowLogout(false)}
       />
     </div>
