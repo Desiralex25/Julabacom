@@ -458,7 +458,12 @@ export function BOLogin() {
                     )}
 
                     {/* Bouton recuperation si necessaire */}
-                    {(diagResult.status?.count === 0 || diagResult.test?.diagnosis?.loginSuccess === false) && (
+                    {(
+                      !diagResult.status?.count ||
+                      diagResult.status?.count === 0 ||
+                      diagResult.status?.error ||
+                      diagResult.test?.diagnosis?.loginSuccess === false
+                    ) && (
                       <button onClick={() => setShowRecovery(v => !v)}
                         className="w-full py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-amber-500/30 transition-all">
                         <RefreshCw className="w-4 h-4" />
