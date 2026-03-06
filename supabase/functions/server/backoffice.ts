@@ -132,10 +132,19 @@ async function checkAuthBO(c: Context, requiredRole?: BORoleType[]): Promise<{ a
     return { authorized: false, error: 'Token manquant' };
   }
 
+  // Vérifier si le token est le publicAnonKey (non autorisé pour le BO)
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+  if (accessToken === supabaseAnonKey) {
+    return { authorized: false, error: 'Token anonyme non autorisé pour le Back-Office' };
+  }
+
   const { data: authUser, error: authError } = await supabase.auth.getUser(accessToken);
   
   if (authError || !authUser?.user) {
-    return { authorized: false, error: 'Non autorisé' };
+    const errMsg = authError?.message || 'Token invalide';
+    console.log('[checkAuthBO] Auth error:', errMsg);
+    // Retourner le message exact pour que le client sache s'il faut refresher
+    return { authorized: false, error: errMsg };
   }
 
   // Récupérer le profil utilisateur
@@ -146,6 +155,7 @@ async function checkAuthBO(c: Context, requiredRole?: BORoleType[]): Promise<{ a
     .single();
 
   if (profileError || !userProfile) {
+    console.log('[checkAuthBO] Profile error:', profileError?.message, 'for user:', authUser.user.id);
     return { authorized: false, error: 'Profil introuvable' };
   }
 
@@ -157,7 +167,7 @@ async function checkAuthBO(c: Context, requiredRole?: BORoleType[]): Promise<{ a
 
   // Vérifier les permissions spécifiques si requises
   if (requiredRole && !requiredRole.includes(userProfile.role)) {
-    return { authorized: false, error: 'Permissions insuffisantes' };
+    return { authorized: false, error: `Permissions insuffisantes. Rôle requis: ${requiredRole.join(' ou ')}. Votre rôle: ${userProfile.role}` };
   }
 
   return { authorized: true, user: userProfile };
@@ -403,7 +413,24 @@ export async function getTransactions(c: Context) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * GET /backoffice/zones - Liste toutes les zones
+ * Mapper une ligne DB zones → BOZone
+ */
+function mapDbZone(row: any, gestionnaireName?: string): BOZone {
+  return {
+    id: row.id,
+    nom: row.nom,
+    region: row.type === 'region' ? row.nom : (row.parent_nom || row.region || ''),
+    gestionnaire: gestionnaireName || row.gestionnaire_nom || undefined,
+    nbActeurs: row.nb_acteurs || 0,
+    nbIdentificateurs: row.nb_identificateurs || 0,
+    volumeTotal: row.volume_total || 0,
+    tauxActivite: row.taux_activite || 0,
+    statut: row.actif ? 'active' : 'inactive',
+  };
+}
+
+/**
+ * GET /backoffice/zones - Liste toutes les zones depuis la table zones
  */
 export async function getZones(c: Context) {
   const auth = await checkAuthBO(c);
@@ -412,10 +439,44 @@ export async function getZones(c: Context) {
   }
 
   try {
-    const zones = await kv.get<BOZone[]>('bo_zones') || [];
+    // Récupérer les zones avec le nom du parent (région) et du gestionnaire
+    const { data: rows, error } = await supabase
+      .from('zones')
+      .select(`
+        id,
+        nom,
+        type,
+        actif,
+        parent_id,
+        gestionnaire_id,
+        created_at,
+        parent:zones!parent_id(nom),
+        gestionnaire:users_julaba!gestionnaire_id(first_name, last_name)
+      `)
+      .order('nom', { ascending: true });
+
+    if (error) {
+      console.log('[getZones] DB error:', error.message);
+      return c.json({ error: 'Erreur lors du chargement des zones', details: error.message }, 500);
+    }
+
+    const zones: BOZone[] = (rows || []).map(row => ({
+      id: row.id,
+      nom: row.nom,
+      region: (row.parent as any)?.nom || (row.type === 'region' ? row.nom : ''),
+      gestionnaire: row.gestionnaire
+        ? `${(row.gestionnaire as any).first_name || ''} ${(row.gestionnaire as any).last_name || ''}`.trim()
+        : undefined,
+      nbActeurs: 0,
+      nbIdentificateurs: 0,
+      volumeTotal: 0,
+      tauxActivite: 0,
+      statut: row.actif ? 'active' : 'inactive',
+    }));
+
     return c.json({ zones });
   } catch (error) {
-    console.log('Error in getZones:', error);
+    console.log('[getZones] Error:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
   }
 }
@@ -433,39 +494,49 @@ export async function updateZoneStatut(c: Context) {
     const zoneId = c.req.param('id');
     const { statut } = await c.req.json();
 
-    const zones = await kv.get<BOZone[]>('bo_zones') || [];
-    const zoneIndex = zones.findIndex(z => z.id === zoneId);
+    // Récupérer la zone actuelle
+    const { data: zone, error: fetchError } = await supabase
+      .from('zones')
+      .select('id, nom, actif')
+      .eq('id', zoneId)
+      .single();
 
-    if (zoneIndex === -1) {
+    if (fetchError || !zone) {
       return c.json({ error: 'Zone introuvable' }, 404);
     }
 
-    const zone = zones[zoneIndex];
-    const ancienStatut = zone.statut;
+    const newActif = statut === 'active';
 
-    zones[zoneIndex] = { ...zone, statut };
-    await kv.set('bo_zones', zones);
+    const { error: updateError } = await supabase
+      .from('zones')
+      .update({ actif: newActif })
+      .eq('id', zoneId);
+
+    if (updateError) {
+      console.log('[updateZoneStatut] DB error:', updateError.message);
+      return c.json({ error: 'Erreur lors de la mise à jour', details: updateError.message }, 500);
+    }
 
     await addAuditLog({
-      action: statut === 'active' ? 'ACTIVATION zone' : 'DÉSACTIVATION zone',
+      action: newActif ? 'ACTIVATION zone' : 'DÉSACTIVATION zone',
       utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
       roleBO: auth.user.role,
       acteurImpacte: zone.nom,
-      ancienneValeur: ancienStatut,
+      ancienneValeur: zone.actif ? 'active' : 'inactive',
       nouvelleValeur: statut,
       ip: c.req.header('x-forwarded-for') || 'unknown',
       module: 'Zones',
     });
 
-    return c.json({ success: true, zone: zones[zoneIndex] });
+    return c.json({ success: true, zone: { id: zoneId, statut } });
   } catch (error) {
-    console.log('Error in updateZoneStatut:', error);
+    console.log('[updateZoneStatut] Error:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
   }
 }
 
 /**
- * POST /backoffice/zones - Créer une nouvelle zone
+ * POST /backoffice/zones - Créer une nouvelle zone dans la table zones
  */
 export async function createZone(c: Context) {
   const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
@@ -474,17 +545,69 @@ export async function createZone(c: Context) {
   }
 
   try {
-    const { nom, region, gestionnaire } = await c.req.json();
+    const { nom, region, type, parent_id, gestionnaire } = await c.req.json();
 
-    if (!nom || !region) {
-      return c.json({ error: 'Nom et région sont obligatoires' }, 400);
+    if (!nom) {
+      return c.json({ error: 'Le nom de la zone est obligatoire' }, 400);
     }
 
-    const newZone: BOZone = {
-      id: `zone_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      nom,
-      region,
-      gestionnaire: gestionnaire || undefined,
+    // Résoudre le parent_id : si fourni directement on l'utilise,
+    // sinon on cherche la région par nom
+    let resolvedParentId = parent_id || null;
+    if (!resolvedParentId && region) {
+      const { data: parentZone } = await supabase
+        .from('zones')
+        .select('id')
+        .eq('nom', region)
+        .eq('type', 'region')
+        .single();
+      if (parentZone) resolvedParentId = parentZone.id;
+    }
+
+    // Résoudre gestionnaire_id depuis le nom ou l'id
+    let resolvedGestionnaireId = null;
+    if (gestionnaire) {
+      const { data: gUser } = await supabase
+        .from('users_julaba')
+        .select('id')
+        .eq('id', gestionnaire)
+        .single();
+      if (gUser) resolvedGestionnaireId = gUser.id;
+    }
+
+    const { data: newZone, error: insertError } = await supabase
+      .from('zones')
+      .insert({
+        nom,
+        type: type || (resolvedParentId ? 'commune' : 'region'),
+        parent_id: resolvedParentId,
+        gestionnaire_id: resolvedGestionnaireId,
+        actif: true,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.log('[createZone] DB error:', insertError.message);
+      return c.json({ error: 'Erreur lors de la création de la zone', details: insertError.message }, 500);
+    }
+
+    await addAuditLog({
+      action: 'CRÉATION zone',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: nom,
+      ancienneValeur: '-',
+      nouvelleValeur: region || type || 'region',
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Zones',
+    });
+
+    const boZone: BOZone = {
+      id: newZone.id,
+      nom: newZone.nom,
+      region: region || nom,
+      gestionnaire: undefined,
       nbActeurs: 0,
       nbIdentificateurs: 0,
       volumeTotal: 0,
@@ -492,24 +615,9 @@ export async function createZone(c: Context) {
       statut: 'active',
     };
 
-    const zones = await kv.get<BOZone[]>('bo_zones') || [];
-    zones.push(newZone);
-    await kv.set('bo_zones', zones);
-
-    await addAuditLog({
-      action: 'CRÉATION zone',
-      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
-      roleBO: auth.user.role,
-      acteurImpacte: newZone.nom,
-      ancienneValeur: '-',
-      nouvelleValeur: region,
-      ip: c.req.header('x-forwarded-for') || 'unknown',
-      module: 'Zones',
-    });
-
-    return c.json({ success: true, zone: newZone }, 201);
+    return c.json({ success: true, zone: boZone }, 201);
   } catch (error) {
-    console.log('Error in createZone:', error);
+    console.log('[createZone] Error:', error);
     return c.json({ error: 'Erreur serveur lors de la création de la zone' }, 500);
   }
 }
@@ -525,38 +633,78 @@ export async function updateZone(c: Context) {
 
   try {
     const zoneId = c.req.param('id');
-    const { nom, region, gestionnaire } = await c.req.json();
+    const { nom, region, gestionnaire, type, parent_id } = await c.req.json();
 
-    const zones = await kv.get<BOZone[]>('bo_zones') || [];
-    const zoneIndex = zones.findIndex(z => z.id === zoneId);
+    // Récupérer la zone actuelle
+    const { data: zone, error: fetchError } = await supabase
+      .from('zones')
+      .select('id, nom, gestionnaire_id, parent_id')
+      .eq('id', zoneId)
+      .single();
 
-    if (zoneIndex === -1) {
+    if (fetchError || !zone) {
       return c.json({ error: 'Zone introuvable' }, 404);
     }
 
-    const zone = zones[zoneIndex];
-    zones[zoneIndex] = {
-      ...zone,
-      nom: nom ?? zone.nom,
-      region: region ?? zone.region,
-      gestionnaire: gestionnaire !== undefined ? gestionnaire : zone.gestionnaire,
-    };
-    await kv.set('bo_zones', zones);
+    // Résoudre parent_id depuis la région si besoin
+    let resolvedParentId = parent_id !== undefined ? parent_id : zone.parent_id;
+    if (region && !parent_id) {
+      const { data: parentZone } = await supabase
+        .from('zones')
+        .select('id')
+        .eq('nom', region)
+        .eq('type', 'region')
+        .single();
+      if (parentZone) resolvedParentId = parentZone.id;
+    }
+
+    // Résoudre gestionnaire_id
+    let resolvedGestionnaireId = zone.gestionnaire_id;
+    if (gestionnaire !== undefined) {
+      if (!gestionnaire) {
+        resolvedGestionnaireId = null;
+      } else {
+        const { data: gUser } = await supabase
+          .from('users_julaba')
+          .select('id')
+          .eq('id', gestionnaire)
+          .single();
+        if (gUser) resolvedGestionnaireId = gUser.id;
+      }
+    }
+
+    const updateData: any = {};
+    if (nom !== undefined) updateData.nom = nom;
+    if (type !== undefined) updateData.type = type;
+    if (resolvedParentId !== undefined) updateData.parent_id = resolvedParentId;
+    if (resolvedGestionnaireId !== undefined) updateData.gestionnaire_id = resolvedGestionnaireId;
+
+    const { data: updated, error: updateError } = await supabase
+      .from('zones')
+      .update(updateData)
+      .eq('id', zoneId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.log('[updateZone] DB error:', updateError.message);
+      return c.json({ error: 'Erreur lors de la mise à jour', details: updateError.message }, 500);
+    }
 
     await addAuditLog({
       action: 'MODIFICATION zone',
       utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
       roleBO: auth.user.role,
       acteurImpacte: zone.nom,
-      ancienneValeur: zone.gestionnaire || 'sans gestionnaire',
+      ancienneValeur: zone.gestionnaire_id || 'sans gestionnaire',
       nouvelleValeur: gestionnaire || 'sans gestionnaire',
       ip: c.req.header('x-forwarded-for') || 'unknown',
       module: 'Zones',
     });
 
-    return c.json({ success: true, zone: zones[zoneIndex] });
+    return c.json({ success: true, zone: { id: updated.id, nom: updated.nom, statut: updated.actif ? 'active' : 'inactive' } });
   } catch (error) {
-    console.log('Error in updateZone:', error);
+    console.log('[updateZone] Error:', error);
     return c.json({ error: 'Erreur serveur lors de la mise à jour de la zone' }, 500);
   }
 }
@@ -629,7 +777,7 @@ export async function updateCommissionStatut(c: Context) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTES : Audit Logs
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 
 /**
  * GET /backoffice/audit - Liste tous les logs d'audit
