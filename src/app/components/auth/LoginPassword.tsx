@@ -686,16 +686,25 @@ export function LoginPassword() {
       </div>
 
       {/* Link to onboarding */}
-      <div className="w-full text-center py-6 mt-auto">
+      <div className="w-full text-center py-6 mt-auto space-y-2">
         <button
           onClick={() => {
             localStorage.removeItem('julaba_completed_onboarding');
             window.location.href = '/';
           }}
-          className="text-white text-sm font-medium hover:underline opacity-80"
+          className="text-white text-sm font-medium hover:underline opacity-80 block mx-auto"
         >
           Revoir le tutoriel
         </button>
+        {/* Lien de recuperation admin - visible uniquement sur /backoffice/login */}
+        {window.location.pathname.includes('backoffice') && (
+          <a
+            href="/admin-recovery"
+            className="text-white/60 text-xs hover:text-white/90 transition-colors block mx-auto"
+          >
+            Probleme de connexion admin ?
+          </a>
+        )}
       </div>
     </div>
   );

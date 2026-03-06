@@ -574,6 +574,284 @@ app.post("/make-server-488793d3/auth/refresh", async (c) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// OUTILS DE RÉCUPÉRATION SUPER ADMIN (Usage d'urgence uniquement)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * GET /auth/super-admin-status
+ * Diagnostic : état du compte Super Admin dans la base
+ */
+app.get("/make-server-488793d3/auth/super-admin-status", async (c) => {
+  try {
+    // 1. Chercher dans users_julaba
+    const { data: saProfiles, error: profileErr } = await supabase
+      .from('users_julaba')
+      .select('id, phone, first_name, last_name, auth_user_id, created_at, last_login_at, validated')
+      .eq('role', 'super_admin');
+
+    const profiles = saProfiles || [];
+
+    // 2. Pour chaque profil, vérifier si l'auth_user existe
+    const profilesWithAuth = await Promise.all(profiles.map(async (p: any) => {
+      let authExists = false;
+      let authEmail = null;
+      if (p.auth_user_id) {
+        const { data: authUser } = await supabase.auth.admin.getUserById(p.auth_user_id);
+        authExists = !!authUser?.user;
+        authEmail = authUser?.user?.email || null;
+      }
+      return { ...p, authExists, authEmail };
+    }));
+
+    return c.json({
+      success: true,
+      count: profiles.length,
+      profiles: profilesWithAuth,
+      diagnosis: profiles.length === 0
+        ? 'AUCUN super admin trouvé dans users_julaba'
+        : profiles.length === 1
+          ? 'UN super admin trouvé'
+          : `MULTIPLE super admins (${profiles.length}) trouvés`,
+    });
+  } catch (error) {
+    console.log('super-admin-status error:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Inconnue' }, 500);
+  }
+});
+
+/**
+ * POST /auth/test-login
+ * Teste la connexion avec les identifiants fournis et retourne l'erreur précise
+ * Body: { phone, password }
+ */
+app.post("/make-server-488793d3/auth/test-login", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone, password } = body;
+    if (!phone || !password) return c.json({ error: 'phone et password requis' }, 400);
+
+    const authEmail = `${phone}@julaba.local`;
+
+    // Test 1 : profil dans users_julaba
+    const { data: profile, error: profileErr } = await supabase
+      .from('users_julaba')
+      .select('id, phone, role, auth_user_id, validated')
+      .eq('phone', phone)
+      .single();
+
+    const profileExists = !!profile;
+    const authUserId = profile?.auth_user_id || null;
+
+    // Test 2 : compte Supabase Auth
+    let authUserExists = false;
+    if (authUserId) {
+      const { data: au } = await supabase.auth.admin.getUserById(authUserId);
+      authUserExists = !!au?.user;
+    }
+
+    // Test 3 : tentative de login réelle
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password,
+    });
+
+    return c.json({
+      success: true,
+      diagnosis: {
+        profileExists,
+        profileRole: profile?.role || null,
+        authUserIdLinked: !!authUserId,
+        authUserExists,
+        loginSuccess: !!loginData?.session,
+        loginError: loginError?.message || null,
+        loginErrorCode: loginError?.status || null,
+      }
+    });
+  } catch (error) {
+    console.log('test-login error:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Inconnue' }, 500);
+  }
+});
+
+/**
+ * POST /auth/recover-super-admin
+ * Récupération forcée : recrée/resynchronise le compte Super Admin
+ * Body: { phone, password, firstName, lastName, secretKey }
+ * secretKey doit valoir "JULABA_RECOVERY_2026" pour activer la récupération
+ */
+app.post("/make-server-488793d3/auth/recover-super-admin", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone, password, firstName, lastName, secretKey } = body;
+
+    // Clé de sécurité obligatoire
+    if (secretKey !== 'JULABA_RECOVERY_2026') {
+      return c.json({ error: 'Clé de récupération invalide' }, 403);
+    }
+    if (!phone || !password || !firstName || !lastName) {
+      return c.json({ error: 'Tous les champs sont requis' }, 400);
+    }
+    if (password.length < 6) {
+      return c.json({ error: 'Mot de passe minimum 6 caractères' }, 400);
+    }
+
+    const authEmail = `${phone}@julaba.local`;
+    const steps: string[] = [];
+
+    // Étape 1 : chercher l'ancien profil SA
+    const { data: oldProfiles } = await supabase
+      .from('users_julaba')
+      .select('id, auth_user_id, phone')
+      .eq('role', 'super_admin');
+
+    // Étape 2 : nettoyer les anciens comptes Auth liés aux SA
+    for (const p of (oldProfiles || [])) {
+      if (p.auth_user_id) {
+        await supabase.auth.admin.deleteUser(p.auth_user_id);
+        steps.push(`Ancien compte Auth supprimé: ${p.auth_user_id}`);
+      }
+    }
+
+    // Étape 3 : supprimer les anciens profils SA dans users_julaba
+    if ((oldProfiles || []).length > 0) {
+      await supabase
+        .from('users_julaba')
+        .delete()
+        .eq('role', 'super_admin');
+      steps.push(`${oldProfiles!.length} anciens profil(s) SA supprimé(s)`);
+    }
+
+    // Étape 4 : vérifier si le téléphone est utilisé par un autre rôle
+    const { data: conflictUser } = await supabase
+      .from('users_julaba')
+      .select('id, role')
+      .eq('phone', phone)
+      .single();
+
+    if (conflictUser) {
+      // Supprimer aussi ce conflit
+      if ((conflictUser as any).auth_user_id) {
+        await supabase.auth.admin.deleteUser((conflictUser as any).auth_user_id);
+      }
+      await supabase.from('users_julaba').delete().eq('phone', phone);
+      steps.push(`Conflit téléphone supprimé (rôle: ${conflictUser.role})`);
+    }
+
+    // Étape 5 : créer le nouveau compte Supabase Auth
+    const { data: newAuth, error: authErr } = await supabase.auth.admin.createUser({
+      email: authEmail,
+      password,
+      email_confirm: true,
+      user_metadata: { phone, first_name: firstName, last_name: lastName, role: 'super_admin' }
+    });
+
+    if (authErr || !newAuth?.user) {
+      return c.json({ error: 'Erreur création compte Auth', details: authErr?.message }, 500);
+    }
+    steps.push(`Nouveau compte Auth créé: ${newAuth.user.id}`);
+
+    // Étape 6 : créer le profil dans users_julaba
+    const { data: newProfile, error: profileErr } = await supabase
+      .from('users_julaba')
+      .insert({
+        auth_user_id: newAuth.user.id,
+        phone,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'super_admin',
+        region: 'National',
+        commune: 'Abidjan',
+        activity: 'Administration',
+        institution_name: 'JULABA Back-Office',
+        score: 100,
+        validated: true,
+        verified_phone: true
+      })
+      .select()
+      .single();
+
+    if (profileErr || !newProfile) {
+      await supabase.auth.admin.deleteUser(newAuth.user.id);
+      return c.json({ error: 'Erreur création profil', details: profileErr?.message }, 500);
+    }
+    steps.push(`Nouveau profil créé: ${newProfile.id}`);
+
+    return c.json({
+      success: true,
+      message: 'Super Admin récupéré avec succès',
+      steps,
+      credentials: { phone, email: authEmail },
+      user: {
+        id: newProfile.id,
+        phone: newProfile.phone,
+        firstName: newProfile.first_name,
+        lastName: newProfile.last_name,
+        role: newProfile.role
+      }
+    });
+
+  } catch (error) {
+    console.log('recover-super-admin error:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Inconnue' }, 500);
+  }
+});
+
+/**
+ * POST /auth/reset-super-admin-password
+ * Réinitialise uniquement le mot de passe du SA existant (sans supprimer le profil)
+ * Body: { phone, newPassword, secretKey }
+ */
+app.post("/make-server-488793d3/auth/reset-super-admin-password", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { phone, newPassword, secretKey } = body;
+
+    if (secretKey !== 'JULABA_RECOVERY_2026') {
+      return c.json({ error: 'Clé de récupération invalide' }, 403);
+    }
+    if (!phone || !newPassword) {
+      return c.json({ error: 'phone et newPassword requis' }, 400);
+    }
+    if (newPassword.length < 6) {
+      return c.json({ error: 'Mot de passe minimum 6 caractères' }, 400);
+    }
+
+    const { data: profile, error: profileErr } = await supabase
+      .from('users_julaba')
+      .select('id, auth_user_id, first_name, last_name, role')
+      .eq('phone', phone)
+      .eq('role', 'super_admin')
+      .single();
+
+    if (profileErr || !profile) {
+      return c.json({ error: 'Super Admin introuvable pour ce numéro', details: profileErr?.message }, 404);
+    }
+
+    if (!profile.auth_user_id) {
+      return c.json({ error: 'Ce Super Admin n\'a pas de compte Auth lié (utilisez la récupération complète)' }, 400);
+    }
+
+    const { error: updateErr } = await supabase.auth.admin.updateUserById(
+      profile.auth_user_id,
+      { password: newPassword }
+    );
+
+    if (updateErr) {
+      return c.json({ error: 'Erreur mise à jour mot de passe', details: updateErr.message }, 500);
+    }
+
+    return c.json({
+      success: true,
+      message: `Mot de passe réinitialisé pour ${profile.first_name} ${profile.last_name}`,
+      phone,
+    });
+  } catch (error) {
+    console.log('reset-super-admin-password error:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Inconnue' }, 500);
+  }
+});
+
 // ══════════════════════════════════════════════════════════════════
 // GESTION DES MOTS DE PASSE
 // ═══════════════════════════════════════════════════════════════════
@@ -729,7 +1007,7 @@ app.post("/make-server-488793d3/auth/reset-user-password", async (c) => {
   }
 });
 
-// ═══════════════════════��═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // PARAMÈTRES SYSTÈME
 // ═══════════════════════════════════════════════════════════════════
 

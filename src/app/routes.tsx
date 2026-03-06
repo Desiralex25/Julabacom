@@ -96,6 +96,7 @@ import TestElevenLabs from './pages/TestElevenLabs';
 import DatabaseViewer from './pages/DatabaseViewer';
 import CreateSuperAdmin from './pages/CreateSuperAdmin';
 import DiagnosticDB from './pages/DiagnosticDB';
+import AdminRecovery from './pages/AdminRecovery';
 import { DevModeHome } from './pages/DevModeHome';
 import { DEV_MODE } from './config/devMode';
 import { EntryGate } from './components/auth/EntryGate';
@@ -151,6 +152,10 @@ export const router = createBrowserRouter([
       {
         path: '/diagnostic-db',
         element: <DiagnosticDB />,
+      },
+      {
+        path: '/admin-recovery',
+        element: <AdminRecovery />,
       },
       // ── MARCHAND ─────────────────────────────────────────────────────
       {
