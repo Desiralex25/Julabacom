@@ -891,6 +891,84 @@ app.post("/make-server-488793d3/auth/reset-super-admin-password", async (c) => {
 });
 
 // ══════════════════════════════════════════════════════════════════
+// ROUTE D'URGENCE ABSOLUE - RESET COMPLET AUTH SANS TOUCHER AU PROFIL
+// ══════════════════════════════════════════════════════════════════
+
+app.post("/make-server-488793d3/auth/emergency-reset", async (c) => {
+  const steps: string[] = [];
+  try {
+    const body = await c.req.json();
+    const { phone, newPassword, secretKey } = body;
+
+    if (secretKey !== 'JULABA_RECOVERY_2026') return c.json({ error: 'Cle de recuperation invalide' }, 403);
+    if (!phone || !newPassword) return c.json({ error: 'phone et newPassword sont requis' }, 400);
+    if (newPassword.length < 6) return c.json({ error: 'Mot de passe minimum 6 caracteres' }, 400);
+
+    const cleanPhone = phone.replace(/\s/g, '');
+    const authEmail = `${cleanPhone}@julaba.local`;
+
+    // 1. Trouver le profil dans users_julaba (sans filtre de rôle)
+    const { data: profiles } = await supabase
+      .from('users_julaba')
+      .select('id, auth_user_id, first_name, last_name, role, phone')
+      .eq('phone', cleanPhone)
+      .limit(1);
+
+    const profile = profiles?.[0];
+    if (!profile) {
+      return c.json({ error: `Aucun profil trouve pour ${cleanPhone}` }, 404);
+    }
+    steps.push(`Profil: ${profile.first_name} ${profile.last_name} (${profile.role})`);
+
+    // 2. Supprimer l'ancien compte Auth si existant
+    if (profile.auth_user_id) {
+      const { error: delErr } = await supabase.auth.admin.deleteUser(profile.auth_user_id);
+      steps.push(delErr ? `Suppression echouee (non bloquant): ${delErr.message}` : `Ancien Auth supprime: ${profile.auth_user_id}`);
+    }
+
+    // 3. Pause anti-conflit
+    await new Promise(r => setTimeout(r, 600));
+
+    // 4. Créer nouveau compte Auth
+    const { data: newAuth, error: createErr } = await supabase.auth.admin.createUser({
+      email: authEmail,
+      password: newPassword,
+      email_confirm: true,
+      user_metadata: { phone: cleanPhone, first_name: profile.first_name, last_name: profile.last_name, role: profile.role }
+    });
+
+    if (createErr || !newAuth?.user) {
+      return c.json({ error: 'Echec creation Auth', details: createErr?.message || 'Reponse vide', steps }, 500);
+    }
+    steps.push(`Nouveau Auth cree: ${newAuth.user.id}`);
+
+    // 5. Mettre à jour auth_user_id dans users_julaba
+    const { error: updErr } = await supabase.from('users_julaba').update({ auth_user_id: newAuth.user.id }).eq('id', profile.id);
+    steps.push(updErr ? `Lien non mis a jour: ${updErr.message}` : `auth_user_id -> ${newAuth.user.id}`);
+
+    // 6. Test connexion immédiat
+    await new Promise(r => setTimeout(r, 300));
+    const { data: testLogin, error: testErr } = await supabase.auth.signInWithPassword({ email: authEmail, password: newPassword });
+    steps.push(testErr ? `Test login echoue: ${testErr.message}` : 'Test login: SUCCES');
+
+    return c.json({
+      success: true,
+      message: `Compte reinitialise pour ${profile.first_name} ${profile.last_name}`,
+      phone: cleanPhone,
+      loginReady: !!testLogin?.session,
+      accessToken: testLogin?.session?.access_token || null,
+      refreshToken: testLogin?.session?.refresh_token || null,
+      steps,
+      user: { id: profile.id, phone: cleanPhone, firstName: profile.first_name, lastName: profile.last_name, role: profile.role }
+    });
+
+  } catch (error) {
+    console.log('emergency-reset error:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error), steps }, 500);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
 // GESTION DES MOTS DE PASSE
 // ═══════════════════════════════════════════════════════════════════
 

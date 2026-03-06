@@ -160,7 +160,7 @@ export function BOLogin() {
     }
   };
 
-  // ── Reset mot de passe
+  // ── Reset mot de passe — utilise la route emergency-reset (plus fiable)
   const runReset = async () => {
     if (!resetPhone || !resetNewPassword || !resetKey) {
       setResetResult({ error: 'Tous les champs sont obligatoires.' });
@@ -173,7 +173,7 @@ export function BOLogin() {
     setResetLoading(true);
     setResetResult(null);
     try {
-      const res = await fetch(`${API_URL}/auth/reset-super-admin-password`, {
+      const res = await fetch(`${API_URL}/auth/emergency-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,16 +183,34 @@ export function BOLogin() {
         }),
       });
       const data = await res.json();
+      console.log('[emergency-reset] response:', data);
       setResetResult(data);
       if (data.success) {
-        // Pre-remplir le formulaire principal
+        // Si le token est directement disponible, connexion automatique
+        if (data.accessToken && data.user) {
+          const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
+          if (boRoles.includes(data.user.role)) {
+            localStorage.setItem('julaba_access_token', data.accessToken);
+            if (data.refreshToken) localStorage.setItem('julaba_refresh_token', data.refreshToken);
+            localStorage.setItem('julaba_user', JSON.stringify(data.user));
+            setAppUser(data.user);
+            setBOUser(data.user);
+            setShowPanel(false);
+            setStep('idle');
+            setSuccess(true);
+            setTimeout(() => navigate('/backoffice/dashboard'), 1200);
+            return;
+          }
+        }
+        // Sinon pre-remplir le formulaire pour connexion manuelle
         setPhone(resetPhone.replace(/\s/g, ''));
         setPassword(resetNewPassword);
         setShowPanel(false);
         setStep('idle');
       }
-    } catch {
-      setResetResult({ error: 'Erreur reseau.' });
+    } catch (err) {
+      console.error('[emergency-reset] catch:', err);
+      setResetResult({ error: 'Erreur reseau. Verifiez votre connexion.' });
     } finally {
       setResetLoading(false);
     }
@@ -424,7 +442,7 @@ export function BOLogin() {
             </form>
           </div>
 
-          {/* ── Panneau outils de secours ────────────────────────────────── */}
+          {/* ── Panneau outils de secours ───────────────────────────���────── */}
           <AnimatePresence>
             {showPanel && (
               <motion.div initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
@@ -486,7 +504,7 @@ export function BOLogin() {
                     </div>
                   )}
 
-                  {/* ── RESET MOT DE PASSE ───────────────────────────────── */}
+                  {/* ── RESET MOT DE PASSE ───────────���───────────────────── */}
                   {step === 'reset' && (
                     <div className="space-y-4">
                       <button onClick={() => setStep('idle')} className="text-white/40 hover:text-white/70 text-xs flex items-center gap-1">
