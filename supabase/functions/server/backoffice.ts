@@ -485,22 +485,39 @@ export async function getTransactions(c: Context) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ROUTES : Zones (table zones)
+// ROUTES : Zones (table zones) — requêtes sans FK joins pour compatibilité max
 // ─────────────────────────────────────────────────────────────────────────────
 
-function mapDbZone(row: any): BOZone {
+/** Détecter si une zone est active indépendamment du nom de colonne */
+function isZoneActive(row: any): boolean {
+  if (row.actif !== undefined && row.actif !== null) return Boolean(row.actif);
+  if (row.is_active !== undefined && row.is_active !== null) return Boolean(row.is_active);
+  if (row.active !== undefined && row.active !== null) return Boolean(row.active);
+  if (row.statut !== undefined) return row.statut === 'actif' || row.statut === 'active';
+  return true; // défaut : actif
+}
+
+/** Construire l'objet BOZone depuis une ligne DB brute */
+function buildBOZone(row: any, parentMap: Record<string, string>, gestionnaireMap: Record<string, string>): BOZone {
+  const nom = row.nom || row.name || '';
+  const parentNom = row.parent_id ? (parentMap[row.parent_id] || '') : '';
+  const gestionnaireNom = row.gestionnaire_id ? (gestionnaireMap[row.gestionnaire_id] || '') : '';
+
+  // Région : soit le parent, soit la colonne région, soit le nom de la zone si c'est une région
+  const region = parentNom
+    || row.region
+    || (row.type === 'region' || row.type === 'Region' ? nom : '');
+
   return {
     id: row.id,
-    nom: row.nom,
-    region: (row.parent as any)?.nom || (row.type === 'region' ? row.nom : ''),
-    gestionnaire: row.gestionnaire
-      ? `${(row.gestionnaire as any).first_name || ''} ${(row.gestionnaire as any).last_name || ''}`.trim()
-      : undefined,
-    nbActeurs: 0,
-    nbIdentificateurs: 0,
-    volumeTotal: 0,
-    tauxActivite: 0,
-    statut: row.actif ? 'active' : 'inactive',
+    nom,
+    region,
+    gestionnaire: gestionnaireNom || undefined,
+    nbActeurs: row.nb_acteurs || 0,
+    nbIdentificateurs: row.nb_identificateurs || 0,
+    volumeTotal: row.volume_total || 0,
+    tauxActivite: row.taux_activite || 0,
+    statut: isZoneActive(row) ? 'active' : 'inactive',
   };
 }
 
@@ -509,13 +526,10 @@ export async function getZones(c: Context) {
   if (!auth.authorized) return c.json({ error: auth.error }, 401);
 
   try {
+    // SELECT * sans aucun join FK — compatible avec toute structure de table zones
     const { data: rows, error } = await supabase
       .from('zones')
-      .select(`
-        id, nom, type, actif, parent_id, gestionnaire_id, created_at,
-        parent:zones!parent_id(nom),
-        gestionnaire:users_julaba!gestionnaire_id(first_name, last_name)
-      `)
+      .select('*')
       .order('nom', { ascending: true });
 
     if (error) {
@@ -523,10 +537,43 @@ export async function getZones(c: Context) {
       return c.json({ error: 'Erreur lors du chargement des zones', details: error.message }, 500);
     }
 
-    return c.json({ zones: (rows || []).map(mapDbZone) });
+    if (!rows || rows.length === 0) {
+      console.log('[getZones] Aucune zone trouvée dans la table zones');
+      return c.json({ zones: [] });
+    }
+
+    console.log(`[getZones] ${rows.length} zone(s) trouvée(s)`);
+    console.log('[getZones] Colonnes détectées:', Object.keys(rows[0]).join(', '));
+
+    // Map parent_id → nom (auto-résolution hiérarchie)
+    const parentMap: Record<string, string> = {};
+    rows.forEach(r => {
+      if (r.id) parentMap[r.id] = r.nom || r.name || '';
+    });
+
+    // Résoudre les gestionnaires en une seule requête
+    const gestionnaireMap: Record<string, string> = {};
+    const gestionnaireIds = [...new Set(
+      rows.map(r => r.gestionnaire_id).filter((id): id is string => !!id)
+    )];
+    if (gestionnaireIds.length > 0) {
+      const { data: users, error: usersErr } = await supabase
+        .from('users_julaba')
+        .select('id, first_name, last_name')
+        .in('id', gestionnaireIds);
+      if (!usersErr && users) {
+        users.forEach(u => {
+          gestionnaireMap[u.id] = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+        });
+      }
+    }
+
+    const zones: BOZone[] = rows.map(row => buildBOZone(row, parentMap, gestionnaireMap));
+    return c.json({ zones });
+
   } catch (error) {
     console.log('[getZones] Error:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
   }
 }
 
@@ -540,16 +587,25 @@ export async function updateZoneStatut(c: Context) {
 
     const { data: zone, error: fetchError } = await supabase
       .from('zones')
-      .select('id, nom, actif')
+      .select('*')
       .eq('id', zoneId)
       .single();
 
     if (fetchError || !zone) return c.json({ error: 'Zone introuvable' }, 404);
 
     const newActif = statut === 'active';
+
+    // Adapter la colonne selon ce qui existe réellement dans la table
+    const updateData: any = {};
+    if ('actif' in zone) updateData.actif = newActif;
+    else if ('is_active' in zone) updateData.is_active = newActif;
+    else if ('active' in zone) updateData.active = newActif;
+    else if ('statut' in zone) updateData.statut = newActif ? 'actif' : 'inactif';
+    else updateData.actif = newActif; // fallback
+
     const { error: updateError } = await supabase
       .from('zones')
-      .update({ actif: newActif })
+      .update(updateData)
       .eq('id', zoneId);
 
     if (updateError) {
@@ -562,8 +618,8 @@ export async function updateZoneStatut(c: Context) {
       action: newActif ? 'ACTIVATION zone' : 'DÉSACTIVATION zone',
       utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
       roleBO: auth.user.role,
-      acteurImpacte: zone.nom,
-      ancienneValeur: zone.actif ? 'active' : 'inactive',
+      acteurImpacte: zone.nom || zone.name || zoneId,
+      ancienneValeur: isZoneActive(zone) ? 'active' : 'inactive',
       nouvelleValeur: statut,
       ip: c.req.header('x-forwarded-for') || 'unknown',
       module: 'Zones',
@@ -585,36 +641,49 @@ export async function createZone(c: Context) {
 
     if (!nom) return c.json({ error: 'Le nom de la zone est obligatoire' }, 400);
 
+    // Résoudre le parent_id
     let resolvedParentId = parent_id || null;
     if (!resolvedParentId && region) {
       const { data: parentZone } = await supabase
         .from('zones')
         .select('id')
-        .eq('nom', region)
-        .eq('type', 'region')
-        .single();
+        .ilike('nom', region)
+        .limit(1)
+        .maybeSingle();
       if (parentZone) resolvedParentId = parentZone.id;
     }
 
-    let resolvedGestionnaireId = null;
+    // Résoudre le gestionnaire_id
+    let resolvedGestionnaireId: string | null = null;
     if (gestionnaire) {
       const { data: gUser } = await supabase
         .from('users_julaba')
         .select('id')
         .eq('id', gestionnaire)
-        .single();
+        .maybeSingle();
       if (gUser) resolvedGestionnaireId = gUser.id;
     }
 
+    // Détecter la structure de la table via une lecture préalable
+    let sampleRow: any = null;
+    const { data: sample } = await supabase.from('zones').select('*').limit(1).maybeSingle();
+    if (sample) sampleRow = sample;
+
+    const baseInsert: any = {
+      nom,
+      type: type || (resolvedParentId ? 'commune' : 'region'),
+      parent_id: resolvedParentId,
+      gestionnaire_id: resolvedGestionnaireId,
+    };
+
+    // Ajouter la colonne d'activation selon ce qui existe
+    if (!sampleRow || 'actif' in sampleRow) baseInsert.actif = true;
+    else if ('is_active' in sampleRow) baseInsert.is_active = true;
+    else if ('active' in sampleRow) baseInsert.active = true;
+
     const { data: newZone, error: insertError } = await supabase
       .from('zones')
-      .insert({
-        nom,
-        type: type || (resolvedParentId ? 'commune' : 'region'),
-        parent_id: resolvedParentId,
-        gestionnaire_id: resolvedGestionnaireId,
-        actif: true,
-      })
+      .insert(baseInsert)
       .select()
       .single();
 
@@ -639,7 +708,7 @@ export async function createZone(c: Context) {
       success: true,
       zone: {
         id: newZone.id,
-        nom: newZone.nom,
+        nom: newZone.nom || nom,
         region: region || nom,
         gestionnaire: undefined,
         nbActeurs: 0,
@@ -665,7 +734,7 @@ export async function updateZone(c: Context) {
 
     const { data: zone, error: fetchError } = await supabase
       .from('zones')
-      .select('id, nom, gestionnaire_id, parent_id')
+      .select('*')
       .eq('id', zoneId)
       .single();
 
@@ -674,7 +743,7 @@ export async function updateZone(c: Context) {
     let resolvedParentId = parent_id !== undefined ? parent_id : zone.parent_id;
     if (region && !parent_id) {
       const { data: parentZone } = await supabase
-        .from('zones').select('id').eq('nom', region).eq('type', 'region').single();
+        .from('zones').select('id').ilike('nom', region).limit(1).maybeSingle();
       if (parentZone) resolvedParentId = parentZone.id;
     }
 
@@ -684,7 +753,7 @@ export async function updateZone(c: Context) {
         resolvedGestionnaireId = null;
       } else {
         const { data: gUser } = await supabase
-          .from('users_julaba').select('id').eq('id', gestionnaire).single();
+          .from('users_julaba').select('id').eq('id', gestionnaire).maybeSingle();
         if (gUser) resolvedGestionnaireId = gUser.id;
       }
     }
@@ -708,14 +777,14 @@ export async function updateZone(c: Context) {
       action: 'MODIFICATION zone',
       utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
       roleBO: auth.user.role,
-      acteurImpacte: zone.nom,
+      acteurImpacte: zone.nom || zone.name || zoneId,
       ancienneValeur: zone.gestionnaire_id || 'sans gestionnaire',
       nouvelleValeur: gestionnaire || 'sans gestionnaire',
       ip: c.req.header('x-forwarded-for') || 'unknown',
       module: 'Zones',
     });
 
-    return c.json({ success: true, zone: { id: updated.id, nom: updated.nom, statut: updated.actif ? 'active' : 'inactive' } });
+    return c.json({ success: true, zone: { id: updated.id, nom: updated.nom || nom, statut: isZoneActive(updated) ? 'active' : 'inactive' } });
   } catch (error) {
     console.log('[updateZone] Error:', error);
     return c.json({ error: 'Erreur serveur lors de la mise à jour de la zone' }, 500);
