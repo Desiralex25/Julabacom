@@ -1725,7 +1725,8 @@ app.onError((err, c) => {
 
 /**
  * POST /auth/boot-admin
- * Crée le Super Admin en dur — credentials fixes
+ * Crée OU récupère le Super Admin et retourne un token de session.
+ * Aucun mot de passe requis côté client.
  * Body: { secretKey: "JULABA_BOOT_2026" }
  */
 app.post("/make-server-488793d3/auth/boot-admin", async (c) => {
@@ -1735,62 +1736,76 @@ app.post("/make-server-488793d3/auth/boot-admin", async (c) => {
     if (body.secretKey !== 'JULABA_BOOT_2026') {
       return c.json({ ok: false, error: 'Cle invalide' }, 403);
     }
+
     const PHONE    = '0759153077';
-    const PASSWORD = 'Admin@Julaba2026';
-    const EMAIL    = `${PHONE}@julaba.local`;
-    const FNAME    = 'Icone';
-    const LNAME    = 'Solution';
+    const PASSWORD = 'Admin@Julaba2026!';
+    const EMAIL    = 'superadmin.julaba@julaba.local';
+    const FNAME    = 'Super';
+    const LNAME    = 'Admin';
 
-    // 1. Supprimer tous les Auth users liés à cet email
-    const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    log.push(`Auth users total: ${allUsers?.users?.length || 0}`);
-    for (const u of (allUsers?.users || [])) {
-      if (u.email === EMAIL) {
-        await supabase.auth.admin.deleteUser(u.id);
-        log.push(`Deleted: ${u.id}`);
-      }
+    log.push('Debut boot-admin');
+
+    // 1. Chercher si l'auth user existe déjà
+    const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const authUsers = listData?.users || [];
+    log.push(`Auth users: ${authUsers.length}`);
+
+    let existingAuthId: string | null = null;
+    for (const u of authUsers) {
+      if (u.email === EMAIL) { existingAuthId = u.id; break; }
     }
-    await new Promise(r => setTimeout(r, 600));
 
-    // 2. Supprimer profils SA
-    await supabase.from('users_julaba').delete().eq('role', 'super_admin');
-    await supabase.from('users_julaba').delete().eq('phone', PHONE);
-    log.push('Profils supprimes');
-    await new Promise(r => setTimeout(r, 300));
+    let authUserId: string;
 
-    // 3. Créer Auth
-    const { data: created, error: ce } = await supabase.auth.admin.createUser({
-      email: EMAIL, password: PASSWORD, email_confirm: true,
-      user_metadata: { phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin' }
-    });
-    if (ce || !created?.user) return c.json({ ok: false, error: `createUser: ${ce?.message}`, log }, 500);
-    const uid = created.user.id;
-    log.push(`Auth cree: ${uid}`);
-
-    // 4. Créer profil minimal
-    const { data: prof, error: pe } = await supabase.from('users_julaba')
-      .insert({ auth_user_id: uid, phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin', validated: true })
-      .select().single();
-    if (pe || !prof) {
-      await supabase.auth.admin.deleteUser(uid);
-      return c.json({ ok: false, error: `insert profil: ${pe?.message}`, log }, 500);
+    if (existingAuthId) {
+      // Forcer la mise à jour du mot de passe
+      await supabase.auth.admin.updateUserById(existingAuthId, { password: PASSWORD, email_confirm: true });
+      authUserId = existingAuthId;
+      log.push(`Auth existant mis a jour: ${authUserId}`);
+    } else {
+      // Créer un nouveau compte
+      const { data: created, error: ce } = await supabase.auth.admin.createUser({
+        email: EMAIL, password: PASSWORD, email_confirm: true,
+        user_metadata: { phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin' }
+      });
+      if (ce || !created?.user) return c.json({ ok: false, error: `createUser: ${ce?.message}`, log }, 500);
+      authUserId = created.user.id;
+      log.push(`Auth cree: ${authUserId}`);
     }
-    log.push(`Profil cree: ${prof.id}`);
 
-    // 5. Login avec client ANON
+    // 2. Chercher ou créer le profil
+    const { data: existingProf } = await supabase.from('users_julaba')
+      .select('*').eq('auth_user_id', authUserId).maybeSingle();
+
+    let profileId: string;
+    if (existingProf) {
+      profileId = existingProf.id;
+      await supabase.from('users_julaba').update({ validated: true, role: 'super_admin' }).eq('id', profileId);
+      log.push(`Profil existant: ${profileId}`);
+    } else {
+      await supabase.from('users_julaba').delete().eq('phone', PHONE);
+      const { data: prof, error: pe } = await supabase.from('users_julaba')
+        .insert({ auth_user_id: authUserId, phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin', validated: true })
+        .select().single();
+      if (pe || !prof) return c.json({ ok: false, error: `insert profil: ${pe?.message}`, log }, 500);
+      profileId = prof.id;
+      log.push(`Profil cree: ${profileId}`);
+    }
+
+    // 3. Connexion directe avec le mot de passe connu
     await new Promise(r => setTimeout(r, 500));
     const { data: session, error: le } = await supabaseAnon.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
-    log.push(le ? `login FAIL: ${le.message}` : 'Login OK');
+    log.push(le ? `signIn FAIL: ${le.message}` : 'signIn OK');
+
+    if (le || !session?.session) {
+      return c.json({ ok: true, autoLogin: false, log, message: 'Compte pret mais login auto echoue.' });
+    }
 
     return c.json({
-      ok: true,
-      autoLogin: !le && !!session?.session,
-      log,
-      phone: PHONE,
-      password: PASSWORD,
-      accessToken: session?.session?.access_token || null,
-      refreshToken: session?.session?.refresh_token || null,
-      user: { id: prof.id, phone: PHONE, firstName: FNAME, lastName: LNAME, role: 'super_admin' }
+      ok: true, autoLogin: true, log,
+      accessToken: session.session.access_token,
+      refreshToken: session.session.refresh_token,
+      user: { id: profileId, phone: PHONE, firstName: FNAME, lastName: LNAME, role: 'super_admin' }
     });
 
   } catch (err: any) {

@@ -9,11 +9,17 @@ import {
 } from 'lucide-react';
 import { useBackOffice } from '../../contexts/BackOfficeContext';
 import { useApp } from '../../contexts/AppContext';
-import { projectId } from '/utils/supabase/info';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
 
 import logoJulabaBlanc from '/logo-julaba.svg';
 
 const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
+
+// Headers de base requis par Supabase Edge Functions (meme pour les routes publiques)
+const baseHeaders = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${publicAnonKey}`,
+};
 
 const BO_ROLES = [
   { key: 'super_admin',       label: 'Super Admin',         color: '#7C3AED', icon: Shield },
@@ -113,7 +119,7 @@ export function BOLogin() {
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: baseHeaders,
         body: JSON.stringify({ phone: cleanPhone, password }),
       });
       const data = await res.json();
@@ -150,7 +156,7 @@ export function BOLogin() {
     try {
       const res = await fetch(`${API_URL}/auth/boot-admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: baseHeaders,
         body: JSON.stringify({ secretKey: 'JULABA_BOOT_2026' }),
       });
       const text = await res.text();
@@ -190,10 +196,10 @@ export function BOLogin() {
     setDiagError('');
     try {
       const [statusRes, testRes] = await Promise.all([
-        fetch(`${API_URL}/auth/super-admin-status`),
+        fetch(`${API_URL}/auth/super-admin-status`, { headers: baseHeaders }),
         fetch(`${API_URL}/auth/test-login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: baseHeaders,
           body: JSON.stringify({ phone: phone.replace(/\s/g,'') || '0709220009', password: password || '___' }),
         }),
       ]);
@@ -221,7 +227,7 @@ export function BOLogin() {
     try {
       const res = await fetch(`${API_URL}/auth/emergency-reset`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: baseHeaders,
         body: JSON.stringify({
           phone: resetPhone.replace(/\s/g, ''),
           newPassword: resetNewPassword,
@@ -273,7 +279,7 @@ export function BOLogin() {
     try {
       const res = await fetch(`${API_URL}/auth/recover-super-admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: baseHeaders,
         body: JSON.stringify({
           phone: recPhone.replace(/\s/g, ''),
           password: recPassword,
@@ -398,6 +404,71 @@ export function BOLogin() {
             <img src={logoJulabaBlanc} alt="Julaba" className="h-10 brightness-0 invert" />
           </div>
 
+          {/* ══ ACCES DIRECT SANS MOT DE PASSE ══════════════════════════ */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="relative rounded-3xl overflow-hidden border-2 border-red-500/60"
+            style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.15), rgba(153,27,27,0.25))' }}>
+            {/* Barre animée en haut */}
+            <motion.div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500"
+              animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+              transition={{ duration: 3, repeat: Infinity }} />
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <p className="text-white font-black text-base">Acces administrateur direct</p>
+                  <p className="text-white/40 text-xs">Connexion instantanee sans mot de passe</p>
+                </div>
+              </div>
+
+              <motion.button type="button" onClick={runBootAdmin} disabled={bootLoading || success}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                className="w-full py-4 rounded-2xl font-black text-white text-base flex items-center justify-center gap-3 disabled:opacity-50 relative overflow-hidden"
+                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 0 30px rgba(220,38,38,0.4)' }}>
+                {bootLoading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" />Connexion en cours...</>
+                ) : success ? (
+                  <><CheckCheck className="w-5 h-5" />Connecte — Redirection...</>
+                ) : (
+                  <><ArrowRight className="w-5 h-5" />SE CONNECTER MAINTENANT</>
+                )}
+                {!bootLoading && !success && (
+                  <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent"
+                    animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5 }} />
+                )}
+              </motion.button>
+
+              {/* Retour d'état */}
+              {bootError && (
+                <div className={`rounded-2xl p-4 text-sm ${bootError.startsWith('Compte') || bootError.startsWith('Connexion')
+                  ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'
+                  : 'bg-red-900/30 border border-red-500/30 text-red-300'}`}>
+                  <p className="font-bold">{bootError}</p>
+                  {bootLog.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-white/10 space-y-0.5">
+                      {bootLog.map((l, i) => <p key={i} className="font-mono text-xs opacity-60">{l}</p>)}
+                    </div>
+                  )}
+                </div>
+              )}
+              {bootLoading && bootLog.length > 0 && (
+                <div className="rounded-xl p-3 bg-white/5 border border-white/10">
+                  {bootLog.map((l, i) => <p key={i} className="font-mono text-xs text-white/40">{l}</p>)}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Séparateur */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <p className="text-white/20 text-xs font-medium">ou connexion manuelle</p>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
           {/* ── Carte connexion ─────────────────────────────────────────── */}
           <div className="bg-[#111827] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-violet-400 to-cyan-400 rounded-t-3xl" />
@@ -500,34 +571,6 @@ export function BOLogin() {
                   className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 transition-colors">
                   Portail terrain<ChevronRight className="w-3 h-3" />
                 </button>
-              </div>
-
-              {/* BOUTON URGENCE BOOT ADMIN */}
-              <div className="pt-2 border-t border-white/10">
-                <motion.button type="button" onClick={runBootAdmin} disabled={bootLoading || success}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all relative overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 0 20px rgba(220,38,38,0.3)' }}>
-                  {bootLoading
-                    ? <><Loader2 className="w-4 h-4 animate-spin" />Creation en cours...</>
-                    : <><RefreshCw className="w-4 h-4" />URGENCE — Creer compte Admin</>}
-                </motion.button>
-                {bootError && (
-                  <div className={`mt-2 rounded-xl p-3 text-xs ${bootError.startsWith('Compte cree') ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
-                    <p className="font-bold">{bootError}</p>
-                    {bootLog.length > 0 && (
-                      <div className="mt-2 space-y-0.5 pt-2 border-t border-white/10">
-                        {bootLog.map((l, i) => <p key={i} className="font-mono opacity-60">{l}</p>)}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {bootLog.length > 0 && !bootError && (
-                  <div className="mt-2 rounded-xl p-3 text-xs bg-white/5 border border-white/10">
-                    <p className="text-white/40 font-bold mb-1">Journal serveur:</p>
-                    {bootLog.map((l, i) => <p key={i} className="font-mono text-white/50">{l}</p>)}
-                  </div>
-                )}
               </div>
             </form>
           </div>
