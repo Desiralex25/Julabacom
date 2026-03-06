@@ -74,6 +74,11 @@ export function BOLogin() {
   const [recLoading, setRecLoading] = useState(false);
   const [recResult, setRecResult] = useState<any>(null);
 
+  // Boot Admin urgence
+  const [bootLoading, setBootLoading] = useState(false);
+  const [bootLog, setBootLog] = useState<string[]>([]);
+  const [bootError, setBootError] = useState('');
+
   useEffect(() => {
     const t = setInterval(() => setCurrentStat(s => (s + 1) % STATS.length), 3000);
     return () => clearInterval(t);
@@ -134,6 +139,47 @@ export function BOLogin() {
       setError('Erreur reseau. Verifiez votre connexion.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── BOOT ADMIN URGENCE
+  const runBootAdmin = async () => {
+    setBootLoading(true);
+    setBootLog([]);
+    setBootError('');
+    try {
+      const res = await fetch(`${API_URL}/auth/boot-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secretKey: 'JULABA_BOOT_2026' }),
+      });
+      const text = await res.text();
+      console.log('[boot-admin] raw response:', text);
+      let data: any;
+      try { data = JSON.parse(text); } catch { setBootError(`Reponse non-JSON: ${text.slice(0, 200)}`); return; }
+      setBootLog(data.log || []);
+      if (!data.ok) { setBootError(data.error || 'Echec inconnu'); return; }
+      // Succes
+      const user = data.user || { phone: data.phone, role: 'super_admin' };
+      if (data.autoLogin && data.accessToken) {
+        localStorage.setItem('julaba_access_token', data.accessToken);
+        if (data.refreshToken) localStorage.setItem('julaba_refresh_token', data.refreshToken);
+        localStorage.setItem('julaba_user', JSON.stringify(user));
+        setAppUser(user);
+        setBOUser(user);
+        setSuccess(true);
+        setTimeout(() => navigate('/backoffice/dashboard'), 1000);
+      } else {
+        // Login manuel avec les creds retournés
+        setPhone(data.phone || '0759153077');
+        setPassword(data.password || 'Admin@Julaba2026');
+        setShowPanel(false);
+        setBootError(`Compte cree! Connectez-vous avec: ${data.phone} / ${data.password}`);
+      }
+    } catch (err: any) {
+      setBootError(`Erreur reseau: ${err?.message}`);
+    } finally {
+      setBootLoading(false);
     }
   };
 
@@ -454,6 +500,34 @@ export function BOLogin() {
                   className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 transition-colors">
                   Portail terrain<ChevronRight className="w-3 h-3" />
                 </button>
+              </div>
+
+              {/* BOUTON URGENCE BOOT ADMIN */}
+              <div className="pt-2 border-t border-white/10">
+                <motion.button type="button" onClick={runBootAdmin} disabled={bootLoading || success}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all relative overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 0 20px rgba(220,38,38,0.3)' }}>
+                  {bootLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />Creation en cours...</>
+                    : <><RefreshCw className="w-4 h-4" />URGENCE — Creer compte Admin</>}
+                </motion.button>
+                {bootError && (
+                  <div className={`mt-2 rounded-xl p-3 text-xs ${bootError.startsWith('Compte cree') ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
+                    <p className="font-bold">{bootError}</p>
+                    {bootLog.length > 0 && (
+                      <div className="mt-2 space-y-0.5 pt-2 border-t border-white/10">
+                        {bootLog.map((l, i) => <p key={i} className="font-mono opacity-60">{l}</p>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {bootLog.length > 0 && !bootError && (
+                  <div className="mt-2 rounded-xl p-3 text-xs bg-white/5 border border-white/10">
+                    <p className="text-white/40 font-bold mb-1">Journal serveur:</p>
+                    {bootLog.map((l, i) => <p key={i} className="font-mono text-white/50">{l}</p>)}
+                  </div>
+                )}
               </div>
             </form>
           </div>

@@ -1723,4 +1723,80 @@ app.onError((err, c) => {
   }, 500);
 });
 
+/**
+ * POST /auth/boot-admin
+ * Crée le Super Admin en dur — credentials fixes
+ * Body: { secretKey: "JULABA_BOOT_2026" }
+ */
+app.post("/make-server-488793d3/auth/boot-admin", async (c) => {
+  const log: string[] = [];
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    if (body.secretKey !== 'JULABA_BOOT_2026') {
+      return c.json({ ok: false, error: 'Cle invalide' }, 403);
+    }
+    const PHONE    = '0759153077';
+    const PASSWORD = 'Admin@Julaba2026';
+    const EMAIL    = `${PHONE}@julaba.local`;
+    const FNAME    = 'Icone';
+    const LNAME    = 'Solution';
+
+    // 1. Supprimer tous les Auth users liés à cet email
+    const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    log.push(`Auth users total: ${allUsers?.users?.length || 0}`);
+    for (const u of (allUsers?.users || [])) {
+      if (u.email === EMAIL) {
+        await supabase.auth.admin.deleteUser(u.id);
+        log.push(`Deleted: ${u.id}`);
+      }
+    }
+    await new Promise(r => setTimeout(r, 600));
+
+    // 2. Supprimer profils SA
+    await supabase.from('users_julaba').delete().eq('role', 'super_admin');
+    await supabase.from('users_julaba').delete().eq('phone', PHONE);
+    log.push('Profils supprimes');
+    await new Promise(r => setTimeout(r, 300));
+
+    // 3. Créer Auth
+    const { data: created, error: ce } = await supabase.auth.admin.createUser({
+      email: EMAIL, password: PASSWORD, email_confirm: true,
+      user_metadata: { phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin' }
+    });
+    if (ce || !created?.user) return c.json({ ok: false, error: `createUser: ${ce?.message}`, log }, 500);
+    const uid = created.user.id;
+    log.push(`Auth cree: ${uid}`);
+
+    // 4. Créer profil minimal
+    const { data: prof, error: pe } = await supabase.from('users_julaba')
+      .insert({ auth_user_id: uid, phone: PHONE, first_name: FNAME, last_name: LNAME, role: 'super_admin', validated: true })
+      .select().single();
+    if (pe || !prof) {
+      await supabase.auth.admin.deleteUser(uid);
+      return c.json({ ok: false, error: `insert profil: ${pe?.message}`, log }, 500);
+    }
+    log.push(`Profil cree: ${prof.id}`);
+
+    // 5. Login avec client ANON
+    await new Promise(r => setTimeout(r, 500));
+    const { data: session, error: le } = await supabaseAnon.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
+    log.push(le ? `login FAIL: ${le.message}` : 'Login OK');
+
+    return c.json({
+      ok: true,
+      autoLogin: !le && !!session?.session,
+      log,
+      phone: PHONE,
+      password: PASSWORD,
+      accessToken: session?.session?.access_token || null,
+      refreshToken: session?.session?.refresh_token || null,
+      user: { id: prof.id, phone: PHONE, firstName: FNAME, lastName: LNAME, role: 'super_admin' }
+    });
+
+  } catch (err: any) {
+    log.push(`CATCH: ${err?.message || String(err)}`);
+    return c.json({ ok: false, error: err?.message || 'Erreur serveur', log }, 500);
+  }
+});
+
 Deno.serve(app.fetch);
