@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import * as boAPI from '/src/imports/backoffice-api';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
@@ -319,57 +319,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-
-    async function loadBackOfficeData() {
-      setLoading(true);
-      try {
-        // Charger toutes les données en parallèle
-        const [
-          acteursRes,
-          dossiersRes,
-          transactionsRes,
-          zonesRes,
-          commissionsRes,
-          auditRes,
-          usersRes,
-          institutionsRes,
-          missionsRes,
-        ] = await Promise.all([
-          boAPI.fetchActeurs().catch(e => { console.error('fetchActeurs:', e.message); return { acteurs: [] }; }),
-          boAPI.fetchDossiers().catch(e => { console.error('fetchDossiers:', e.message); return { dossiers: [] }; }),
-          boAPI.fetchTransactions().catch(e => { console.error('fetchTransactions:', e.message); return { transactions: [] }; }),
-          boAPI.fetchZones().catch(e => { console.error('fetchZones:', e.message); return { zones: [] }; }),
-          boAPI.fetchCommissions().catch(e => { console.error('fetchCommissions:', e.message); return { commissions: [] }; }),
-          boAPI.fetchAuditLogs().catch(e => { console.error('fetchAuditLogs:', e.message); return { logs: [] }; }),
-          boAPI.fetchBOUsers().catch(e => { console.error('fetchBOUsers:', e.message); return { users: [] }; }),
-          boAPI.fetchInstitutions().catch(e => { console.error('fetchInstitutions:', e.message); return { institutions: [] }; }),
-          boAPI.fetchMissions().catch(e => { console.error('fetchMissions:', e.message); return { missions: [] }; }),
-        ]);
-
-        setActeurs(acteursRes.acteurs);
-        setDossiers(dossiersRes.dossiers);
-        setTransactions(transactionsRes.transactions);
-        setZones(zonesRes.zones);
-        setCommissions(commissionsRes.commissions);
-        setAuditLogs(auditRes.logs);
-        setBOUsers(usersRes.users);
-        setInstitutions(institutionsRes.institutions);
-        setMissions(missionsRes.missions);
-
-        console.log('Donnees Back-Office chargees depuis Supabase');
-      } catch (error) {
-        console.error('Erreur chargement donnees BO:', error);
-        const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-        if (msg !== 'SESSION_EXPIRED') {
-          toast.error('Erreur de chargement des donnees Back-Office', { description: msg });
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadBackOfficeData();
-  }, [boUser]);
+  }, [boUser?.id]);
 
   const hasPermission = (permission: string): boolean => {
     if (!boUser) return false;
@@ -377,98 +328,120 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   };
 
   const addAuditLog = (log: Omit<BOAuditLog, 'id' | 'date'>) => {
-    const newLog: BOAuditLog = {
-      ...log,
-      id: `l${Date.now()}`,
-      date: new Date().toISOString(),
-    };
+    const newLog: BOAuditLog = { ...log, id: `l${Date.now()}`, date: new Date().toISOString() };
     setAuditLogs(prev => [newLog, ...prev]);
+    // Persister dans Supabase de manière asynchrone (best effort)
+    supabase.from('audit_logs').insert({
+      action: log.action,
+      description: `${log.acteurImpacte || ''}: ${log.ancienneValeur || ''} → ${log.nouvelleValeur || ''}`.trim(),
+      severity: 'info',
+      entity_type: log.module,
+      metadata: log,
+    }).then(({ error }) => { if (error) console.warn('[BO] audit_log insert:', error.message); });
   };
 
   const updateActeurStatut = async (id: string, statut: BOActeur['statut'], logAction?: string) => {
     try {
-      await boAPI.updateActeurStatut(id, statut, logAction);
-      
-      // Mettre à jour l'état local
-      setActeurs(prev => prev.map(a => a.id === id ? { ...a, statut } : a));
-      
-      // Recharger les audit logs
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      const validated = statut === 'actif';
+      const { error } = await supabase.from('users_julaba').update({ validated }).eq('id', id);
+      if (error) throw new Error(error.message);
+      setActeurs(prev => prev.map(a => a.id === id ? { ...a, statut, validated } : a));
+      // Audit log local
+      const acteur = acteurs.find(a => a.id === id);
+      addAuditLog({ action: logAction || `STATUT → ${statut}`, utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: acteur ? `${acteur.prenoms} ${acteur.nom}` : id, ancienneValeur: acteur?.statut, nouvelleValeur: statut, ip: 'frontend', module: 'Acteurs' });
     } catch (error) {
       console.error('Erreur updateActeurStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour statut acteur', { description: msg });
+      toast.error('Echec mise a jour statut acteur', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateDossierStatut = async (id: string, statut: BODossier['statut'], motif?: string) => {
     try {
-      await boAPI.updateDossierStatut(id, statut, motif);
+      const statutMap: Record<string, string> = { approved: 'valide', rejected: 'rejete', complement: 'complement', pending: 'en_attente', draft: 'draft' };
+      const updateData: any = { statut: statutMap[statut] || statut };
+      if (motif) updateData.motif_rejet = motif;
+      const { error } = await supabase.from('identifications').update(updateData).eq('id', id);
+      if (error) throw new Error(error.message);
+      // Si approuvé → valider l'acteur
+      if (statut === 'approved') {
+        const dossier = dossiers.find(d => d.id === id);
+        if (dossier?.acteurId) await supabase.from('users_julaba').update({ validated: true }).eq('id', dossier.acteurId);
+      }
       setDossiers(prev => prev.map(d => d.id === id ? { ...d, statut, motifRejet: motif, dateModification: new Date().toISOString().split('T')[0] } : d));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      addAuditLog({ action: `${statut.toUpperCase()} dossier`, utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: id, ancienneValeur: dossiers.find(d => d.id === id)?.statut, nouvelleValeur: statut, ip: 'frontend', module: 'Enrolement' });
     } catch (error) {
       console.error('Erreur updateDossierStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour dossier', { description: msg });
+      toast.error('Echec mise a jour dossier', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateZoneStatut = async (id: string, statut: BOZone['statut']) => {
     try {
-      await boAPI.updateZoneStatut(id, statut);
+      const newActif = statut === 'active';
+      // Détecter la colonne actif
+      const zone = zones.find(z => z.id === id);
+      const updateData: any = { actif: newActif }; // colonne par défaut
+      const { error } = await supabase.from('zones').update(updateData).eq('id', id);
+      if (error) {
+        // Essayer is_active
+        const { error: e2 } = await supabase.from('zones').update({ is_active: newActif }).eq('id', id);
+        if (e2) throw new Error(e2.message);
+      }
       setZones(prev => prev.map(z => z.id === id ? { ...z, statut } : z));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      addAuditLog({ action: newActif ? 'ACTIVATION zone' : 'DÉSACTIVATION zone', utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: zone?.nom || id, ancienneValeur: zone?.statut, nouvelleValeur: statut, ip: 'frontend', module: 'Zones' });
     } catch (error) {
       console.error('Erreur updateZoneStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour zone', { description: msg });
+      toast.error('Echec mise a jour zone', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const addZone = async (data: { nom: string; region: string; gestionnaire?: string }) => {
     try {
-      const { zone } = await boAPI.createZone(data);
+      // Résoudre parent_id
+      const { data: parent } = await supabase.from('zones').select('id').ilike('nom', data.region).limit(1).maybeSingle();
+      const insertData: any = {
+        nom: data.nom,
+        type: parent ? 'commune' : 'region',
+        parent_id: parent?.id || null,
+        actif: true,
+      };
+      const { data: newZone, error } = await supabase.from('zones').insert(insertData).select().single();
+      if (error) throw new Error(error.message);
+      const zone: BOZone = { id: newZone.id, nom: newZone.nom, region: data.region, gestionnaire: data.gestionnaire, nbActeurs: 0, nbIdentificateurs: 0, volumeTotal: 0, tauxActivite: 0, statut: 'active' };
       setZones(prev => [...prev, zone]);
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      addAuditLog({ action: 'CRÉATION zone', utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: data.nom, ancienneValeur: '-', nouvelleValeur: data.region, ip: 'frontend', module: 'Zones' });
     } catch (error) {
       console.error('Erreur addZone:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation zone', { description: msg });
+      toast.error('Echec creation zone', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateZoneData = async (id: string, data: { nom?: string; region?: string; gestionnaire?: string }) => {
     try {
-      const { zone } = await boAPI.updateZone(id, data);
-      setZones(prev => prev.map(z => z.id === id ? zone : z));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      const updateData: any = {};
+      if (data.nom) updateData.nom = data.nom;
+      const { error } = await supabase.from('zones').update(updateData).eq('id', id);
+      if (error) throw new Error(error.message);
+      setZones(prev => prev.map(z => z.id === id ? { ...z, ...data } : z));
     } catch (error) {
       console.error('Erreur updateZoneData:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour zone', { description: msg });
+      toast.error('Echec mise a jour zone', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateCommissionStatut = async (id: string, statut: BOCommission['statut']) => {
     try {
-      await boAPI.updateCommissionStatut(id, statut);
+      const { error } = await supabase.from('commissions').update({ statut }).eq('id', id);
+      if (error) throw new Error(error.message);
       setCommissions(prev => prev.map(c => c.id === id ? { ...c, statut } : c));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateCommissionStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour commission', { description: msg });
+      toast.error('Echec mise a jour commission', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -477,26 +450,22 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     try {
       const { user: newUser } = await boAPI.createBOUser(user);
       setBOUsers(prev => [...prev, newUser]);
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      addAuditLog({ action: 'CRÉATION utilisateur BO', utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: `${user.prenom} ${user.nom}`, ancienneValeur: '-', nouvelleValeur: user.role, ip: 'frontend', module: 'Utilisateurs' });
     } catch (error) {
       console.error('Erreur addBOUser:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation utilisateur BO', { description: msg });
+      toast.error('Echec creation utilisateur BO', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateBOUserActif = async (id: string, actif: boolean) => {
     try {
-      await boAPI.updateBOUserActif(id, actif);
+      const { error } = await supabase.from('users_julaba').update({ validated: actif }).eq('id', id);
+      if (error) throw new Error(error.message);
       setBOUsers(prev => prev.map(u => u.id === id ? { ...u, actif } : u));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateBOUserActif:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour utilisateur', { description: msg });
+      toast.error('Echec mise a jour utilisateur', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -505,12 +474,9 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     try {
       const { institution } = await boAPI.createInstitution(inst);
       setInstitutions(prev => [...prev, institution]);
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur addInstitution:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation institution', { description: msg });
+      toast.error('Echec creation institution', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -519,12 +485,9 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     try {
       await boAPI.updateInstitutionModules(id, modules);
       setInstitutions(prev => prev.map(i => i.id === id ? { ...i, modules } : i));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateInstitutionModules:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour modules', { description: msg });
+      toast.error('Echec mise a jour modules', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -533,12 +496,9 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     try {
       await boAPI.updateInstitutionStatut(id, statut);
       setInstitutions(prev => prev.map(i => i.id === id ? { ...i, statut } : i));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateInstitutionStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour institution', { description: msg });
+      toast.error('Echec mise a jour institution', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -547,40 +507,43 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     try {
       await boAPI.deleteInstitution(id);
       setInstitutions(prev => prev.filter(i => i.id !== id));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur deleteInstitution:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec suppression institution', { description: msg });
+      toast.error('Echec suppression institution', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const addMission = async (data: any) => {
     try {
-      const { mission } = await boAPI.createMission(data);
+      const insertData: any = {
+        titre: data.titre,
+        description: data.type || 'Mission créée par le Back-Office',
+        objectif: data.objectif || 100,
+        recompense: 0,
+        progres: 0,
+        statut: 'en_cours',
+      };
+      const { data: newMission, error } = await supabase.from('missions').insert(insertData).select().single();
+      if (error) throw new Error(error.message);
+      const mission = mapMissions([newMission])[0];
       setMissions(prev => [mission, ...prev]);
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      addAuditLog({ action: 'CRÉATION mission', utilisateurBO: boUser ? `${boUser.prenom} ${boUser.nom}` : 'BO', roleBO: boUser?.role || 'super_admin', acteurImpacte: data.titre, ancienneValeur: '-', nouvelleValeur: 'en_cours', ip: 'frontend', module: 'Missions' });
     } catch (error) {
       console.error('Erreur addMission:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation mission', { description: msg });
+      toast.error('Echec creation mission', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
 
   const updateMissionStatut = async (id: string, statut: string) => {
     try {
-      const { mission } = await boAPI.updateMissionStatut(id, statut);
-      setMissions(prev => prev.map(m => m.id === id ? mission : m));
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      const { error } = await supabase.from('missions').update({ statut }).eq('id', id);
+      if (error) throw new Error(error.message);
+      setMissions(prev => prev.map(m => m.id === id ? { ...m, statut } : m));
     } catch (error) {
       console.error('Erreur updateMissionStatut:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour mission', { description: msg });
+      toast.error('Echec mise a jour mission', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -588,15 +551,362 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   const createIdentificateur = async (data: { prenom: string; nom: string; telephone: string; cni?: string; region?: string; zoneId?: string; objectifMensuel?: string; institutionRattachee?: string }) => {
     try {
       await boAPI.createIdentificateur(data);
-      const { logs } = await boAPI.fetchAuditLogs();
-      setAuditLogs(logs);
+      // Recharger les acteurs
+      const { data: users } = await supabase.from('users_julaba').select('*').in('role', ['marchand', 'producteur', 'cooperative', 'institution', 'identificateur']).order('created_at', { ascending: false });
+      if (users) {
+        setActeurs(users.map((u: any): BOActeur => ({
+          id: u.id, nom: u.last_name || '', prenoms: u.first_name || '', telephone: u.phone,
+          type: u.role, region: u.region || '', commune: u.commune || '',
+          statut: u.validated ? 'actif' : 'en_attente', dateInscription: u.created_at,
+          score: u.score || 0, transactionsTotal: 0, volumeTotal: 0, validated: Boolean(u.validated),
+          zone: u.region, activite: u.activity, email: u.email || `${u.phone}@julaba.local`, cni: u.cni_number,
+        })));
+      }
     } catch (error) {
       console.error('Erreur createIdentificateur:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
-      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation identificateur', { description: msg });
+      toast.error('Echec creation identificateur', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
+
+  // ✅ DIRECT SUPABASE — Contourne l'Edge Function et les problèmes de token JWT
+  // Interroge les tables Supabase directement depuis le client frontend
+  async function loadBackOfficeData() {
+    setLoading(true);
+    const errors: string[] = [];
+
+    try {
+      console.log('[BO] Chargement direct depuis Supabase...');
+
+      // ── ZONES ─────────────────────────────────────────────────────────────
+      const zonesPromise = supabase
+        .from('zones')
+        .select('*')
+        .order('nom', { ascending: true })
+        .then(({ data, error }) => {
+          if (error) { console.error('[BO] zones:', error.message); errors.push('zones'); return []; }
+          console.log(`[BO] zones: ${(data || []).length} lignes`);
+          return (data || []).map((row: any) => ({
+            id: row.id,
+            nom: row.nom || row.name || '',
+            region: row.region || row.parent_nom || (row.type === 'region' ? (row.nom || '') : ''),
+            gestionnaire: row.gestionnaire_nom || undefined,
+            nbActeurs: row.nb_acteurs || 0,
+            nbIdentificateurs: row.nb_identificateurs || 0,
+            volumeTotal: row.volume_total || 0,
+            tauxActivite: row.taux_activite || 0,
+            statut: (row.actif !== undefined ? Boolean(row.actif) : row.is_active !== undefined ? Boolean(row.is_active) : true) ? 'active' : 'inactive',
+          })) as BOZone[];
+        });
+
+      // ── ACTEURS (users_julaba roles terrain) ──────────────────────────────
+      const acteursPromise = supabase
+        .from('users_julaba')
+        .select('*')
+        .in('role', ['marchand', 'producteur', 'cooperative', 'institution', 'identificateur'])
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) { console.error('[BO] acteurs:', error.message); errors.push('acteurs'); return []; }
+          console.log(`[BO] acteurs: ${(data || []).length} lignes`);
+          return (data || []).map((u: any): BOActeur => ({
+            id: u.id,
+            nom: u.last_name || '',
+            prenoms: u.first_name || '',
+            telephone: u.phone,
+            type: u.role,
+            region: u.region || '',
+            commune: u.commune || '',
+            statut: u.validated ? 'actif' : 'en_attente',
+            dateInscription: u.created_at,
+            score: u.score || 0,
+            transactionsTotal: 0,
+            volumeTotal: 0,
+            validated: Boolean(u.validated),
+            zone: u.region,
+            activite: u.activity,
+            email: u.email || `${u.phone}@julaba.local`,
+            cni: u.cni_number,
+          }));
+        });
+
+      // ── DOSSIERS (identifications) ────────────────────────────────────────
+      const dossiersPromise = supabase
+        .from('identifications')
+        .select('*, acteur:users_julaba!acteur_id(id, first_name, last_name, role, region), identificateur:users_julaba!identificateur_id(id, first_name, last_name)')
+        .order('created_at', { ascending: false })
+        .limit(200)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[BO] dossiers (avec joins):', error.message);
+            // Fallback sans joins
+            return supabase.from('identifications').select('*').order('created_at', { ascending: false }).limit(200)
+              .then(({ data: d2, error: e2 }) => {
+                if (e2) { errors.push('dossiers'); return []; }
+                return (d2 || []).map((row: any): BODossier => ({
+                  id: row.id,
+                  acteurId: row.acteur_id || '',
+                  acteurNom: row.acteur_nom || 'Inconnu',
+                  acteurType: (row.type_acteur || 'marchand') as BOActeur['type'],
+                  statut: mapDossierStatut(row.statut),
+                  dateCreation: row.created_at || row.date_identification,
+                  dateModification: row.updated_at || row.created_at,
+                  identificateurNom: row.identificateur_nom || 'Non assigné',
+                  region: row.region || '',
+                  motifRejet: row.motif_rejet,
+                  documents: Array.isArray(row.documents) ? row.documents : [],
+                }));
+              });
+          }
+          console.log(`[BO] dossiers: ${(data || []).length} lignes`);
+          return (data || []).map((row: any): BODossier => {
+            const acteur = row.acteur as any;
+            const ident = row.identificateur as any;
+            return {
+              id: row.id,
+              acteurId: acteur?.id || row.acteur_id || '',
+              acteurNom: acteur ? `${acteur.first_name || ''} ${acteur.last_name || ''}`.trim() : (row.acteur_nom || 'Inconnu'),
+              acteurType: (acteur?.role || row.type_acteur || 'marchand') as BOActeur['type'],
+              statut: mapDossierStatut(row.statut),
+              dateCreation: row.created_at || row.date_identification,
+              dateModification: row.updated_at || row.created_at,
+              identificateurNom: ident ? `${ident.first_name || ''} ${ident.last_name || ''}`.trim() : (row.identificateur_nom || 'Non assigné'),
+              region: acteur?.region || row.region || '',
+              motifRejet: row.motif_rejet,
+              documents: Array.isArray(row.documents) ? row.documents : [],
+            };
+          });
+        });
+
+      // ── TRANSACTIONS (commandes) ──────────────────────────────────────────
+      const txPromise = supabase
+        .from('commandes')
+        .select('*, user:users_julaba!user_id(first_name, last_name, role, region)')
+        .order('created_at', { ascending: false })
+        .limit(500)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[BO] transactions (avec joins):', error.message);
+            return supabase.from('commandes').select('*').order('created_at', { ascending: false }).limit(500)
+              .then(({ data: d2, error: e2 }) => {
+                if (e2) { errors.push('transactions'); return []; }
+                return mapTransactions(d2 || []);
+              });
+          }
+          console.log(`[BO] transactions: ${(data || []).length} lignes`);
+          return mapTransactions(data || []);
+        });
+
+      // ── COMMISSIONS ───────────────────────────────────────────────────────
+      const commissionsPromise = supabase
+        .from('commissions')
+        .select('*, identificateur:users_julaba!identificateur_id(first_name, last_name)')
+        .order('created_at', { ascending: false })
+        .limit(300)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[BO] commissions (avec joins):', error.message);
+            return supabase.from('commissions').select('*').order('created_at', { ascending: false }).limit(300)
+              .then(({ data: d2, error: e2 }) => {
+                if (e2) { errors.push('commissions'); return []; }
+                return mapCommissions(d2 || []);
+              });
+          }
+          console.log(`[BO] commissions: ${(data || []).length} lignes`);
+          return mapCommissions(data || []);
+        });
+
+      // ── AUDIT LOGS ────────────────────────────────────────────────────────
+      const auditPromise = supabase
+        .from('audit_logs')
+        .select('*, user:users_julaba!user_id(first_name, last_name, role)')
+        .order('created_at', { ascending: false })
+        .limit(500)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[BO] audit_logs (avec joins):', error.message);
+            return supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(500)
+              .then(({ data: d2, error: e2 }) => {
+                if (e2) { errors.push('audit_logs'); return []; }
+                return mapAuditLogs(d2 || []);
+              });
+          }
+          console.log(`[BO] audit_logs: ${(data || []).length} lignes`);
+          return mapAuditLogs(data || []);
+        });
+
+      // ── UTILISATEURS BO ───────────────────────────────────────────────────
+      const boUsersPromise = supabase
+        .from('users_julaba')
+        .select('*')
+        .in('role', ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'])
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (error) { console.error('[BO] bo_users:', error.message); errors.push('bo_users'); return []; }
+          console.log(`[BO] bo_users: ${(data || []).length} lignes`);
+          return (data || []).map((u: any): BOUser => ({
+            id: u.id,
+            nom: u.last_name || '',
+            prenom: u.first_name || '',
+            email: u.email || `${u.phone}@julaba.ci`,
+            role: u.role,
+            region: u.region,
+            lastLogin: u.last_login_at || u.created_at,
+            actif: Boolean(u.validated),
+          }));
+        });
+
+      // ── MISSIONS ──────────────────────────────────────────────────────────
+      const missionsPromise = supabase
+        .from('missions')
+        .select('*, identificateur:users_julaba!identificateur_id(first_name, last_name)')
+        .order('created_at', { ascending: false })
+        .limit(200)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('[BO] missions (avec joins):', error.message);
+            return supabase.from('missions').select('*').order('created_at', { ascending: false }).limit(200)
+              .then(({ data: d2, error: e2 }) => {
+                if (e2) { errors.push('missions'); return []; }
+                return mapMissions(d2 || []);
+              });
+          }
+          console.log(`[BO] missions: ${(data || []).length} lignes`);
+          return mapMissions(data || []);
+        });
+
+      // ── INSTITUTIONS (KV Store) ────────────────────────────────────────────
+      const institutionsPromise = boAPI.fetchInstitutions()
+        .then(r => r.institutions)
+        .catch(() => [] as InstitutionBO[]);
+
+      // Exécuter tout en parallèle
+      const [zonesData, acteursData, dossiersData, txData, commissionsData, auditData, boUsersData, missionsData, institutionsData] = await Promise.all([
+        zonesPromise, acteursPromise, dossiersPromise, txPromise, commissionsPromise, auditPromise, boUsersPromise, missionsPromise, institutionsPromise,
+      ]);
+
+      setZones(zonesData);
+      setActeurs(acteursData);
+      setDossiers(dossiersData);
+      setTransactions(txData);
+      setCommissions(commissionsData);
+      setAuditLogs(auditData);
+      setBOUsers(boUsersData);
+      setMissions(missionsData);
+      setInstitutions(institutionsData);
+
+      if (errors.length > 0) {
+        console.warn('[BO] Tables avec erreurs:', errors.join(', '));
+      }
+      console.log('[BO] Chargement termine —', {
+        zones: zonesData.length,
+        acteurs: acteursData.length,
+        dossiers: dossiersData.length,
+        transactions: txData.length,
+        commissions: commissionsData.length,
+        audit: auditData.length,
+        boUsers: boUsersData.length,
+        missions: missionsData.length,
+      });
+
+    } catch (error) {
+      console.error('[BO] Erreur chargement:', error);
+      toast.error('Erreur de chargement des données', {
+        description: error instanceof Error ? error.message : 'Vérifiez la console pour plus de détails',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ─── Helpers de mapping ─────────────────────────────────────────────────────
+
+  function mapDossierStatut(statut: string): BODossier['statut'] {
+    const map: Record<string, BODossier['statut']> = {
+      en_attente: 'pending', pending: 'pending',
+      valide: 'approved', approved: 'approved', approuve: 'approved',
+      rejete: 'rejected', rejected: 'rejected',
+      complement: 'complement',
+      draft: 'draft', brouillon: 'draft',
+    };
+    return map[statut] || 'pending';
+  }
+
+  function mapTransactions(rows: any[]): BOTransaction[] {
+    const statutMap: Record<string, BOTransaction['statut']> = {
+      en_attente: 'en_cours', confirmee: 'validee', livree: 'validee',
+      annulee: 'annulee', litige: 'litige', validee: 'validee',
+    };
+    return rows.map((row: any) => {
+      const user = row.user as any;
+      const montant = parseFloat(row.total || row.prix || row.montant || 0);
+      return {
+        id: row.id,
+        acteurNom: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (row.acteur_nom || 'Inconnu'),
+        acteurType: user?.role || row.acteur_type || 'marchand',
+        produit: row.produit || '',
+        quantite: String(row.quantite || ''),
+        montant,
+        commission: Math.round(montant * 0.02 * 100) / 100,
+        statut: statutMap[row.statut] || 'en_cours',
+        date: row.created_at || row.date_creation || new Date().toISOString(),
+        region: user?.region || row.region || '',
+        modePaiement: row.mode_paiement || 'wallet',
+      };
+    });
+  }
+
+  function mapCommissions(rows: any[]): BOCommission[] {
+    return rows.map((row: any) => {
+      const ident = row.identificateur as any;
+      return {
+        id: row.id,
+        identificateurNom: ident
+          ? `${ident.first_name || ''} ${ident.last_name || ''}`.trim()
+          : (row.identificateur_nom || 'Inconnu'),
+        periode: row.periode || (row.created_at ? row.created_at.slice(0, 7) : ''),
+        nbDossiers: row.nb_dossiers || 1,
+        montantTotal: parseFloat(row.montant || row.montant_total || 0),
+        statut: (row.statut as BOCommission['statut']) || 'en_attente',
+        date: row.created_at,
+      };
+    });
+  }
+
+  function mapAuditLogs(rows: any[]): BOAuditLog[] {
+    return rows.map((row: any) => {
+      const user = row.user as any;
+      const meta = (row.metadata as any) || {};
+      return {
+        id: row.id,
+        action: row.action,
+        utilisateurBO: meta.utilisateurBO || (user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : 'Système'),
+        roleBO: (meta.roleBO || user?.role || 'analyste') as BORoleType,
+        acteurImpacte: meta.acteurImpacte || row.description || '',
+        ancienneValeur: meta.ancienneValeur || '',
+        nouvelleValeur: meta.nouvelleValeur || '',
+        date: row.created_at,
+        ip: meta.ip || 'unknown',
+        module: meta.module || row.entity_type || 'Système',
+      };
+    });
+  }
+
+  function mapMissions(rows: any[]): any[] {
+    return rows.map((row: any) => {
+      const ident = row.identificateur as any;
+      return {
+        id: row.id,
+        titre: row.titre || row.description || 'Mission sans titre',
+        type: row.type || 'identification',
+        realise: row.progres || row.realise || 0,
+        objectif: row.objectif || 100,
+        statut: row.statut || 'en_cours',
+        participantsCount: row.participants_count || 1,
+        creePar: ident ? `${ident.first_name || ''} ${ident.last_name || ''}`.trim() : (row.cree_par || 'Système'),
+        dateCreation: row.created_at,
+      };
+    });
+  }
 
   return (
     <BackOfficeContext.Provider value={{

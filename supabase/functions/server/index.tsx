@@ -1656,6 +1656,29 @@ app.post("/make-server-488793d3/api/stt/transcribe", stt.transcribeAudio);
 // ROUTES BACK-OFFICE
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Diagnostic public (sans auth) — teste la connexion DB ───────────────────
+app.get("/make-server-488793d3/backoffice/ping", async (c) => {
+  try {
+    const { createClient } = await import("npm:@supabase/supabase-js@2");
+    const supa = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+    const { data: zones, error: zonesErr } = await supa.from('zones').select('id, nom').limit(5);
+    const { data: users, error: usersErr } = await supa.from('users_julaba').select('id, role').limit(5);
+    const { count: zonesCount } = await supa.from('zones').select('*', { count: 'exact', head: true });
+    return c.json({
+      ok: true,
+      timestamp: new Date().toISOString(),
+      supabaseUrl: (Deno.env.get('SUPABASE_URL') ?? '').slice(0, 50) + '...',
+      zones: { total: zonesCount, error: zonesErr?.message || null, sample: (zones || []).map((z: any) => z.nom) },
+      users: { count: (users || []).length, error: usersErr?.message || null, roles: (users || []).map((u: any) => u.role) },
+    });
+  } catch (err) {
+    return c.json({ ok: false, error: String(err) }, 500);
+  }
+});
+
 // Acteurs
 app.get("/make-server-488793d3/backoffice/acteurs", bo.getActeurs);
 app.patch("/make-server-488793d3/backoffice/acteurs/:id/statut", bo.updateActeurStatut);
