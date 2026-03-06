@@ -13,8 +13,8 @@ import { supabase } from '../../services/supabaseClient';
 
 import logoJulabaBlanc from '/logo-julaba.svg';
 const tantieSagesseImg = '/images/tantie-sagesse.svg';
-import tantieImage from 'figma:asset/bbbed5e7a47cbae1386ba85eae6a6f46b77564ff.png';
-import newLogoImage from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
+const tantieImage = '/images/tantie-sagesse.png';
+const newLogoImage = '/images/logo-julaba-blanc.svg';
 
 const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 const tantieSagesseAvatar = '/images/tantie-sagesse.png';
-import tantiePortrait from 'figma:asset/29101683deddffc08ca005d5e1ca2ad8906b7bd4.png';
+const tantiePortrait = '/images/tantie-sagesse.png';
 
 interface TantieSagesseProps {
   isVisible: boolean;
