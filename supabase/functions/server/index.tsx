@@ -268,17 +268,37 @@ app.post("/make-server-488793d3/auth/login", async (c) => {
     }
 
     // Récupérer le profil utilisateur complet
-    const { data: userProfile, error: profileError } = await supabase
+    // Tentative 1 : par auth_user_id (lien direct)
+    let { data: userProfile, error: profileError } = await supabase
       .from('users_julaba')
       .select('*')
       .eq('auth_user_id', authData.user.id)
       .single();
 
+    // Tentative 2 : fallback par téléphone si auth_user_id absent ou désynchronisé
     if (profileError || !userProfile) {
-      console.log('Profile fetch error:', profileError);
-      return c.json({ 
-        error: 'Profil utilisateur introuvable' 
-      }, 404);
+      console.log(`[LOGIN] Profil non trouvé par auth_user_id (${authData.user.id}), tentative par téléphone...`);
+      const { data: profileByPhone, error: phoneError } = await supabase
+        .from('users_julaba')
+        .select('*')
+        .eq('phone', phone)
+        .single();
+
+      if (phoneError || !profileByPhone) {
+        console.log('[LOGIN] Profil introuvable par téléphone aussi:', phoneError?.message);
+        return c.json({ 
+          error: 'Profil utilisateur introuvable. Contacte le support Jùlaba.' 
+        }, 404);
+      }
+
+      // Auto-réparation : resynchroniser auth_user_id pour les prochaines connexions
+      console.log(`[LOGIN] Profil trouvé par téléphone (id: ${profileByPhone.id}), mise à jour auth_user_id -> ${authData.user.id}`);
+      await supabase
+        .from('users_julaba')
+        .update({ auth_user_id: authData.user.id })
+        .eq('id', profileByPhone.id);
+
+      userProfile = { ...profileByPhone, auth_user_id: authData.user.id };
     }
 
     // Mettre à jour last_login_at
@@ -656,16 +676,34 @@ app.post("/make-server-488793d3/auth/test-login", async (c) => {
       password,
     });
 
+    // Test 4 : recherche par téléphone dans users_julaba
+    const { data: profileByPhone } = await supabase
+      .from('users_julaba')
+      .select('id, phone, role, auth_user_id, validated')
+      .eq('phone', phone)
+      .single();
+
     return c.json({
       success: true,
       diagnosis: {
         profileExists,
         profileRole: profile?.role || null,
+        profileAuthUserId: profile?.auth_user_id || null,
         authUserIdLinked: !!authUserId,
         authUserExists,
+        authUserExpectedId: authData?.user?.id || null,
+        authUserIdMatch: profile?.auth_user_id === authData?.user?.id,
         loginSuccess: !!loginData?.session,
         loginError: loginError?.message || null,
         loginErrorCode: loginError?.status || null,
+        fallbackProfileByPhone: profileByPhone ? { id: profileByPhone.id, role: profileByPhone.role, auth_user_id: profileByPhone.auth_user_id } : null,
+        explanation: !profileExists
+          ? 'AUCUN profil dans users_julaba pour ce numéro'
+          : profile?.auth_user_id !== loginData?.user?.id
+          ? 'auth_user_id désynchronisé : le profil existe mais le lien UUID est cassé (auto-réparé au prochain login)'
+          : loginError
+          ? 'Mot de passe incorrect dans Supabase Auth'
+          : 'Tout semble correct'
       }
     });
   } catch (error) {
