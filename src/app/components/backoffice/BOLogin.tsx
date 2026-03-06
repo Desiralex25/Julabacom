@@ -25,8 +25,9 @@ const baseHeaders = {
 function normalizeToBoUser(raw: any) {
   return {
     id:        raw.id        || 'sa-' + Date.now(),
-    nom:       raw.nom       || raw.lastName  || raw.last_name  || 'Admin',
-    prenom:    raw.prenom    || raw.firstName || raw.first_name || 'Super',
+    // Compatibilité camelCase (backend /auth/profile) et snake_case (ancienne API)
+    nom:       raw.nom       || raw.lastName   || raw.last_name   || 'Admin',
+    prenom:    raw.prenom    || raw.firstName  || raw.first_name  || 'Super',
     email:     raw.email     || `${raw.phone || 'admin'}@julaba.local`,
     role:      raw.role      || 'super_admin',
     region:    raw.region    || 'National',
@@ -35,25 +36,6 @@ function normalizeToBoUser(raw: any) {
   };
 }
 
-// ── Persiste la session dans le SDK Supabase + localStorage + Contexts ────────
-async function persistSession(
-  accessToken: string,
-  refreshToken: string,
-  boUser: any,
-  setAppUser: any,
-  setBOUser: any
-) {
-  await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken || '',
-  });
-  localStorage.setItem('julaba_access_token', accessToken);
-  if (refreshToken) localStorage.setItem('julaba_refresh_token', refreshToken);
-  localStorage.setItem('julaba_user', JSON.stringify(boUser));
-  localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
-  setAppUser(boUser);
-  setBOUser(boUser);
-}
 
 const BO_ROLES = [
   { key: 'super_admin',       label: 'Super Admin',       color: '#7C3AED', icon: Shield    },
@@ -177,34 +159,25 @@ export function BOLogin() {
         return;
       }
 
-      // ── Étape 2 : Récupérer le profil depuis users_julaba ─────────────────
-      let profile: any = null;
-      const { data: p1 } = await supabase
-        .from('users_julaba')
-        .select('*')
-        .eq('auth_user_id', authData.user.id)
-        .single();
+      // ── Étape 2 : Récupérer le profil via le backend (service role, bypass RLS) ─
+      // Requête directe Supabase depuis le frontend → bloquée par RLS (406)
+      // On passe par /auth/profile qui utilise la service role key côté serveur
+      const profileRes = await fetch(`${API_URL}/auth/profile`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authData.session.access_token}`,
+        },
+      });
+      const profileData = await profileRes.json();
 
-      if (p1) {
-        profile = p1;
-      } else {
-        // Fallback par téléphone (auth_user_id désynchronisé)
-        const { data: p2 } = await supabase
-          .from('users_julaba')
-          .select('*')
-          .eq('phone', cleanPhone)
-          .single();
-        if (p2) {
-          await supabase.from('users_julaba').update({ auth_user_id: authData.user.id }).eq('id', p2.id);
-          profile = p2;
-        }
-      }
-
-      if (!profile) {
-        setError('Profil introuvable. Contactez le support Julaba.');
+      if (!profileRes.ok || !profileData.user) {
+        console.error('[BOLogin] Erreur profil:', profileData);
+        setError(profileData.error || 'Profil introuvable. Contactez le support Julaba.');
         await supabase.auth.signOut();
         return;
       }
+
+      const profile = profileData.user;
 
       // ── Étape 3 : Vérifier le rôle BO ─────────────────────────────────────
       const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
@@ -268,19 +241,32 @@ export function BOLogin() {
         return;
       }
       setCaSuccess(true);
-      // Connexion automatique apres creation
+      // Connexion automatique apres creation — via SDK (session native)
       setTimeout(async () => {
-        const loginRes  = await fetch(`${API_URL}/auth/login`, {
-          method: 'POST',
-          headers: baseHeaders,
-          body: JSON.stringify({ phone: cleanPhone, password: caPassword }),
-        });
-        const loginData = await loginRes.json();
-        if (loginRes.ok && loginData.accessToken) {
-          const boUser = normalizeToBoUser(loginData.user);
-          await persistSession(loginData.accessToken, loginData.refreshToken, boUser, setAppUser, setBOUser);
+        try {
+          const authEmail = `${cleanPhone}@julaba.local`;
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password: caPassword,
+          });
+          if (authError || !authData.session) throw authError;
+
+          // Récupérer le profil via backend (bypass RLS)
+          const profileRes = await fetch(`${API_URL}/auth/profile`, {
+            headers: { 'Authorization': `Bearer ${authData.session.access_token}` },
+          });
+          const profileData = await profileRes.json();
+          if (!profileRes.ok || !profileData.user) throw new Error(profileData.error);
+
+          const boUser = normalizeToBoUser(profileData.user);
+          localStorage.setItem('julaba_access_token', authData.session.access_token);
+          localStorage.setItem('julaba_refresh_token', authData.session.refresh_token);
+          localStorage.setItem('julaba_user', JSON.stringify(boUser));
+          localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
+          setAppUser(boUser);
+          setBOUser(boUser);
           navigate('/backoffice/dashboard');
-        } else {
+        } catch {
           // Connexion manuelle si auto-login echoue
           setPhone(cleanPhone);
           setPassword(caPassword);
@@ -342,18 +328,7 @@ export function BOLogin() {
       });
       const data = await res.json();
       setResetResult(data);
-      if (data.success && data.accessToken && data.user) {
-        const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
-        if (boRoles.includes(data.user.role)) {
-          const boUser = normalizeToBoUser(data.user);
-          await persistSession(data.accessToken, data.refreshToken, boUser, setAppUser, setBOUser);
-          setShowPanel(false);
-          setToolStep('idle');
-          setSuccess(true);
-          setTimeout(() => navigate('/backoffice/dashboard'), 1200);
-          return;
-        }
-      }
+      // Après reset réussi → rediriger vers la page login pour une connexion propre
       if (data.success) {
         setPhone(resetPhone.replace(/\s/g, ''));
         setPassword(resetNewPwd);
@@ -389,15 +364,7 @@ export function BOLogin() {
       });
       const data = await res.json();
       setRecResult(data);
-      if (data.success && data.accessToken && data.user) {
-        const boUser = normalizeToBoUser(data.user);
-        await persistSession(data.accessToken, data.refreshToken, boUser, setAppUser, setBOUser);
-        setShowPanel(false);
-        setToolStep('idle');
-        setSuccess(true);
-        setTimeout(() => navigate('/backoffice/dashboard'), 1200);
-        return;
-      }
+      // Après récréation réussie → rediriger vers login pour une connexion propre via SDK
       if (data.success) {
         setPhone(recPhone.replace(/\s/g, ''));
         setPassword(recPassword);

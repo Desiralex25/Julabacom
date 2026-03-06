@@ -241,6 +241,77 @@ app.post("/make-server-488793d3/auth/signup", async (c) => {
 });
 
 /**
+ * GET /auth/profile - Récupérer le profil de l'utilisateur connecté
+ * Header: Authorization: Bearer <access_token>
+ * Utilise service role pour bypasser RLS → évite 406 depuis le frontend
+ */
+app.get("/make-server-488793d3/auth/profile", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Token manquant' }, 401);
+
+    // Valider JWT via client anon (service role retourne "Invalid JWT" pour les user JWTs)
+    const { data: authData, error: authError } = await supabaseAnon.auth.getUser(accessToken);
+    if (authError || !authData?.user) {
+      console.log('[/auth/profile] JWT invalide:', authError?.message);
+      return c.json({ error: 'Token invalide ou expiré', details: authError?.message }, 401);
+    }
+
+    // Lire le profil via service role (bypass RLS complet — évite erreur 406)
+    let { data: profile } = await supabase
+      .from('users_julaba')
+      .select('*')
+      .eq('auth_user_id', authData.user.id)
+      .single();
+
+    // Fallback par phone si auth_user_id désynchronisé
+    if (!profile) {
+      const phone = (authData.user.email || '').replace('@julaba.local', '');
+      if (phone) {
+        const { data: profileByPhone } = await supabase
+          .from('users_julaba')
+          .select('*')
+          .eq('phone', phone)
+          .single();
+        if (profileByPhone) {
+          await supabase
+            .from('users_julaba')
+            .update({ auth_user_id: authData.user.id })
+            .eq('id', profileByPhone.id);
+          profile = profileByPhone;
+        }
+      }
+    }
+
+    if (!profile) {
+      console.log('[/auth/profile] Profil introuvable pour auth_user_id:', authData.user.id);
+      return c.json({ error: 'Profil introuvable. Contactez le support Julaba.' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      user: {
+        id: profile.id,
+        phone: profile.phone,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        role: profile.role,
+        region: profile.region,
+        commune: profile.commune,
+        activity: profile.activity,
+        score: profile.score,
+        validated: profile.validated,
+        createdAt: profile.created_at,
+      }
+    });
+
+  } catch (error) {
+    console.log('[/auth/profile] Erreur:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
+  }
+});
+
+/**
  * POST /login - Connexion utilisateur
  * Body: { phone, password }
  */
