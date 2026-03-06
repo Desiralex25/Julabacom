@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import * as identificationsApi from '../../imports/identifications-api';
 import * as commissionsApi from '../../imports/commissions-api';
 import * as missionsApi from '../../imports/missions-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Identification {
@@ -64,10 +63,6 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const loadIdentifications = async () => {
-    if (DEV_MODE) {
-      devLog('IdentificateurContext', 'Mode dev - skip loadIdentifications');
-      return;
-    }
     try {
       const { identifications: data } = await identificationsApi.fetchIdentifications();
       
@@ -89,10 +84,6 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
   };
 
   const loadCommissions = async () => {
-    if (DEV_MODE) {
-      devLog('IdentificateurContext', 'Mode dev - skip loadCommissions');
-      return;
-    }
     try {
       const { commissions: data } = await commissionsApi.fetchCommissions();
       
@@ -110,10 +101,6 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
   };
 
   const loadMissions = async () => {
-    if (DEV_MODE) {
-      devLog('IdentificateurContext', 'Mode dev - skip loadMissions');
-      return;
-    }
     try {
       const { missions: data } = await missionsApi.fetchMissions();
       

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as boAPI from '/src/imports/backoffice-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { toast } from 'sonner';
+import { supabase } from '../services/supabaseClient';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -260,11 +260,28 @@ interface BackOfficeContextType {
 const BackOfficeContext = createContext<BackOfficeContextType | null>(null);
 
 export function BackOfficeProvider({ children }: { children: ReactNode }) {
-  // ✅ PERSISTANCE : Charger boUser depuis localStorage au démarrage
+  // ✅ PERSISTANCE BO : Restaurer depuis Supabase session au démarrage
+  // Le boUser est stocké en localStorage uniquement comme cache UI — le token Supabase fait foi
   const [boUser, setBOUser] = useState<BOUser | null>(() => {
     const stored = localStorage.getItem('julaba_bo_user');
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem('julaba_bo_user');
+      return null;
+    }
   });
+
+  // Vérifier la session Supabase au démarrage — si pas de session, on nettoie boUser
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        setBOUser(null);
+        localStorage.removeItem('julaba_bo_user');
+      }
+    }).catch((e) => console.warn('[BO] Erreur vérification session Supabase:', e));
+  }, []);
   
   // ✅ Sauvegarder boUser dans localStorage quand il change
   React.useEffect(() => {
@@ -296,11 +313,6 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
 
     async function loadBackOfficeData() {
       setLoading(true);
-      if (DEV_MODE) {
-        devLog('BackOfficeContext', 'Mode dev - skip API calls');
-        setLoading(false);
-        return;
-      }
       try {
         // Charger toutes les données en parallèle
         const [

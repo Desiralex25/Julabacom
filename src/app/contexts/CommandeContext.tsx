@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as commandesApi from '../../imports/commandes-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Commande {
@@ -39,10 +38,6 @@ export function CommandeProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const loadCommandes = async () => {
-    if (DEV_MODE) {
-      devLog('CommandeContext', 'Mode dev - skip API call');
-      return;
-    }
     try {
       setLoading(true);
       const { commandes: data } = await commandesApi.fetchCommandes();

@@ -265,19 +265,11 @@ export function LoginPassword() {
       }
 
       if (result.accessToken) {
-        localStorage.setItem('julaba_access_token', result.accessToken);
-        // ✅ Stocker l'ID utilisateur pour la restauration de session au redémarrage
-        if (result.user?.id) {
-          localStorage.setItem('julaba_user_id', result.user.id);
-        }
-        // Injecter la session dans le singleton Supabase pour le refresh automatique
+        // Le SDK Supabase gère la persistance des tokens — pas de localStorage manuel
         await supabase.auth.setSession({
           access_token: result.accessToken,
           refresh_token: result.refreshToken || '',
         });
-      }
-      if (result.refreshToken) {
-        localStorage.setItem('julaba_refresh_token', result.refreshToken);
       }
 
       speakWithText(`Bienvenue ${user.firstName} ! Redirection en cours...`);

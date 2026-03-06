@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AuditEvent, AuditAction, AuditEntityType } from '../types/julaba.types';
 import * as auditApi from '../../imports/audit-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 interface AuditContextType {
@@ -37,10 +36,6 @@ export function AuditProvider({ children }: { children: ReactNode }) {
 
   // Charger les logs d'audit depuis Supabase
   const loadAuditLogs = async () => {
-    if (DEV_MODE) {
-      devLog('AuditContext', 'Mode dev - skip API call');
-      return;
-    }
     try {
       setLoading(true);
       const { logs } = await auditApi.fetchAuditLogs();

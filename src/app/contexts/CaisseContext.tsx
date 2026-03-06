@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as caisseApi from '../../imports/caisse-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface CaisseTransaction {
@@ -35,10 +34,6 @@ export function CaisseProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const loadTransactions = async () => {
-    if (DEV_MODE) {
-      devLog('CaisseContext', 'Mode dev - skip API call');
-      return;
-    }
     try {
       setLoading(true);
       const { transactions: data } = await caisseApi.fetchCaisseTransactions();

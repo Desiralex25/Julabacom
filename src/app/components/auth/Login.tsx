@@ -2,14 +2,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, ArrowRight, Code, CheckCircle, Zap } from 'lucide-react';
+import { Mic, ArrowRight, CheckCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { sendOTP, verifyOTP } from '../../utils/api';
-import { DEV_MODE, DEV_CONFIG } from '../../config/devMode';
 
 const logoJulabaBlanc = '/images/logo-julaba-blanc.svg';
 const logoOrange = '/images/logo-orange.svg';
@@ -386,11 +385,10 @@ export function Login() {
     if (!showOTP) {
       startListening();
     } else {
-      // Read OTP code and offer dictation
-      speakWithText(`Ton code OTP est ${DEFAULT_OTP.split('').join(' ')}. Tu peux aussi me dicter ton code si tu veux`);
+      speakWithText('Dicte ton code à 4 chiffres lentement');
       setTimeout(() => {
         startListening();
-      }, 7000); // Wait for speech to finish
+      }, 3000);
     }
   };
 

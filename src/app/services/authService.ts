@@ -2,14 +2,12 @@
  * ═══════════════════════════════════════════════════════════════════
  * JÙLABA — SERVICE D'AUTHENTIFICATION SUPABASE
  * ═══════════════════════════════════════════════════════════════════
- * 
- * Service pour gérer l'authentification avec Supabase Backend.
- * Remplace les mock users par de vraies données Supabase.
- * 
- * MIGRATION PROGRESSIVE - SEMAINE 1
+ *
+ * Source unique de vérité : SDK Supabase (auto-refresh intégré).
+ * Aucun stockage manuel de JWT.
  */
 
-import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+import { publicAnonKey, projectId } from '../../../utils/supabase/info';
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
@@ -79,28 +77,19 @@ export async function signup(data: SignupData): Promise<AuthResponse> {
 
     if (!response.ok) {
       console.error('Signup error:', result);
-      return {
-        success: false,
-        error: result.error || 'Erreur lors de l\'inscription',
-      };
+      return { success: false, error: result.error || "Erreur lors de l'inscription" };
     }
 
-    return {
-      success: true,
-      user: result.user,
-      message: result.message,
-    };
+    return { success: true, user: result.user, message: result.message };
   } catch (error) {
     console.error('Signup network error:', error);
-    return {
-      success: false,
-      error: 'Erreur de connexion au serveur',
-    };
+    return { success: false, error: 'Erreur de connexion au serveur' };
   }
 }
 
 /**
  * Connexion d'un utilisateur
+ * Les tokens sont gérés par le SDK Supabase via setSession().
  */
 export async function login(data: LoginData): Promise<AuthResponse> {
   try {
@@ -117,23 +106,15 @@ export async function login(data: LoginData): Promise<AuthResponse> {
 
     if (!response.ok) {
       console.error('Login error:', result);
-      return {
-        success: false,
-        error: result.error || 'Identifiants incorrects',
-      };
+      return { success: false, error: result.error || 'Identifiants incorrects' };
     }
 
-    // Stocker les tokens de manière sécurisée
+    // Injecter la session dans le SDK Supabase (gère le refresh automatiquement)
     if (result.accessToken) {
-      sessionStorage.setItem('julaba_access_token', result.accessToken);
-      // Injecter dans le singleton Supabase pour le refresh automatique
       await supabase.auth.setSession({
         access_token: result.accessToken,
         refresh_token: result.refreshToken || '',
       });
-    }
-    if (result.refreshToken) {
-      sessionStorage.setItem('julaba_refresh_token', result.refreshToken);
     }
 
     return {
@@ -144,60 +125,7 @@ export async function login(data: LoginData): Promise<AuthResponse> {
     };
   } catch (error) {
     console.error('Login network error:', error);
-    return {
-      success: false,
-      error: 'Erreur de connexion au serveur',
-    };
-  }
-}
-
-/**
- * Récupérer le profil de l'utilisateur connecté
- */
-export async function getCurrentUser(): Promise<AuthResponse> {
-  try {
-    const accessToken = sessionStorage.getItem('julaba_access_token');
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Aucune session active',
-      };
-    }
-
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Si le token est invalide, nettoyer la session
-      if (response.status === 401) {
-        sessionStorage.removeItem('julaba_access_token');
-        sessionStorage.removeItem('julaba_refresh_token');
-      }
-
-      console.error('Get current user error:', result);
-      return {
-        success: false,
-        error: result.error || 'Erreur lors de la récupération du profil',
-      };
-    }
-
-    return {
-      success: true,
-      user: result.user,
-    };
-  } catch (error) {
-    console.error('Get current user network error:', error);
-    return {
-      success: false,
-      error: 'Erreur de connexion au serveur',
-    };
+    return { success: false, error: 'Erreur de connexion au serveur' };
   }
 }
 
@@ -206,70 +134,31 @@ export async function getCurrentUser(): Promise<AuthResponse> {
  */
 export async function logout(): Promise<AuthResponse> {
   try {
-    const accessToken = sessionStorage.getItem('julaba_access_token');
-
-    if (accessToken) {
-      // Appeler l'endpoint de déconnexion
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-    }
-
-    // Nettoyer les tokens localement
-    sessionStorage.removeItem('julaba_access_token');
-    sessionStorage.removeItem('julaba_refresh_token');
-
-    return {
-      success: true,
-      message: 'Déconnexion réussie',
-    };
+    await supabase.auth.signOut();
+    return { success: true, message: 'Déconnexion réussie' };
   } catch (error) {
     console.error('Logout error:', error);
-    // Nettoyer quand même les tokens localement
-    sessionStorage.removeItem('julaba_access_token');
-    sessionStorage.removeItem('julaba_refresh_token');
-    
-    return {
-      success: true,
-      message: 'Déconnexion réussie (locale)',
-    };
+    return { success: true, message: 'Déconnexion réussie (locale)' };
   }
+}
+
+/**
+ * Obtenir un token valide (avec auto-refresh via SDK Supabase)
+ */
+export async function getValidToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session.access_token;
+  } catch (e) {
+    console.warn('getValidToken: erreur SDK Supabase', e);
+  }
+  return null;
 }
 
 /**
  * Vérifier si l'utilisateur est connecté
  */
-export function isAuthenticated(): boolean {
-  return !!sessionStorage.getItem('julaba_access_token');
-}
-
-/**
- * Obtenir le token d'accès actuel (avec auto-refresh via singleton Supabase)
- * Utilise le singleton en priorité pour bénéficier du refresh automatique
- */
-export async function getValidToken(): Promise<string | null> {
-  try {
-    // Priorité : session Supabase singleton (auto-refresh si expiré)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      return session.access_token;
-    }
-  } catch (e) {
-    console.warn('getValidToken: erreur singleton Supabase', e);
-  }
-  // Fallback : token stocké manuellement
-  return sessionStorage.getItem('julaba_access_token') ||
-    localStorage.getItem('julaba_access_token');
-}
-
-/**
- * Obtenir le token d'accès actuel (synchrone - peut être périmé)
- * @deprecated Utiliser getValidToken() à la place
- */
-export function getAccessToken(): string | null {
-  return sessionStorage.getItem('julaba_access_token') ||
-    localStorage.getItem('julaba_access_token');
+export async function isAuthenticated(): Promise<boolean> {
+  const token = await getValidToken();
+  return !!token;
 }

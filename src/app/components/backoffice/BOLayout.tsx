@@ -322,7 +322,7 @@ function NotifPanel({ open, onClose, tickets, nouveauxCount, onVoirTicket, onMar
   );
 }
 
-// ─── Toast notification push ───────────────────────────────���─────────────────
+// ─── Toast notification push ────────────────────────────────────────────────
 
 interface PushToastProps {
   ticket: Ticket | null;
@@ -478,21 +478,23 @@ export function BOLayout() {
 
   const handleLogout = () => {
     speak('Au revoir. Déconnexion du Back-Office.');
-    setTimeout(() => { 
-      setBOUser(null); 
-      localStorage.removeItem('julaba_access_token');
-      localStorage.removeItem('julaba_refresh_token');
-      navigate('/backoffice/login'); 
+    setTimeout(async () => {
+      // signOut Supabase efface automatiquement la session (clés sb-*)
+      const { supabase } = await import('../../services/supabaseClient');
+      await supabase.auth.signOut().catch((e: any) => console.warn('signOut error:', e));
+      setBOUser(null);
+      localStorage.removeItem('julaba_bo_user');
+      navigate('/backoffice/login');
     }, 1000);
   };
 
   // ── Détecter la session expirée (événement émis par backoffice-api) ────────
   useEffect(() => {
-    const handleSessionExpired = () => {
+    const handleSessionExpired = async () => {
+      const { supabase } = await import('../../services/supabaseClient');
+      await supabase.auth.signOut().catch((e: any) => console.warn('signOut error:', e));
       setBOUser(null);
       localStorage.removeItem('julaba_bo_user');
-      localStorage.removeItem('julaba_access_token');
-      localStorage.removeItem('julaba_refresh_token');
       navigate('/backoffice/login');
     };
     window.addEventListener('julaba:session-expired', handleSessionExpired);

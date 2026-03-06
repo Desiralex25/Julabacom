@@ -10,54 +10,24 @@ const SUPABASE_URL = `https://${projectId}.supabase.co`;
 const API_URL = `${SUPABASE_URL}/functions/v1/make-server-488793d3/backoffice`;
 
 /**
- * Récupérer le token d'accès
+ * Récupérer un token valide via le SDK Supabase (auto-refresh inclus)
+ * Ne retourne jamais publicAnonKey — les endpoints BO nécessitent un token admin valide.
  */
-function getAccessToken(): string {
-  return localStorage.getItem('julaba_access_token') || publicAnonKey;
-}
-
-/**
- * Rafraîchir le token via le singleton Supabase partagé
- */
-async function refreshAccessToken(): Promise<string | null> {
+async function getValidToken(): Promise<string> {
   try {
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error || !data.session) {
-      // Essai fallback via le refresh token stocké
-      const refreshToken = localStorage.getItem('julaba_refresh_token');
-      if (!refreshToken) {
-        console.warn('[BO API] Pas de refresh token disponible - reconnexion requise');
-        return null;
-      }
-      const { data: data2, error: error2 } = await supabase.auth.setSession({
-        access_token: '',
-        refresh_token: refreshToken,
-      });
-      if (error2 || !data2.session) {
-        console.error('[BO API] Échec du refresh token:', error2?.message);
-        localStorage.removeItem('julaba_access_token');
-        localStorage.removeItem('julaba_refresh_token');
-        return null;
-      }
-      localStorage.setItem('julaba_access_token', data2.session.access_token);
-      localStorage.setItem('julaba_refresh_token', data2.session.refresh_token);
-      return data2.session.access_token;
-    }
-    localStorage.setItem('julaba_access_token', data.session.access_token);
-    localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
-    console.log('[BO API] Token rafraîchi avec succès');
-    return data.session.access_token;
-  } catch (err) {
-    console.error('[BO API] Erreur lors du refresh token:', err);
-    return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session.access_token;
+  } catch (e) {
+    console.warn('[BO API] getValidToken: erreur SDK Supabase', e);
   }
+  return '';
 }
 
 /**
  * Effectuer une requête API avec gestion automatique du refresh token
  */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  let token = getAccessToken();
+  let token = await getValidToken();
 
   const doFetch = async (authToken: string) =>
     fetch(`${API_URL}${endpoint}`, {
@@ -71,16 +41,14 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
   let response = await doFetch(token);
 
-  // Si 401 (token expiré), tenter un refresh automatique
+  // Si 401 (token expiré), forcer un refresh via le SDK
   if (response.status === 401) {
     console.warn(`[BO API] 401 sur ${endpoint} - tentative de refresh du token...`);
-    const newToken = await refreshAccessToken();
-
-    if (newToken) {
-      // Réessayer avec le nouveau token
-      response = await doFetch(newToken);
+    const { data, error } = await supabase.auth.refreshSession();
+    if (!error && data.session?.access_token) {
+      token = data.session.access_token;
+      response = await doFetch(token);
     } else {
-      // Refresh impossible → déclencher une déconnexion forcée
       window.dispatchEvent(new CustomEvent('julaba:session-expired'));
       throw new Error('SESSION_EXPIRED');
     }
@@ -103,7 +71,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTEURS
-// ─────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────���──────
 
 export async function fetchActeurs() {
   return apiRequest<{ acteurs: any[] }>('/acteurs');
@@ -133,7 +101,7 @@ export async function updateDossierStatut(id: string, statut: string, motif?: st
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRANSACTIONS
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────��──────────────────────────────────────────────────────────────────────
 
 export async function fetchTransactions() {
   return apiRequest<{ transactions: any[] }>('/transactions');
@@ -183,9 +151,9 @@ export async function updateCommissionStatut(id: string, statut: string) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // AUDIT
-// ─────────────────────��───────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 
 export async function fetchAuditLogs() {
   return apiRequest<{ logs: any[] }>('/audit');

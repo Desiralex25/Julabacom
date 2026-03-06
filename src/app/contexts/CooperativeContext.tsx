@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as cooperativesApi from '../../imports/cooperatives-api';
-import { DEV_MODE, devLog } from '../config/devMode';
 import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Cooperative {
@@ -53,10 +52,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const loadCooperative = async () => {
-    if (DEV_MODE) {
-      devLog('CooperativeContext', 'Mode dev - skip loadCooperative');
-      return;
-    }
     try {
       const { cooperative: data } = await cooperativesApi.fetchCooperative();
       
@@ -75,10 +70,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   };
 
   const loadMembres = async () => {
-    if (DEV_MODE) {
-      devLog('CooperativeContext', 'Mode dev - skip loadMembres');
-      return;
-    }
     try {
       const { membres: data } = await cooperativesApi.fetchCooperativeMembres();
       
@@ -97,10 +88,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   };
 
   const loadTresorerie = async () => {
-    if (DEV_MODE) {
-      devLog('CooperativeContext', 'Mode dev - skip loadTresorerie');
-      return;
-    }
     try {
       const { transactions: data } = await cooperativesApi.fetchCooperativeTresorerie();
       

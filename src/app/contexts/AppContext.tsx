@@ -14,8 +14,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as ElevenLabs from '../services/elevenlabs';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
-import { DEV_MODE, devLog } from '../config/devMode';
-import { DEV_USER } from '../data/devMockData';
 import { supabase } from '../services/supabaseClient';
 
 export type UserRole = 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
@@ -176,15 +174,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Charger les données utilisateur depuis Supabase
   const loadUserData = async (userId: string, token: string) => {
-    // Mode dev : charger données mock
-    if (DEV_MODE) {
-      devLog('AppContext', 'Chargement données mock en mode dev');
-      setUser(DEV_USER);
-      setAccessToken('dev-token');
-      setLoading(false);
-      return;
-    }
-    
     try {
       // Charger profil utilisateur
       const userResponse = await fetch(
@@ -284,64 +273,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Vérifier session au démarrage
+  // Vérifier session au démarrage — source unique de vérité : SDK Supabase
   useEffect(() => {
     const checkSession = async () => {
-      // Mode dev : charger données mock immédiatement
-      if (DEV_MODE) {
-        devLog('AppContext', 'Mode dev activé - Chargement utilisateur mock');
-        setUser(DEV_USER);
-        setAccessToken('dev-token');
-        setLoading(false);
-        return;
-      }
-      
       try {
-        // ✅ SOURCE DE VÉRITÉ PRIMAIRE : singleton Supabase avec auto-refresh
-        // Le singleton lit depuis localStorage 'julaba_supabase_session'
-        // qui a été écrit par setSession() lors du login
-        const { data: { session: supabaseSession } } = await supabase.auth.getSession();
+        // Le SDK Supabase gère le refresh automatique depuis sa propre clé localStorage
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (supabaseSession?.user && supabaseSession.access_token) {
-          devLog('AppContext', 'Session Supabase restaurée depuis le singleton', supabaseSession.user.id);
-          setAccessToken(supabaseSession.access_token);
-          await loadUserData(supabaseSession.user.id, supabaseSession.access_token);
+        if (session?.user && session.access_token) {
+          setAccessToken(session.access_token);
+          await loadUserData(session.user.id, session.access_token);
           return;
         }
 
-        // ✅ FALLBACK : tokens stockés manuellement (backward compat)
-        const storedToken = sessionStorage.getItem('julaba_access_token');
-        const localToken = localStorage.getItem('julaba_access_token');
-        const storedUserId =
-          sessionStorage.getItem('julaba_user_id') ||
-          localStorage.getItem('julaba_user_id');
-        const refreshToken =
-          sessionStorage.getItem('julaba_refresh_token') ||
-          localStorage.getItem('julaba_refresh_token');
-
-        const token = storedToken || localToken;
-
-        // Restaurer la session dans le singleton pour activer le refresh auto
-        if (token && refreshToken) {
-          await supabase.auth.setSession({
-            access_token: token,
-            refresh_token: refreshToken,
-          });
-          // Récupérer la session fraîche (peut avoir été rafraîchie)
-          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          if (refreshedSession?.user) {
-            setAccessToken(refreshedSession.access_token);
-            await loadUserData(refreshedSession.user.id, refreshedSession.access_token);
-            return;
-          }
-        }
-
-        if (token && storedUserId) {
-          setAccessToken(token);
-          await loadUserData(storedUserId, token);
-        } else {
-          setLoading(false);
-        }
+        setLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
         setLoading(false);
@@ -360,7 +305,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Déconnexion
   const logout = async () => {
-    // ✅ Déconnecter du singleton Supabase (efface la session dans localStorage)
     await supabase.auth.signOut().catch((e) => console.warn('Supabase signOut error:', e));
 
     setUser(null);
@@ -368,13 +312,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTransactions([]);
     setMarketplaceItems([]);
     setCurrentSession(null);
-    
+
+    // Nettoyer uniquement les clés non-Supabase (les clés sb-* sont gérées par signOut)
     sessionStorage.removeItem('julaba_access_token');
     sessionStorage.removeItem('julaba_user_id');
     sessionStorage.removeItem('julaba_refresh_token');
     localStorage.removeItem('julaba_access_token');
     localStorage.removeItem('julaba_refresh_token');
     localStorage.removeItem('julaba_user_id');
+    localStorage.removeItem('julaba_bo_user');
   };
 
   // ═══════════════════════════════════════════════════════════════════
@@ -426,12 +372,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     
     setTransactions((prev) => [newTransaction, ...prev]);
-
-    // Mode dev : ne pas synchroniser
-    if (DEV_MODE) {
-      devLog('AppContext', 'Transaction ajoutée (mode dev - pas de sync)');
-      return;
-    }
 
     // Sync avec Supabase si connecté
     if (accessToken && user) {

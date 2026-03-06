@@ -1,94 +1,17 @@
-import { ProducteurAlertes } from './components/producteur/ProducteurAlertes';
-import { MarchandAlertes } from './components/marchand/MarchandAlertes';
-import { InstitutionParametres } from './components/institution/InstitutionParametres';
-import { ProducteurParametres } from './components/producteur/ProducteurParametres';
-import { CooperativeParametres } from './components/cooperative/CooperativeParametres';
-import { IdentificateurParametres } from './components/identificateur/IdentificateurParametres';
-import { WalletPage } from './components/wallet/WalletPage';
-import { MesRecoltesPage } from './components/producteur/MesRecoltesPage';
-import { FinancesCooperative } from './components/cooperative/FinancesCooperative';
-
-import { SuiviIdentifications } from './components/identificateur/SuiviIdentifications';
-import { RapportsIdentificateur } from './components/identificateur/RapportsIdentificateur';
-import { DemandeMutation } from './components/identificateur/DemandeMutation';
-import { IdentificateurHome } from './components/identificateur/IdentificateurHome';
-import { ActeurDetails } from './components/identificateur/ActeurDetails';
-import { IdentificationPage } from './components/identificateur/IdentificationPage';
-import { Identifications } from './components/identificateur/Identifications';
+import React from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
-import { Onboarding } from './components/auth/Onboarding';
-import { Login } from './components/auth/Login';
-import { LoginPassword } from './components/auth/LoginPassword';
-import { Welcome } from './components/auth/Welcome';
-import { BODashboard } from './components/backoffice/BODashboard';
-import { BOActeurs } from './components/backoffice/BOActeurs';
-import { BOActeurDetail } from './components/backoffice/BOActeurDetail';
-import { BOEnrolement } from './components/backoffice/BOEnrolement';
-import { BOSupervision } from './components/backoffice/BOSupervision';
-import { BOZones } from './components/backoffice/BOZones';
-import { BOCommissions } from './components/backoffice/BOCommissions';
-import { BOAudit } from './components/backoffice/BOAudit';
-import { BOUtilisateurs } from './components/backoffice/BOUtilisateurs';
-import { BOProfil } from './components/backoffice/BOProfil';
-import { BOAcademy } from './components/backoffice/BOAcademy';
-import { BOMissions } from './components/backoffice/BOMissions';
-import { BOParametres } from './components/backoffice/BOParametres';
-import { BORapports } from './components/backoffice/BORapports';
-import { BONotifications } from './components/backoffice/BONotifications';
-import { BORoot } from './components/backoffice/BORoot';
-import { BOInstitutions } from './components/backoffice/BOInstitutions';
-import { AppLayout } from './components/layout/AppLayout';
+
+// Layout
 import { RootLayout } from './components/layout/RootLayout';
-import { MarchandHome } from './components/marchand/MarchandHome';
-import { POSCaisse } from './components/marchand/POSCaisse';
-import { MarchandDepenses } from './components/marchand/MarchandDepenses';
-import { MarcheVirtuel } from './components/marchand/MarcheVirtuel';
-import { GestionStock } from './components/marchand/GestionStock';
-import { MarchandProfil } from './components/marchand/MarchandProfil';
-import { VentesPassees } from './components/marchand/VentesPassees';
-import { ResumeCaisse } from './components/marchand/ResumeCaisse';
-import { MesCommandes } from './components/marchand/MesCommandes';
-import { Parametres } from './components/marchand/Parametres';
-import { MarchandAcademy } from './components/academy/MarchandAcademy';
-import { UniversalAcademy } from './components/academy/UniversalAcademy';
-import { ProducteurHome } from './components/producteur/ProducteurHome';
-import { ProducteurProduction } from './components/producteur/ProducteurProduction';
-import { ProducteurCommandes } from './components/producteur/CommandesProducteurPage';
-import { RecolteForm } from './components/producteur/RecolteForm';
-import { ProducteurMoi } from './components/producteur/ProducteurMoi';
-import { StocksWrapper } from './components/producteur/StocksWrapper';
-import { ProducteurPageWrapper } from './components/producteur/ProducteurPageWrapper';
-import { PublierRecolte } from './components/producteur/PublierRecolte';
-import { CooperativeHome } from './components/cooperative/CooperativeHome';
-import { CooperativeProfil } from './components/cooperative/CooperativeProfil';
-import { Membres } from './components/cooperative/Membres';
-import { Stock } from './components/cooperative/Stock';
-import { TresorerieCooperative } from './components/cooperative/TresorerieCooperative';
-import { GestionMembres } from './components/cooperative/GestionMembres';
-import { MarcheCooperative } from './components/cooperative/MarcheCooperative';
-import { Commandes } from './components/cooperative/Commandes';
-import { MarcheHub } from './components/cooperative/MarcheHub';
-import { InstitutionHome } from './components/institution/InstitutionHome';
-import { InstitutionProfil } from './components/institution/InstitutionProfil';
-import { Dashboard } from './components/institution/Dashboard';
-import { Analytics } from './components/institution/Analytics';
-import { InstitutionActeurs } from './components/institution/InstitutionActeurs';
-import { InstitutionSupervision } from './components/institution/InstitutionSupervision';
-import { DashboardAnalytics } from './components/institution/DashboardAnalytics';
-import { AuditTrail } from './components/institution/AuditTrail';
-import { InstitutionLayout } from './components/institution/InstitutionLayout';
-import { Marketplace } from './components/marketplace/Marketplace';
-import { IdentificateurLayout } from './components/identificateur/IdentificateurLayout';
-import { IdentificateurStats } from './components/identificateur/IdentificateurStats';
-import { IdentificateurProfil } from './components/identificateur/IdentificateurProfil';
-import { NouveauMarchand } from './components/identificateur/NouveauMarchand';
-import { FormulaireIdentificationMarchand } from './components/identificateur/FormulaireIdentificationMarchand';
-import { FicheMarchand } from './components/identificateur/FicheMarchand';
-import { IdentificateurDashboard } from './components/identificateur/IdentificateurDashboard';
-import { NouvelleIdentification } from './components/identificateur/NouvelleIdentification';
-import { FicheIdentificationDynamique } from './components/identificateur/FicheIdentificationDynamique';
-import { SupportPage } from './components/shared/SupportPage';
-import { BOSupport } from './components/backoffice/BOSupport';
+import { AppLayout } from './components/layout/AppLayout';
+
+// Auth & Entry
+import { EntryGate } from './components/auth/EntryGate';
+import { LoginPassword } from './components/auth/LoginPassword';
+import { Onboarding } from './components/auth/Onboarding';
+import { Welcome } from './components/auth/Welcome';
+
+// Diagnostic / Utilitaires
 import SupabaseTestPage from './pages/SupabaseTestPage';
 import AuthTestPage from './pages/AuthTestPage';
 import TestTantie from './pages/TestTantie';
@@ -98,66 +21,124 @@ import CreateSuperAdmin from './pages/CreateSuperAdmin';
 import DiagnosticDB from './pages/DiagnosticDB';
 import AdminRecovery from './pages/AdminRecovery';
 import { DevModeHome } from './pages/DevModeHome';
-import { DEV_MODE } from './config/devMode';
-import { EntryGate } from './components/auth/EntryGate';
+
+// ── MARCHAND ─────────────────────────────────────────────────────────────────
+import { MarchandHome } from './components/marchand/MarchandHome';
+import { POSCaisse } from './components/marchand/POSCaisse';
+import { MarchandDepenses } from './components/marchand/MarchandDepenses';
+import { GestionStock } from './components/marchand/GestionStock';
+import { MarcheVirtuel } from './components/marchand/MarcheVirtuel';
+import { MarchandProfil } from './components/marchand/MarchandProfil';
+import { VentesPassees } from './components/marchand/VentesPassees';
+import { ResumeCaisse } from './components/marchand/ResumeCaisse';
+import { MesCommandes } from './components/marchand/MesCommandes';
+import { Parametres } from './components/marchand/Parametres';
+import { MarchandAlertes } from './components/marchand/MarchandAlertes';
+
+// ── PRODUCTEUR ────────────────────────────────────────────────────────────────
+import { ProducteurHome } from './components/producteur/ProducteurHome';
+import { ProducteurProduction } from './components/producteur/ProducteurProduction';
+import { ProducteurMoi } from './components/producteur/ProducteurMoi';
+import { RecolteForm } from './components/producteur/RecolteForm';
+import { MesRecoltesPage } from './components/producteur/MesRecoltesPage';
+import { StocksWrapper } from './components/producteur/StocksWrapper';
+import { PublierRecolte } from './components/producteur/PublierRecolte';
+import { ProducteurParametres } from './components/producteur/ProducteurParametres';
+import { ProducteurAlertes } from './components/producteur/ProducteurAlertes';
+import { ProducteurCommandes } from './components/producteur/CommandesProducteurPage';
+
+// ── COOPERATIVE ───────────────────────────────────────────────────────────────
+import { CooperativeHome } from './components/cooperative/CooperativeHome';
+import { Membres } from './components/cooperative/Membres';
+import { FinancesCooperative } from './components/cooperative/FinancesCooperative';
+import { CooperativeProfil } from './components/cooperative/CooperativeProfil';
+import { Stock } from './components/cooperative/Stock';
+import { TresorerieCooperative } from './components/cooperative/TresorerieCooperative';
+import { GestionMembres } from './components/cooperative/GestionMembres';
+import { MarcheHub } from './components/cooperative/MarcheHub';
+import { Commandes } from './components/cooperative/Commandes';
+import { CooperativeParametres } from './components/cooperative/CooperativeParametres';
+
+// ── INSTITUTION ───────────────────────────────────────────────────────────────
+import { InstitutionLayout } from './components/institution/InstitutionLayout';
+import { InstitutionHome } from './components/institution/InstitutionHome';
+import { Analytics } from './components/institution/Analytics';
+import { InstitutionActeurs } from './components/institution/InstitutionActeurs';
+import { InstitutionSupervision } from './components/institution/InstitutionSupervision';
+import { InstitutionParametres } from './components/institution/InstitutionParametres';
+import { InstitutionProfil } from './components/institution/InstitutionProfil';
+import { Dashboard } from './components/institution/Dashboard';
+import { DashboardAnalytics } from './components/institution/DashboardAnalytics';
+import { AuditTrail } from './components/institution/AuditTrail';
+
+// ── MARKETPLACE ───────────────────────────────────────────────────────────────
+import { Marketplace } from './components/marketplace/Marketplace';
+
+// ── IDENTIFICATEUR ────────────────────────────────────────────────────────────
+import { IdentificateurLayout } from './components/identificateur/IdentificateurLayout';
+import { IdentificateurHome } from './components/identificateur/IdentificateurHome';
+import { IdentificationPage } from './components/identificateur/IdentificationPage';
+import { SuiviIdentifications } from './components/identificateur/SuiviIdentifications';
+import { IdentificateurProfil } from './components/identificateur/IdentificateurProfil';
+import { ActeurDetails } from './components/identificateur/ActeurDetails';
+import { DemandeMutation } from './components/identificateur/DemandeMutation';
+import { Identifications } from './components/identificateur/Identifications';
+import { IdentificateurStats } from './components/identificateur/IdentificateurStats';
+import { RapportsIdentificateur } from './components/identificateur/RapportsIdentificateur';
+import { NouveauMarchand } from './components/identificateur/NouveauMarchand';
+import { FormulaireIdentificationMarchand } from './components/identificateur/FormulaireIdentificationMarchand';
+import { FicheMarchand } from './components/identificateur/FicheMarchand';
+import { IdentificateurDashboard } from './components/identificateur/IdentificateurDashboard';
+import { NouvelleIdentification } from './components/identificateur/NouvelleIdentification';
+import { FicheIdentificationDynamique } from './components/identificateur/FicheIdentificationDynamique';
+import { IdentificateurParametres } from './components/identificateur/IdentificateurParametres';
+
+// ── PARTAGÉS ──────────────────────────────────────────────────────────────────
+import { UniversalAcademy } from './components/academy/UniversalAcademy';
+import { WalletPage } from './components/wallet/WalletPage';
+import { SupportPage } from './components/shared/SupportPage';
+
+// ── BACK-OFFICE ───────────────────────────────────────────────────────────────
+import { BORoot } from './components/backoffice/BORoot';
+import { BODashboard } from './components/backoffice/BODashboard';
+import { BOActeurs } from './components/backoffice/BOActeurs';
+import { BOActeurDetail } from './components/backoffice/BOActeurDetail';
+import { BOEnrolement } from './components/backoffice/BOEnrolement';
+import { BOSupervision } from './components/backoffice/BOSupervision';
+import { BOZones } from './components/backoffice/BOZones';
+import { BOCommissions } from './components/backoffice/BOCommissions';
+import { BOAcademy } from './components/backoffice/BOAcademy';
+import { BOMissions } from './components/backoffice/BOMissions';
+import { BOParametres } from './components/backoffice/BOParametres';
+import { BOAudit } from './components/backoffice/BOAudit';
+import { BOUtilisateurs } from './components/backoffice/BOUtilisateurs';
+import { BOInstitutions } from './components/backoffice/BOInstitutions';
+import { BOProfil } from './components/backoffice/BOProfil';
+import { BORapports } from './components/backoffice/BORapports';
+import { BONotifications } from './components/backoffice/BONotifications';
+import { BOSupport } from './components/backoffice/BOSupport';
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      {
-        path: '/',
-        element: <EntryGate />,
-      },
-      {
-        path: '/onboarding',
-        element: <Onboarding />,
-      },
-      {
-        path: '/welcome',
-        element: <Welcome />,
-      },
-      {
-        path: '/login',
-        element: <LoginPassword />,
-      },
-      {
-        path: '/dev-mode',
-        element: <DevModeHome />,
-      },
-      {
-        path: '/supabase-test',
-        element: <SupabaseTestPage />,
-      },
-      {
-        path: '/auth-test',
-        element: <AuthTestPage />,
-      },
-      {
-        path: '/test-tantie',
-        element: <TestTantie />,
-      },
-      {
-        path: '/test-elevenlabs',
-        element: <TestElevenLabs />,
-      },
-      {
-        path: '/database',
-        element: <DatabaseViewer />,
-      },
-      {
-        path: '/create-super-admin',
-        element: <CreateSuperAdmin />,
-      },
-      {
-        path: '/diagnostic-db',
-        element: <DiagnosticDB />,
-      },
-      {
-        path: '/admin-recovery',
-        element: <AdminRecovery />,
-      },
-      // ── MARCHAND ─────────────────────────────────────────────────────
+      { path: '/', element: <EntryGate /> },
+      { path: '/onboarding', element: <Onboarding /> },
+      { path: '/welcome', element: <Welcome /> },
+      { path: '/login', element: <LoginPassword /> },
+      { path: '/dev-mode', element: <DevModeHome /> },
+
+      // Diagnostic / Utilitaires
+      { path: '/supabase-test', element: <SupabaseTestPage /> },
+      { path: '/auth-test', element: <AuthTestPage /> },
+      { path: '/test-tantie', element: <TestTantie /> },
+      { path: '/test-elevenlabs', element: <TestElevenLabs /> },
+      { path: '/database', element: <DatabaseViewer /> },
+      { path: '/create-super-admin', element: <CreateSuperAdmin /> },
+      { path: '/diagnostic-db', element: <DiagnosticDB /> },
+      { path: '/admin-recovery', element: <AdminRecovery /> },
+
+      // ── MARCHAND ────────────────────────────────────────────────────────────
       {
         path: '/marchand',
         element: <AppLayout />,
@@ -178,7 +159,8 @@ export const router = createBrowserRouter([
           { path: 'support', element: <SupportPage /> },
         ],
       },
-      // ── PRODUCTEUR ──────────────────────────────────
+
+      // ── PRODUCTEUR ──────────────────────────────────────────────────────────
       {
         path: '/producteur',
         element: <AppLayout />,
@@ -198,7 +180,8 @@ export const router = createBrowserRouter([
           { path: 'support', element: <SupportPage /> },
         ],
       },
-      // ── COOPERATIVE ─────────────────────────────────
+
+      // ── COOPERATIVE ─────────────────────────────────────────────────────────
       {
         path: '/cooperative',
         element: <AppLayout />,
@@ -218,7 +201,8 @@ export const router = createBrowserRouter([
           { path: 'support', element: <SupportPage /> },
         ],
       },
-      // ── INSTITUTION ─────────────────────────────────────────
+
+      // ── INSTITUTION ─────────────────────────────────────────────────────────
       {
         path: '/institution',
         element: <InstitutionLayout />,
@@ -237,7 +221,8 @@ export const router = createBrowserRouter([
           { path: 'support', element: <SupportPage /> },
         ],
       },
-      // ── MARKETPLACE ─────────────────────────────────
+
+      // ── MARKETPLACE ─────────────────────────────────────────────────────────
       {
         path: '/marketplace',
         element: <AppLayout />,
@@ -245,7 +230,8 @@ export const router = createBrowserRouter([
           { index: true, element: <Marketplace /> },
         ],
       },
-      // ── IDENTIFICATEUR ─────────────────────────────
+
+      // ── IDENTIFICATEUR ──────────────────────────────────────────────────────
       {
         path: '/identificateur',
         element: <IdentificateurLayout />,
@@ -271,11 +257,9 @@ export const router = createBrowserRouter([
           { path: 'support', element: <SupportPage /> },
         ],
       },
-      // ── BACK-OFFICE CENTRAL ─────────────────────────
-      {
-        path: '/backoffice/login',
-        element: <LoginPassword />,
-      },
+
+      // ── BACK-OFFICE CENTRAL ─────────────────────────────────────────────────
+      { path: '/backoffice/login', element: <LoginPassword /> },
       {
         path: '/backoffice',
         element: <BORoot />,
@@ -300,10 +284,8 @@ export const router = createBrowserRouter([
           { path: 'support', element: <BOSupport /> },
         ],
       },
-      {
-        path: '*',
-        element: <Navigate to="/" replace />,
-      },
+
+      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
 ]);
