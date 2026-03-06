@@ -170,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ═══════════════════════════════════════════════════════════════════
   // AUTHENTIFICATION & CHARGEMENT DONNÉES
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════���═══════════════════
 
   // Charger les données utilisateur depuis Supabase
   const loadUserData = async (userId: string, token: string) => {
@@ -313,7 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMarketplaceItems([]);
     setCurrentSession(null);
 
-    // Nettoyer uniquement les clés non-Supabase (les clés sb-* sont gérées par signOut)
+    // Nettoyer toutes les clés localStorage Jùlaba
     sessionStorage.removeItem('julaba_access_token');
     sessionStorage.removeItem('julaba_user_id');
     sessionStorage.removeItem('julaba_refresh_token');
@@ -321,6 +321,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('julaba_refresh_token');
     localStorage.removeItem('julaba_user_id');
     localStorage.removeItem('julaba_bo_user');
+    localStorage.removeItem('julaba_user_data'); // UserContext storage key
+    localStorage.removeItem('julaba_user');
   };
 
   // ═══════════════════════════════════════════════════════════════════

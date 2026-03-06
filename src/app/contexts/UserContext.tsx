@@ -70,45 +70,42 @@ const DEFAULT_USER: UserData = {
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<UserData | null>(() => {
-    // ✅ En mode DEV, restaurer l'utilisateur depuis sessionStorage si disponible
-    if (import.meta.env.DEV) {
-      try {
-        const stored = sessionStorage.getItem('julaba_dev_user');
-        if (stored) {
-          return JSON.parse(stored);
-        }
-      } catch (e) {
-        console.warn('Error loading dev user:', e);
+    // Restaurer l'utilisateur depuis localStorage (prod) ou sessionStorage (dev)
+    try {
+      // Priorité : localStorage (fonctionne en prod et en dev)
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
       }
+      // Fallback dev : sessionStorage
+      if (import.meta.env.DEV) {
+        const storedDev = sessionStorage.getItem('julaba_dev_user');
+        if (storedDev) return JSON.parse(storedDev);
+      }
+    } catch (e) {
+      console.warn('Error loading stored user:', e);
     }
     return null;
   });
 
-  // ✅ Sauvegarder l'utilisateur en sessionStorage en mode DEV
+  // Sauvegarder l'utilisateur dans localStorage dès qu'il change
   useEffect(() => {
-    if (import.meta.env.DEV && user) {
+    if (user) {
       try {
-        sessionStorage.setItem('julaba_dev_user', JSON.stringify(user));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        if (import.meta.env.DEV) {
+          sessionStorage.setItem('julaba_dev_user', JSON.stringify(user));
+        }
       } catch (e) {
-        console.warn('Error saving dev user:', e);
+        console.warn('Error saving user:', e);
       }
-    } else if (import.meta.env.DEV && !user) {
-      sessionStorage.removeItem('julaba_dev_user');
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      if (import.meta.env.DEV) {
+        sessionStorage.removeItem('julaba_dev_user');
+      }
     }
   }, [user]);
-
-  // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
-  // TODO: Charger le profil utilisateur depuis Supabase au démarrage
-  // useEffect(() => {
-  //   const loadUser = async () => {
-  //     const { data: session } = await supabase.auth.getSession();
-  //     if (session?.user) {
-  //       const { data } = await supabase.from('users').select('*').eq('id', session.user.id).single();
-  //       if (data) setUserState(data);
-  //     }
-  //   };
-  //   loadUser();
-  // }, []);
 
   const setUser = (userData: UserData | User | null) => {
     // Handle null (logout case)
@@ -148,10 +145,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    // ✅ NETTOYAGE PHASE 2 : localStorage SUPPRIMÉ
-    // TODO: Déconnexion via Supabase Auth
-    // await supabase.auth.signOut();
     setUserState(null);
+    localStorage.removeItem(STORAGE_KEY);
+    if (import.meta.env.DEV) {
+      sessionStorage.removeItem('julaba_dev_user');
+    }
   };
 
   return (
