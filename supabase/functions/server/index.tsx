@@ -414,6 +414,39 @@ app.post("/make-server-488793d3/auth/login", async (c) => {
 });
 
 /**
+ * POST /auth/token-refresh - Rafraîchir un access_token via un refresh_token
+ * Contourne le SDK frontend (souvent source de confusion avec les sessions périmées)
+ * Body: { refreshToken: string }
+ */
+app.post("/make-server-488793d3/auth/token-refresh", async (c) => {
+  try {
+    const { refreshToken } = await c.req.json();
+    if (!refreshToken) {
+      return c.json({ error: 'refresh_token manquant' }, 400);
+    }
+    // Appel direct à l'API Supabase Auth REST (plus fiable que le SDK avec état interne)
+    const refreshRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': supabaseAnonKey },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const refreshData = await refreshRes.json();
+    if (!refreshRes.ok || !refreshData.access_token) {
+      console.log('[/auth/token-refresh] Echec refresh:', refreshData.error_description || refreshData.error);
+      return c.json({ error: 'Session expiree, reconnectez-vous' }, 401);
+    }
+    console.log('[/auth/token-refresh] Token rafraichi avec succes');
+    return c.json({
+      accessToken: refreshData.access_token,
+      refreshToken: refreshData.refresh_token || refreshToken,
+    });
+  } catch (error) {
+    console.log('[/auth/token-refresh] Erreur:', error);
+    return c.json({ error: 'Erreur serveur lors du refresh' }, 500);
+  }
+});
+
+/**
  * POST /create-super-admin - Créer le premier compte Super Admin
  * Body: { phone, password, firstName, lastName }
  * ⚠️ Route de bootstrap - À utiliser une seule fois pour créer le premier admin

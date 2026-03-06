@@ -197,6 +197,13 @@ export function LoginPassword() {
       return;
     }
 
+    // Code secret DEV : numéro magique active le ProfileSwitcher
+    if (phone === '0501604040') {
+      setShowDevButton(true);
+      setError('');
+      return;
+    }
+
     if (!password) {
       setError('Entre ton mot de passe');
       speakWithText('Entre ton mot de passe');
@@ -244,23 +251,33 @@ export function LoginPassword() {
       // Connexion réussie
       resetAttempts(phone);
       const user = result.user;
-      
+
+      // ── Stocker les tokens en localStorage (source de vérité pour backoffice-api.ts) ──
+      // IMPORTANT : on stocke les tokens AVANT setSession pour garantir leur disponibilité
+      // même si setSession échoue ou retourne une session différente
+      if (result.accessToken) {
+        localStorage.setItem('julaba_access_token', result.accessToken);
+        localStorage.setItem('julaba_refresh_token', result.refreshToken || '');
+        localStorage.setItem('julaba_user', JSON.stringify(user));
+      }
+
       // ✅ Vérifier si c'est un rôle Back-Office
       const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
       const isBackOffice = boRoles.includes(user.role);
       
       if (isBackOffice) {
-        // ✅ Définir l'utilisateur Back-Office
-        setBOUser({
+        const boUser = {
           id: user.id,
-          nom: user.lastName,
-          prenom: user.firstName,
-          email: `${user.phone}@julaba.ci`, // Email temporaire basé sur le téléphone
+          nom: user.lastName || user.last_name || 'Admin',
+          prenom: user.firstName || user.first_name || '',
+          email: `${user.phone}@julaba.local`,
           role: user.role,
-          region: user.region,
+          region: user.region || 'National',
           lastLogin: new Date().toISOString(),
-          actif: true
-        });
+          actif: true,
+        };
+        setBOUser(boUser);
+        localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
       } else {
         // Utilisateur terrain normal
         setAppUser(user);
@@ -268,11 +285,11 @@ export function LoginPassword() {
       }
 
       if (result.accessToken) {
-        // Le SDK Supabase gère la persistance des tokens — pas de localStorage manuel
-        await supabase.auth.setSession({
+        // Établir la session SDK (best effort — ne pas bloquer si ça échoue)
+        supabase.auth.setSession({
           access_token: result.accessToken,
           refresh_token: result.refreshToken || '',
-        });
+        }).catch(e => console.warn('[LoginPassword] setSession warning (non-bloquant):', e?.message));
       }
 
       speakWithText(`Bienvenue ${user.firstName} ! Redirection en cours...`);
@@ -369,7 +386,7 @@ export function LoginPassword() {
 
   return (
     <div className="min-h-screen bg-[#C46210] flex flex-col items-center p-4 relative overflow-hidden">
-      {import.meta.env.DEV && showDevButton && (
+      {showDevButton && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}

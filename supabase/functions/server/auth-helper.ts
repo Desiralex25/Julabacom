@@ -29,12 +29,36 @@ const supabaseUserValidator = createClient(supabaseUrl, supabaseAnonKey);
  * Utilise le client service role pour la lecture DB (accès complet)
  */
 async function validateUserJWT(accessToken: string): Promise<{ user: any; error?: string }> {
-  // Validation JWT via client anon (obligatoire pour éviter "Invalid JWT")
+  // Log du préfixe du token pour diagnostic (jamais le token complet)
+  const tokenPreview = accessToken ? `${accessToken.substring(0, 20)}...` : 'VIDE';
+  console.log('[validateUserJWT] Validation token preview:', tokenPreview, '| longueur:', accessToken?.length);
+
+  // Vérification basique du format JWT (3 parties séparées par des points)
+  const parts = accessToken?.split('.');
+  if (!accessToken || parts?.length !== 3) {
+    console.log('[validateUserJWT] Format JWT invalide — parts:', parts?.length);
+    return { user: null, error: 'Format JWT invalide' };
+  }
+
+  // Décodage du payload pour vérifier expiration AVANT appel réseau (optimisation)
+  try {
+    const payload = JSON.parse(atob(parts[1]));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      console.log('[validateUserJWT] Token expiré — exp:', payload.exp, 'now:', now, 'delta:', now - payload.exp, 's');
+      return { user: null, error: 'JWT expired' };
+    }
+    console.log('[validateUserJWT] Token non expiré — exp dans', payload.exp - now, 's | sub:', payload.sub?.substring(0, 8));
+  } catch (e) {
+    console.log('[validateUserJWT] Impossible de décoder le payload JWT:', e);
+  }
+
+  // Validation JWT via client anon (obligatoire pour éviter "Invalid JWT" avec service role)
   const { data: authData, error: authError } = await supabaseUserValidator.auth.getUser(accessToken);
 
   if (authError || !authData?.user) {
     const msg = authError?.message || 'Token JWT invalide';
-    console.log('[validateUserJWT] Echec validation JWT (anon client):', msg);
+    console.log('[validateUserJWT] Echec getUser (anon client):', msg);
     return { user: null, error: msg };
   }
 

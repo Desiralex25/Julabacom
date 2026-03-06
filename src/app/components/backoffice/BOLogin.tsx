@@ -172,26 +172,22 @@ export function BOLogin() {
         return;
       }
 
-      // ── Étape 3 : Injecter la session dans le SDK (auto-refresh natif) ─────
-      // setSession établit la session côté SDK → auto-refresh via refresh_token (7j)
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: loginData.accessToken,
-        refresh_token: loginData.refreshToken || '',
-      });
-      if (sessionError) {
-        // Non-bloquant : on continue, le token backend est valide
-        console.warn('[BOLogin] setSession warning:', sessionError.message);
-      }
-
-      // ── Étape 4 : Persister dans les contextes + localStorage ─────────────
+      // ── Étape 3 : Persister en localStorage AVANT setSession ──────────────
+      // CRITIQUE : stocker d'abord les tokens bruts du backend — c'est la source
+      // de vérité pour backoffice-api.ts/getValidToken(), indépendamment du SDK.
       const boUser = normalizeToBoUser(loginData.user);
       localStorage.setItem('julaba_access_token', loginData.accessToken);
       localStorage.setItem('julaba_refresh_token', loginData.refreshToken || '');
       localStorage.setItem('julaba_user', JSON.stringify(boUser));
       localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
+
+      // ── Étape 4 : Injecter dans le SDK (best effort, non-bloquant) ─────────
+      supabase.auth.setSession({
+        access_token: loginData.accessToken,
+        refresh_token: loginData.refreshToken || '',
+      }).catch(e => console.warn('[BOLogin] setSession warning (non-bloquant):', e?.message));
       setAppUser(boUser);
       setBOUser(boUser);
-
       delete loginAttempts[cleanPhone];
       setSuccess(true);
       setTimeout(() => navigate('/backoffice/dashboard'), 1200);
