@@ -581,7 +581,7 @@ export function LoginPassword() {
         </motion.div>
 
         {/* Help Text */}
-        <p className="text-center text-white/90 mt-4 font-bold text-[18px]">
+        <p className="text-center text-white/90 mt-4 font-bold text-[15px]">
           Plateforme nationale d'inclusion économique des acteurs vivriers
         </p>
 

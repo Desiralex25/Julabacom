@@ -143,67 +143,60 @@ export function BOLogin() {
     }
     setIsLoading(true);
     try {
-      // ── Étape 1 : signInWithPassword directement via SDK Supabase ─────────
-      // La session est gérée nativement par le SDK → auto-refresh garanti
-      const authEmail = `${cleanPhone}@julaba.local`;
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: authEmail,
-        password,
+      // ── Étape 1 : Login via backend ────────────────────────────────────────
+      // Le SDK navigateur retourne 400 (bloqué par Supabase selon le contexte).
+      // Le backend contourne : signInWithPassword avec supabaseAnon côté serveur
+      // + lecture profil via service role (bypass RLS complet, évite 406).
+      const loginRes = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: baseHeaders,
+        body: JSON.stringify({ phone: cleanPhone, password }),
       });
+      const loginData = await loginRes.json();
 
-      if (authError || !authData.session) {
+      if (!loginRes.ok || !loginData.accessToken) {
         loginAttempts[cleanPhone] = { count: (loginAttempts[cleanPhone]?.count || 0) + 1, ts: now };
-        setError(authError?.message?.includes('Invalid') || authError?.message?.includes('invalid')
-          ? 'Identifiants incorrects. Verifiez votre numero et mot de passe.'
-          : (authError?.message || 'Identifiants incorrects.'));
+        const msg = loginData.error || loginData.details || 'Identifiants incorrects.';
+        setError(
+          msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('incorrect')
+            ? 'Identifiants incorrects. Verifiez votre numero et mot de passe.'
+            : msg
+        );
         return;
       }
 
-      // ── Étape 2 : Récupérer le profil via le backend (service role, bypass RLS) ─
-      // Requête directe Supabase depuis le frontend → bloquée par RLS (406)
-      // On passe par /auth/profile qui utilise la service role key côté serveur
-      const profileRes = await fetch(`${API_URL}/auth/profile`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authData.session.access_token}`,
-        },
-      });
-      const profileData = await profileRes.json();
-
-      if (!profileRes.ok || !profileData.user) {
-        console.error('[BOLogin] Erreur profil:', profileData);
-        setError(profileData.error || 'Profil introuvable. Contactez le support Julaba.');
-        await supabase.auth.signOut();
-        return;
-      }
-
-      const profile = profileData.user;
-
-      // ── Étape 3 : Vérifier le rôle BO ─────────────────────────────────────
+      // ── Étape 2 : Vérifier le rôle BO ─────────────────────────────────────
       const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
-      if (!boRoles.includes(profile.role)) {
+      if (!boRoles.includes(loginData.user?.role)) {
         setError('Acces refuse. Ce portail est reserve aux administrateurs Back-Office.');
-        await supabase.auth.signOut();
         return;
       }
 
-      // ── Étape 4 : Persister dans les contextes (session SDK déjà active) ──
-      const boUser = normalizeToBoUser(profile);
-      // Sauvegarder tokens dans localStorage pour getValidToken() de backoffice-api
-      localStorage.setItem('julaba_access_token', authData.session.access_token);
-      localStorage.setItem('julaba_refresh_token', authData.session.refresh_token);
+      // ── Étape 3 : Injecter la session dans le SDK (auto-refresh natif) ─────
+      // setSession établit la session côté SDK → auto-refresh via refresh_token (7j)
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: loginData.accessToken,
+        refresh_token: loginData.refreshToken || '',
+      });
+      if (sessionError) {
+        // Non-bloquant : on continue, le token backend est valide
+        console.warn('[BOLogin] setSession warning:', sessionError.message);
+      }
+
+      // ── Étape 4 : Persister dans les contextes + localStorage ─────────────
+      const boUser = normalizeToBoUser(loginData.user);
+      localStorage.setItem('julaba_access_token', loginData.accessToken);
+      localStorage.setItem('julaba_refresh_token', loginData.refreshToken || '');
       localStorage.setItem('julaba_user', JSON.stringify(boUser));
       localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
       setAppUser(boUser);
       setBOUser(boUser);
 
-      // Mettre à jour last_login_at (best effort, non-bloquant)
-      supabase.from('users_julaba').update({ last_login_at: new Date().toISOString() }).eq('id', profile.id);
-
       delete loginAttempts[cleanPhone];
       setSuccess(true);
       setTimeout(() => navigate('/backoffice/dashboard'), 1200);
-    } catch {
+    } catch (err) {
+      console.error('[BOLogin] Erreur reseau:', err);
       setError('Erreur reseau. Verifiez votre connexion.');
     } finally {
       setIsLoading(false);
