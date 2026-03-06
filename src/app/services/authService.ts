@@ -10,6 +10,7 @@
  */
 
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+import { supabase } from './supabaseClient';
 
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
 
@@ -125,6 +126,11 @@ export async function login(data: LoginData): Promise<AuthResponse> {
     // Stocker les tokens de manière sécurisée
     if (result.accessToken) {
       sessionStorage.setItem('julaba_access_token', result.accessToken);
+      // Injecter dans le singleton Supabase pour le refresh automatique
+      await supabase.auth.setSession({
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken || '',
+      });
     }
     if (result.refreshToken) {
       sessionStorage.setItem('julaba_refresh_token', result.refreshToken);
@@ -241,8 +247,29 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Obtenir le token d'accès actuel
+ * Obtenir le token d'accès actuel (avec auto-refresh via singleton Supabase)
+ * Utilise le singleton en priorité pour bénéficier du refresh automatique
+ */
+export async function getValidToken(): Promise<string | null> {
+  try {
+    // Priorité : session Supabase singleton (auto-refresh si expiré)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      return session.access_token;
+    }
+  } catch (e) {
+    console.warn('getValidToken: erreur singleton Supabase', e);
+  }
+  // Fallback : token stocké manuellement
+  return sessionStorage.getItem('julaba_access_token') ||
+    localStorage.getItem('julaba_access_token');
+}
+
+/**
+ * Obtenir le token d'accès actuel (synchrone - peut être périmé)
+ * @deprecated Utiliser getValidToken() à la place
  */
 export function getAccessToken(): string | null {
-  return sessionStorage.getItem('julaba_access_token');
+  return sessionStorage.getItem('julaba_access_token') ||
+    localStorage.getItem('julaba_access_token');
 }

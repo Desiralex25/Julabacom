@@ -376,7 +376,7 @@ export async function updateDossierStatut(c: Context) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // ROUTES : Transactions
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -461,6 +461,103 @@ export async function updateZoneStatut(c: Context) {
   } catch (error) {
     console.log('Error in updateZoneStatut:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
+  }
+}
+
+/**
+ * POST /backoffice/zones - Créer une nouvelle zone
+ */
+export async function createZone(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const { nom, region, gestionnaire } = await c.req.json();
+
+    if (!nom || !region) {
+      return c.json({ error: 'Nom et région sont obligatoires' }, 400);
+    }
+
+    const newZone: BOZone = {
+      id: `zone_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      nom,
+      region,
+      gestionnaire: gestionnaire || undefined,
+      nbActeurs: 0,
+      nbIdentificateurs: 0,
+      volumeTotal: 0,
+      tauxActivite: 0,
+      statut: 'active',
+    };
+
+    const zones = await kv.get<BOZone[]>('bo_zones') || [];
+    zones.push(newZone);
+    await kv.set('bo_zones', zones);
+
+    await addAuditLog({
+      action: 'CRÉATION zone',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: newZone.nom,
+      ancienneValeur: '-',
+      nouvelleValeur: region,
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Zones',
+    });
+
+    return c.json({ success: true, zone: newZone }, 201);
+  } catch (error) {
+    console.log('Error in createZone:', error);
+    return c.json({ error: 'Erreur serveur lors de la création de la zone' }, 500);
+  }
+}
+
+/**
+ * PATCH /backoffice/zones/:id - Mettre à jour une zone
+ */
+export async function updateZone(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const zoneId = c.req.param('id');
+    const { nom, region, gestionnaire } = await c.req.json();
+
+    const zones = await kv.get<BOZone[]>('bo_zones') || [];
+    const zoneIndex = zones.findIndex(z => z.id === zoneId);
+
+    if (zoneIndex === -1) {
+      return c.json({ error: 'Zone introuvable' }, 404);
+    }
+
+    const zone = zones[zoneIndex];
+    zones[zoneIndex] = {
+      ...zone,
+      nom: nom ?? zone.nom,
+      region: region ?? zone.region,
+      gestionnaire: gestionnaire !== undefined ? gestionnaire : zone.gestionnaire,
+    };
+    await kv.set('bo_zones', zones);
+
+    await addAuditLog({
+      action: 'MODIFICATION zone',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: zone.nom,
+      ancienneValeur: zone.gestionnaire || 'sans gestionnaire',
+      nouvelleValeur: gestionnaire || 'sans gestionnaire',
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Zones',
+    });
+
+    return c.json({ success: true, zone: zones[zoneIndex] });
+  } catch (error) {
+    console.log('Error in updateZone:', error);
+    return c.json({ error: 'Erreur serveur lors de la mise à jour de la zone' }, 500);
   }
 }
 
@@ -554,7 +651,7 @@ export async function getAuditLogs(c: Context) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTES : Utilisateurs BO
-// ─────────────────────────────────────────────────────────────────��───────────
+// ────────────────────────────────────────────────────────────────────────────
 
 /**
  * GET /backoffice/users - Liste tous les utilisateurs BO
@@ -595,7 +692,7 @@ export async function getBOUsers(c: Context) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // ROUTES : Institutions
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -784,5 +881,344 @@ export async function deleteInstitution(c: Context) {
   } catch (error) {
     console.log('Error in deleteInstitution:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROUTES : Création Utilisateur BO
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /backoffice/users - Créer un utilisateur Back-Office
+ */
+export async function createBOUser(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const { prenom, nom, email, password, role, region } = await c.req.json();
+
+    if (!prenom || !nom || !email || !password || !role) {
+      return c.json({ error: 'Champs obligatoires manquants : prenom, nom, email, password, role' }, 400);
+    }
+
+    const validBoRoles = ['admin_national', 'gestionnaire_zone', 'analyste'];
+    if (!validBoRoles.includes(role)) {
+      return c.json({ error: 'Rôle BO invalide. Valeurs acceptées : admin_national, gestionnaire_zone, analyste' }, 400);
+    }
+
+    // Créer l'utilisateur dans Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { first_name: prenom, last_name: nom, role },
+    });
+
+    if (authError) {
+      console.log('Erreur création auth utilisateur BO:', authError);
+      return c.json({ error: 'Erreur lors de la création du compte', details: authError.message }, 500);
+    }
+
+    // Générer un phone unique (les users BO n'ont pas toujours de téléphone)
+    const fakePHone = `BO${Date.now().toString().slice(-8)}`;
+
+    // Créer le profil dans users_julaba
+    const { data: profile, error: profileError } = await supabase
+      .from('users_julaba')
+      .insert({
+        auth_user_id: authData.user.id,
+        phone: fakePHone,
+        first_name: prenom,
+        last_name: nom,
+        role,
+        region: region || 'National',
+        validated: true,
+        score: 100,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.log('Erreur création profil utilisateur BO:', profileError);
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return c.json({ error: 'Erreur lors de la création du profil', details: profileError.message }, 500);
+    }
+
+    await addAuditLog({
+      action: 'CRÉATION utilisateur BO',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: `${prenom} ${nom}`,
+      ancienneValeur: '-',
+      nouvelleValeur: role,
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Utilisateurs',
+    });
+
+    return c.json({
+      success: true,
+      user: {
+        id: profile.id,
+        nom,
+        prenom,
+        email,
+        role,
+        region: region || 'National',
+        lastLogin: new Date().toISOString(),
+        actif: true,
+      },
+    }, 201);
+  } catch (error) {
+    console.log('Erreur createBOUser:', error);
+    return c.json({ error: 'Erreur serveur lors de la création de l\'utilisateur BO', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
+  }
+}
+
+/**
+ * PATCH /backoffice/users/:id/actif - Activer / Désactiver un utilisateur BO
+ */
+export async function updateBOUserActif(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const userId = c.req.param('id');
+    const { actif } = await c.req.json();
+
+    const { data: user, error: fetchError } = await supabase
+      .from('users_julaba')
+      .select('first_name, last_name, role, validated')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError || !user) {
+      return c.json({ error: 'Utilisateur introuvable' }, 404);
+    }
+
+    const { error: updateError } = await supabase
+      .from('users_julaba')
+      .update({ validated: actif })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.log('Erreur mise à jour statut utilisateur BO:', updateError);
+      return c.json({ error: 'Erreur lors de la mise à jour', details: updateError.message }, 500);
+    }
+
+    await addAuditLog({
+      action: actif ? 'RÉACTIVATION utilisateur BO' : 'DÉSACTIVATION utilisateur BO',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: `${user.first_name} ${user.last_name}`,
+      ancienneValeur: user.validated ? 'actif' : 'inactif',
+      nouvelleValeur: actif ? 'actif' : 'inactif',
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Utilisateurs',
+    });
+
+    return c.json({ success: true, actif });
+  } catch (error) {
+    console.log('Erreur updateBOUserActif:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROUTES : Missions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /backoffice/missions - Lister toutes les missions
+ */
+export async function getMissions(c: Context) {
+  const auth = await checkAuthBO(c);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const missions = await kv.get<any[]>('bo_missions') || [];
+    return c.json({ missions });
+  } catch (error) {
+    console.log('Erreur getMissions:', error);
+    return c.json({ error: 'Erreur serveur' }, 500);
+  }
+}
+
+/**
+ * POST /backoffice/missions - Créer une mission
+ */
+export async function createMission(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const missionData = await c.req.json();
+
+    if (!missionData.titre || !missionData.type) {
+      return c.json({ error: 'Titre et type sont obligatoires' }, 400);
+    }
+
+    const newMission = {
+      ...missionData,
+      id: `ms_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      realise: 0,
+      statut: 'draft',
+      participantsCount: 0,
+      creePar: `${auth.user.first_name} ${auth.user.last_name}`,
+      dateCreation: new Date().toISOString(),
+    };
+
+    const missions = await kv.get<any[]>('bo_missions') || [];
+    missions.unshift(newMission);
+    await kv.set('bo_missions', missions);
+
+    await addAuditLog({
+      action: 'CRÉATION mission',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: newMission.titre,
+      ancienneValeur: '-',
+      nouvelleValeur: 'draft',
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Missions',
+    });
+
+    return c.json({ success: true, mission: newMission }, 201);
+  } catch (error) {
+    console.log('Erreur createMission:', error);
+    return c.json({ error: 'Erreur serveur lors de la création de la mission', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
+  }
+}
+
+/**
+ * PATCH /backoffice/missions/:id/statut - Mettre à jour le statut d'une mission
+ */
+export async function updateMissionStatut(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const missionId = c.req.param('id');
+    const { statut } = await c.req.json();
+
+    const missions = await kv.get<any[]>('bo_missions') || [];
+    const idx = missions.findIndex(m => m.id === missionId);
+
+    if (idx === -1) {
+      return c.json({ error: 'Mission introuvable' }, 404);
+    }
+
+    const ancienStatut = missions[idx].statut;
+    missions[idx] = { ...missions[idx], statut };
+    await kv.set('bo_missions', missions);
+
+    await addAuditLog({
+      action: statut === 'active' ? 'ACTIVATION mission' : statut === 'terminee' ? 'CLÔTURE mission' : 'MODIFICATION statut mission',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: missions[idx].titre,
+      ancienneValeur: ancienStatut,
+      nouvelleValeur: statut,
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Missions',
+    });
+
+    return c.json({ success: true, mission: missions[idx] });
+  } catch (error) {
+    console.log('Erreur updateMissionStatut:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
+  }
+}
+
+/**
+ * POST /backoffice/enrolement/identificateur - Créer un compte identificateur depuis le BO
+ */
+export async function createIdentificateur(c: Context) {
+  const auth = await checkAuthBO(c, ['super_admin', 'admin_national']);
+  if (!auth.authorized) {
+    return c.json({ error: auth.error }, 401);
+  }
+
+  try {
+    const { prenom, nom, telephone, cni, region, zoneId, objectifMensuel, institutionRattachee } = await c.req.json();
+
+    if (!prenom || !nom || !telephone) {
+      return c.json({ error: 'Prénom, nom et téléphone sont obligatoires' }, 400);
+    }
+
+    // Vérifier si le téléphone existe déjà
+    const { data: existing } = await supabase
+      .from('users_julaba')
+      .select('phone')
+      .eq('phone', telephone)
+      .single();
+
+    if (existing) {
+      return c.json({ error: 'Ce numéro de téléphone est déjà enregistré' }, 409);
+    }
+
+    const authEmail = `${telephone}@julaba.local`;
+    const defaultPassword = telephone; // Mot de passe initial = téléphone
+
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: authEmail,
+      password: defaultPassword,
+      email_confirm: true,
+      user_metadata: { phone: telephone, first_name: prenom, last_name: nom, role: 'identificateur' },
+    });
+
+    if (authError) {
+      console.log('Erreur création auth identificateur:', authError);
+      return c.json({ error: 'Erreur lors de la création du compte', details: authError.message }, 500);
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users_julaba')
+      .insert({
+        auth_user_id: authData.user.id,
+        phone: telephone,
+        first_name: prenom,
+        last_name: nom,
+        role: 'identificateur',
+        region: region || null,
+        cni_number: cni || null,
+        institution_name: institutionRattachee || null,
+        score: 50,
+        validated: true,
+        verified_phone: true,
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return c.json({ error: 'Erreur lors de la création du profil', details: profileError.message }, 500);
+    }
+
+    await addAuditLog({
+      action: 'CRÉATION identificateur',
+      utilisateurBO: `${auth.user.first_name} ${auth.user.last_name}`,
+      roleBO: auth.user.role,
+      acteurImpacte: `${prenom} ${nom}`,
+      ancienneValeur: '-',
+      nouvelleValeur: `Zone: ${zoneId || 'non assigné'}`,
+      ip: c.req.header('x-forwarded-for') || 'unknown',
+      module: 'Enrôlement',
+    });
+
+    return c.json({ success: true, user: { id: profile.id, phone: telephone, firstName: prenom, lastName: nom, role: 'identificateur' } }, 201);
+  } catch (error) {
+    console.log('Erreur createIdentificateur:', error);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' }, 500);
   }
 }

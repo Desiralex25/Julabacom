@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as zonesApi from '../../imports/zones-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export type ZoneType = 'marche' | 'village' | 'region';
 
@@ -60,7 +61,8 @@ export function ZoneProvider({ children }: { children: ReactNode }) {
       setError(null);
       const { zones: data } = await zonesApi.fetchZones();
       setZones(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.message === NOT_AUTHENTICATED) { setLoading(false); return; }
       console.error('Error loading zones:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
     } finally {

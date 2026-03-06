@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as commandesApi from '../../imports/commandes-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Commande {
   id: string;
@@ -61,7 +62,8 @@ export function CommandeProvider({ children }: { children: ReactNode }) {
       }));
 
       setCommandes(commandeList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading commandes:', error);
     } finally {
       setLoading(false);

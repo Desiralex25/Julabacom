@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as caisseApi from '../../imports/caisse-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface CaisseTransaction {
   id: string;
@@ -54,7 +55,8 @@ export function CaisseProvider({ children }: { children: ReactNode }) {
       }));
 
       setTransactions(txList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading caisse transactions:', error);
     } finally {
       setLoading(false);

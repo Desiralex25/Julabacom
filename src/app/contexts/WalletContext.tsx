@@ -9,6 +9,7 @@ import { useUser } from './UserContext';
 import { useNotifications } from './NotificationsContext';
 import * as walletsApi from '../../imports/wallets-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 interface WalletContextType {
   wallet: WalletAccount | null;
@@ -95,7 +96,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       setWallet(walletAccount);
       setTransactions(txList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) { setLoading(false); return; }
       console.error('Error loading wallet:', error);
       
       // Créer wallet vide si n'existe pas

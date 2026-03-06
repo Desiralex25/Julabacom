@@ -4,8 +4,10 @@
  */
 
 import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { supabase } from '../app/services/supabaseClient';
 
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/backoffice`;
+const SUPABASE_URL = `https://${projectId}.supabase.co`;
+const API_URL = `${SUPABASE_URL}/functions/v1/make-server-488793d3/backoffice`;
 
 /**
  * Récupérer le token d'accès
@@ -15,23 +17,85 @@ function getAccessToken(): string {
 }
 
 /**
- * Effectuer une requête API
+ * Rafraîchir le token via le singleton Supabase partagé
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error || !data.session) {
+      // Essai fallback via le refresh token stocké
+      const refreshToken = localStorage.getItem('julaba_refresh_token');
+      if (!refreshToken) {
+        console.warn('[BO API] Pas de refresh token disponible - reconnexion requise');
+        return null;
+      }
+      const { data: data2, error: error2 } = await supabase.auth.setSession({
+        access_token: '',
+        refresh_token: refreshToken,
+      });
+      if (error2 || !data2.session) {
+        console.error('[BO API] Échec du refresh token:', error2?.message);
+        localStorage.removeItem('julaba_access_token');
+        localStorage.removeItem('julaba_refresh_token');
+        return null;
+      }
+      localStorage.setItem('julaba_access_token', data2.session.access_token);
+      localStorage.setItem('julaba_refresh_token', data2.session.refresh_token);
+      return data2.session.access_token;
+    }
+    localStorage.setItem('julaba_access_token', data.session.access_token);
+    localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
+    console.log('[BO API] Token rafraîchi avec succès');
+    return data.session.access_token;
+  } catch (err) {
+    console.error('[BO API] Erreur lors du refresh token:', err);
+    return null;
+  }
+}
+
+/**
+ * Effectuer une requête API avec gestion automatique du refresh token
  */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getAccessToken();
-  
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  let token = getAccessToken();
+
+  const doFetch = async (authToken: string) =>
+    fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+        ...options.headers,
+      },
+    });
+
+  let response = await doFetch(token);
+
+  // Si 401 (token expiré), tenter un refresh automatique
+  if (response.status === 401) {
+    console.warn(`[BO API] 401 sur ${endpoint} - tentative de refresh du token...`);
+    const newToken = await refreshAccessToken();
+
+    if (newToken) {
+      // Réessayer avec le nouveau token
+      response = await doFetch(newToken);
+    } else {
+      // Refresh impossible → déclencher une déconnexion forcée
+      window.dispatchEvent(new CustomEvent('julaba:session-expired'));
+      throw new Error('SESSION_EXPIRED');
+    }
+  }
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Erreur API');
+    let errorMessage = 'Erreur API';
+    try {
+      const errorBody = await response.json();
+      errorMessage = errorBody.error || errorBody.message || `Erreur HTTP ${response.status}`;
+    } catch {
+      errorMessage = `Erreur HTTP ${response.status}`;
+    }
+    console.error(`[BO API] Erreur ${response.status} sur ${endpoint}:`, errorMessage);
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -75,12 +139,26 @@ export async function fetchTransactions() {
   return apiRequest<{ transactions: any[] }>('/transactions');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // ZONES
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function fetchZones() {
   return apiRequest<{ zones: any[] }>('/zones');
+}
+
+export async function createZone(data: { nom: string; region: string; gestionnaire?: string }) {
+  return apiRequest<{ success: boolean; zone: any }>('/zones', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateZone(id: string, data: { nom?: string; region?: string; gestionnaire?: string }) {
+  return apiRequest<{ success: boolean; zone: any }>(`/zones/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }
 
 export async function updateZoneStatut(id: string, statut: string) {
@@ -107,7 +185,7 @@ export async function updateCommissionStatut(id: string, statut: string) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUDIT
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────��───────────────────────────────────────────────────────
 
 export async function fetchAuditLogs() {
   return apiRequest<{ logs: any[] }>('/audit');
@@ -119,6 +197,20 @@ export async function fetchAuditLogs() {
 
 export async function fetchBOUsers() {
   return apiRequest<{ users: any[] }>('/users');
+}
+
+export async function createBOUser(data: { prenom: string; nom: string; email: string; password: string; role: string; region?: string }) {
+  return apiRequest<{ success: boolean; user: any }>('/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateBOUserActif(id: string, actif: boolean) {
+  return apiRequest<{ success: boolean; actif: boolean }>(`/users/${id}/actif`, {
+    method: 'PATCH',
+    body: JSON.stringify({ actif }),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,5 +245,34 @@ export async function updateInstitutionStatut(id: string, statut: string) {
 export async function deleteInstitution(id: string) {
   return apiRequest(`/institutions/${id}`, {
     method: 'DELETE',
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MISSIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchMissions() {
+  return apiRequest<{ missions: any[] }>('/missions');
+}
+
+export async function createMission(data: any) {
+  return apiRequest<{ success: boolean; mission: any }>('/missions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMissionStatut(id: string, statut: string) {
+  return apiRequest<{ success: boolean; mission: any }>(`/missions/${id}/statut`, {
+    method: 'PATCH',
+    body: JSON.stringify({ statut }),
+  });
+}
+
+export async function createIdentificateur(data: { prenom: string; nom: string; telephone: string; cni?: string; region?: string; zoneId?: string; objectifMensuel?: string; institutionRattachee?: string }) {
+  return apiRequest<{ success: boolean; user: any }>('/enrolement/identificateur', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }

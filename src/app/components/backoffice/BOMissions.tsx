@@ -27,14 +27,6 @@ interface Mission {
   participantsCount: number;
 }
 
-const MOCK_MISSIONS: Mission[] = [
-  { id: 'ms1', titre: 'Sprint Identification Abidjan', description: '50 nouvelles identifications validées sur Abidjan en 1 mois', type: 'identification', cible: 'Identificateurs', objectif: 50, realise: 37, dateDebut: '2026-03-01', dateFin: '2026-03-31', statut: 'active', region: 'Abidjan', points: 500, participantsCount: 12 },
-  { id: 'ms2', titre: 'Academy Challenge Marchands', description: 'Compléter 3 modules Academy pour les marchands de Bouaké', type: 'formation', cible: 'Marchands', objectif: 200, realise: 145, dateDebut: '2026-02-15', dateFin: '2026-03-15', statut: 'active', region: 'Bouaké', points: 300, participantsCount: 89 },
-  { id: 'ms3', titre: 'Volume San Pédro Février', description: 'Atteindre 30M FCFA de volume de transactions', type: 'transaction', cible: 'Marchands + Producteurs', objectif: 30000000, realise: 28000000, dateDebut: '2026-02-01', dateFin: '2026-02-28', statut: 'terminee', region: 'San Pédro', points: 1000, participantsCount: 127 },
-  { id: 'ms4', titre: 'Couverture Korhogo Nord', description: 'Identifier 100% des acteurs de la zone Korhogo Nord', type: 'zone', cible: 'Identificateurs', objectif: 150, realise: 89, dateDebut: '2026-01-01', dateFin: '2026-02-28', statut: 'echouee', region: 'Korhogo', points: 800, participantsCount: 6 },
-  { id: 'ms5', titre: 'Digitalisation Yamoussoukro Q2', description: 'Numériser les acteurs de la zone inactive Yamoussoukro', type: 'identification', cible: 'Identificateurs', objectif: 80, realise: 0, dateDebut: '2026-04-01', dateFin: '2026-06-30', statut: 'draft', region: 'Yamoussoukro', points: 600, participantsCount: 0 },
-];
-
 const TYPE_CONFIG: Record<Mission['type'], { label: string; color: string; icon: any }> = {
   identification: { label: 'Identification', color: BO_PRIMARY, icon: Users },
   formation: { label: 'Formation', color: '#8B5CF6', icon: Award },
@@ -68,51 +60,59 @@ function ProgressBar({ value, total, color }: { value: number; total: number; co
 }
 
 export function BOMissions() {
-  const { hasPermission, addAuditLog, boUser } = useBackOffice();
-  const [missions, setMissions] = useState<Mission[]>(MOCK_MISSIONS);
+  const { hasPermission, addMission, updateMissionStatut, missions } = useBackOffice();
   const [showCreate, setShowCreate] = useState(false);
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ titre: '', description: '', type: 'identification' as Mission['type'], objectif: 50, region: 'Abidjan', cible: '', dateDebut: '', dateFin: '', points: 300 });
 
   const canWrite = hasPermission('missions.write');
 
-  const filtered = missions.filter(m =>
+  const filtered = missions.filter((m: any) =>
     (filterStatut === 'all' || m.statut === filterStatut) &&
     (filterType === 'all' || m.type === filterType)
   );
 
-  const actives = missions.filter(m => m.statut === 'active').length;
-  const terminees = missions.filter(m => m.statut === 'terminee').length;
-  const tauxSucces = Math.round((terminees / missions.filter(m => m.statut !== 'draft').length) * 100);
+  const actives = missions.filter((m: any) => m.statut === 'active').length;
+  const terminees = missions.filter((m: any) => m.statut === 'terminee').length;
+  const totalNonDraft = missions.filter((m: any) => m.statut !== 'draft').length;
+  const tauxSucces = totalNonDraft > 0 ? Math.round((terminees / totalNonDraft) * 100) : 0;
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newMission: Mission = {
-      id: `ms${Date.now()}`, ...form,
-      realise: 0, statut: 'draft', participantsCount: 0,
-    };
-    setMissions(prev => [newMission, ...prev]);
-    if (boUser) addAuditLog({ action: 'CRÉATION mission', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: form.titre, ancienneValeur: '—', nouvelleValeur: 'draft', ip: '127.0.0.1', module: 'Missions' });
-    toast.success(`Mission "${form.titre}" créée en brouillon`);
-    setShowCreate(false);
-    setForm({ titre: '', description: '', type: 'identification', objectif: 50, region: 'Abidjan', cible: '', dateDebut: '', dateFin: '', points: 300 });
+    setIsSubmitting(true);
+    try {
+      await addMission(form);
+      toast.success(`Mission "${form.titre}" créée en brouillon`);
+      setShowCreate(false);
+      setForm({ titre: '', description: '', type: 'identification', objectif: 50, region: 'Abidjan', cible: '', dateDebut: '', dateFin: '', points: 300 });
+    } catch (error) {
+      console.error('Erreur création mission:', error);
+      toast.error('Erreur lors de la création de la mission');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handlePublier = (id: string) => {
-    const mission = missions.find(m => m.id === id);
-    setMissions(prev => prev.map(m => m.id === id ? { ...m, statut: 'active' } : m));
-    if (boUser && mission) addAuditLog({ action: 'ACTIVATION mission', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: mission.titre, ancienneValeur: 'draft', nouvelleValeur: 'active', ip: '127.0.0.1', module: 'Missions' });
-    toast.success('Mission activée — notifications envoyées');
+  const handlePublier = async (id: string) => {
+    try {
+      await updateMissionStatut(id, 'active');
+      toast.success('Mission activée — notifications envoyées');
+    } catch (error) {
+      toast.error('Erreur lors de l\'activation de la mission');
+    }
   };
 
-  const handleCloturer = (id: string) => {
-    const mission = missions.find(m => m.id === id);
-    setMissions(prev => prev.map(m => m.id === id ? { ...m, statut: 'terminee' } : m));
-    if (boUser && mission) addAuditLog({ action: 'CLÔTURE mission', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: mission.titre, ancienneValeur: 'active', nouvelleValeur: 'terminee', ip: '127.0.0.1', module: 'Missions' });
-    toast.info('Mission clôturée — résultats archivés');
+  const handleCloturer = async (id: string) => {
+    try {
+      await updateMissionStatut(id, 'terminee');
+      toast.info('Mission clôturée — résultats archivés');
+    } catch (error) {
+      toast.error('Erreur lors de la clôture de la mission');
+    }
   };
 
   return (

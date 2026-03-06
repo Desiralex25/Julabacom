@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as recoltesApi from '../../imports/recoltes-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Recolte {
   id: string;
@@ -56,7 +57,8 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
       }));
 
       setRecoltes(recolteList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading recoltes:', error);
     } finally {
       setLoading(false);

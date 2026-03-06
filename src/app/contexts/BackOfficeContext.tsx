@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as boAPI from '/src/imports/backoffice-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { toast } from 'sonner';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -236,17 +237,24 @@ interface BackOfficeContextType {
   auditLogs: BOAuditLog[];
   boUsers: BOUser[];
   institutions: InstitutionBO[];
+  missions: any[];
 
   updateActeurStatut: (id: string, statut: BOActeur['statut'], log?: string) => void;
   updateDossierStatut: (id: string, statut: BODossier['statut'], motif?: string) => void;
   updateZoneStatut: (id: string, statut: BOZone['statut']) => void;
+  addZone: (data: { nom: string; region: string; gestionnaire?: string }) => Promise<void>;
+  updateZoneData: (id: string, data: { nom?: string; region?: string; gestionnaire?: string }) => Promise<void>;
   updateCommissionStatut: (id: string, statut: BOCommission['statut']) => void;
   addAuditLog: (log: Omit<BOAuditLog, 'id' | 'date'>) => void;
-  addBOUser: (user: Omit<BOUser, 'id' | 'lastLogin'>) => void;
+  addBOUser: (user: { prenom: string; nom: string; email: string; password: string; role: BORoleType; region?: string }) => Promise<void>;
+  updateBOUserActif: (id: string, actif: boolean) => Promise<void>;
   addInstitution: (inst: Omit<InstitutionBO, 'id' | 'dateCreation' | 'creePar'>) => void;
   updateInstitutionModules: (id: string, modules: ModuleAcces) => void;
   updateInstitutionStatut: (id: string, statut: InstitutionBO['statut']) => void;
   deleteInstitution: (id: string) => void;
+  addMission: (data: any) => Promise<void>;
+  updateMissionStatut: (id: string, statut: string) => Promise<void>;
+  createIdentificateur: (data: { prenom: string; nom: string; telephone: string; cni?: string; region?: string; zoneId?: string; objectifMensuel?: string; institutionRattachee?: string }) => Promise<void>;
 }
 
 const BackOfficeContext = createContext<BackOfficeContextType | null>(null);
@@ -276,6 +284,7 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   const [auditLogs, setAuditLogs] = useState<BOAuditLog[]>([]);
   const [boUsers, setBOUsers] = useState<BOUser[]>([]);
   const [institutions, setInstitutions] = useState<InstitutionBO[]>([]);
+  const [missions, setMissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // ✅ Charger toutes les données depuis Supabase au montage
@@ -303,15 +312,17 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
           auditRes,
           usersRes,
           institutionsRes,
+          missionsRes,
         ] = await Promise.all([
-          boAPI.fetchActeurs().catch(() => ({ acteurs: [] })),
-          boAPI.fetchDossiers().catch(() => ({ dossiers: [] })),
-          boAPI.fetchTransactions().catch(() => ({ transactions: [] })),
-          boAPI.fetchZones().catch(() => ({ zones: [] })),
-          boAPI.fetchCommissions().catch(() => ({ commissions: [] })),
-          boAPI.fetchAuditLogs().catch(() => ({ logs: [] })),
-          boAPI.fetchBOUsers().catch(() => ({ users: [] })),
-          boAPI.fetchInstitutions().catch(() => ({ institutions: [] })),
+          boAPI.fetchActeurs().catch(e => { console.error('fetchActeurs:', e.message); return { acteurs: [] }; }),
+          boAPI.fetchDossiers().catch(e => { console.error('fetchDossiers:', e.message); return { dossiers: [] }; }),
+          boAPI.fetchTransactions().catch(e => { console.error('fetchTransactions:', e.message); return { transactions: [] }; }),
+          boAPI.fetchZones().catch(e => { console.error('fetchZones:', e.message); return { zones: [] }; }),
+          boAPI.fetchCommissions().catch(e => { console.error('fetchCommissions:', e.message); return { commissions: [] }; }),
+          boAPI.fetchAuditLogs().catch(e => { console.error('fetchAuditLogs:', e.message); return { logs: [] }; }),
+          boAPI.fetchBOUsers().catch(e => { console.error('fetchBOUsers:', e.message); return { users: [] }; }),
+          boAPI.fetchInstitutions().catch(e => { console.error('fetchInstitutions:', e.message); return { institutions: [] }; }),
+          boAPI.fetchMissions().catch(e => { console.error('fetchMissions:', e.message); return { missions: [] }; }),
         ]);
 
         setActeurs(acteursRes.acteurs);
@@ -322,10 +333,15 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
         setAuditLogs(auditRes.logs);
         setBOUsers(usersRes.users);
         setInstitutions(institutionsRes.institutions);
+        setMissions(missionsRes.missions);
 
-        console.log('✅ Données Back-Office chargées depuis Supabase');
+        console.log('Donnees Back-Office chargees depuis Supabase');
       } catch (error) {
-        console.error('❌ Erreur chargement données BO:', error);
+        console.error('Erreur chargement donnees BO:', error);
+        const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+        if (msg !== 'SESSION_EXPIRED') {
+          toast.error('Erreur de chargement des donnees Back-Office', { description: msg });
+        }
       } finally {
         setLoading(false);
       }
@@ -360,6 +376,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateActeurStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour statut acteur', { description: msg });
       throw error;
     }
   };
@@ -372,6 +390,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateDossierStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour dossier', { description: msg });
       throw error;
     }
   };
@@ -384,6 +404,36 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateZoneStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour zone', { description: msg });
+      throw error;
+    }
+  };
+
+  const addZone = async (data: { nom: string; region: string; gestionnaire?: string }) => {
+    try {
+      const { zone } = await boAPI.createZone(data);
+      setZones(prev => [...prev, zone]);
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur addZone:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation zone', { description: msg });
+      throw error;
+    }
+  };
+
+  const updateZoneData = async (id: string, data: { nom?: string; region?: string; gestionnaire?: string }) => {
+    try {
+      const { zone } = await boAPI.updateZone(id, data);
+      setZones(prev => prev.map(z => z.id === id ? zone : z));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateZoneData:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour zone', { description: msg });
       throw error;
     }
   };
@@ -396,15 +446,38 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateCommissionStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour commission', { description: msg });
       throw error;
     }
   };
 
-  const addBOUser = async (user: Omit<BOUser, 'id' | 'lastLogin'>) => {
-    // TODO: Créer une route backend pour créer un utilisateur BO
-    console.warn('addBOUser: À implémenter côté backend');
-    const newUser: BOUser = { ...user, id: `bo${Date.now()}`, lastLogin: new Date().toISOString() };
-    setBOUsers(prev => [...prev, newUser]);
+  const addBOUser = async (user: { prenom: string; nom: string; email: string; password: string; role: BORoleType; region?: string }) => {
+    try {
+      const { user: newUser } = await boAPI.createBOUser(user);
+      setBOUsers(prev => [...prev, newUser]);
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur addBOUser:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation utilisateur BO', { description: msg });
+      throw error;
+    }
+  };
+
+  const updateBOUserActif = async (id: string, actif: boolean) => {
+    try {
+      await boAPI.updateBOUserActif(id, actif);
+      setBOUsers(prev => prev.map(u => u.id === id ? { ...u, actif } : u));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateBOUserActif:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour utilisateur', { description: msg });
+      throw error;
+    }
   };
 
   const addInstitution = async (inst: Omit<InstitutionBO, 'id' | 'dateCreation' | 'creePar'>) => {
@@ -415,6 +488,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur addInstitution:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation institution', { description: msg });
       throw error;
     }
   };
@@ -427,6 +502,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateInstitutionModules:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour modules', { description: msg });
       throw error;
     }
   };
@@ -439,6 +516,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur updateInstitutionStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour institution', { description: msg });
       throw error;
     }
   };
@@ -451,6 +530,49 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       setAuditLogs(logs);
     } catch (error) {
       console.error('Erreur deleteInstitution:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec suppression institution', { description: msg });
+      throw error;
+    }
+  };
+
+  const addMission = async (data: any) => {
+    try {
+      const { mission } = await boAPI.createMission(data);
+      setMissions(prev => [mission, ...prev]);
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur addMission:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation mission', { description: msg });
+      throw error;
+    }
+  };
+
+  const updateMissionStatut = async (id: string, statut: string) => {
+    try {
+      const { mission } = await boAPI.updateMissionStatut(id, statut);
+      setMissions(prev => prev.map(m => m.id === id ? mission : m));
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur updateMissionStatut:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec mise a jour mission', { description: msg });
+      throw error;
+    }
+  };
+
+  const createIdentificateur = async (data: { prenom: string; nom: string; telephone: string; cni?: string; region?: string; zoneId?: string; objectifMensuel?: string; institutionRattachee?: string }) => {
+    try {
+      await boAPI.createIdentificateur(data);
+      const { logs } = await boAPI.fetchAuditLogs();
+      setAuditLogs(logs);
+    } catch (error) {
+      console.error('Erreur createIdentificateur:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      if (msg !== 'SESSION_EXPIRED') toast.error('Echec creation identificateur', { description: msg });
       throw error;
     }
   };
@@ -458,9 +580,11 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   return (
     <BackOfficeContext.Provider value={{
       boUser, setBOUser, hasPermission,
-      acteurs, dossiers, transactions, zones, commissions, auditLogs, boUsers, institutions,
-      updateActeurStatut, updateDossierStatut, updateZoneStatut, updateCommissionStatut, addAuditLog, addBOUser,
+      acteurs, dossiers, transactions, zones, commissions, auditLogs, boUsers, institutions, missions,
+      updateActeurStatut, updateDossierStatut, updateZoneStatut, addZone, updateZoneData, updateCommissionStatut, addAuditLog,
+      addBOUser, updateBOUserActif,
       addInstitution, updateInstitutionModules, updateInstitutionStatut, deleteInstitution,
+      addMission, updateMissionStatut, createIdentificateur,
     }}>
       {children}
     </BackOfficeContext.Provider>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as ticketsApi from '../../imports/tickets-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Ticket {
   id: string;
@@ -55,7 +56,8 @@ export function TicketsProvider({ children }: { children: ReactNode }) {
       }));
 
       setTickets(ticketList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading tickets:', error);
     } finally {
       setLoading(false);

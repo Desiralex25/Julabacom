@@ -103,7 +103,7 @@ export function TantieSagesseTest() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white hover:shadow-orange-300 transition-all"
+        className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center border-2 border-white hover:shadow-orange-300 transition-all hidden"
       >
         <Settings className="w-6 h-6" />
       </motion.button>

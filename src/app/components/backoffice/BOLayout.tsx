@@ -322,7 +322,7 @@ function NotifPanel({ open, onClose, tickets, nouveauxCount, onVoirTicket, onMar
   );
 }
 
-// ─── Toast notification push ─────────────────────────────────────────────────
+// ─── Toast notification push ───────────────────────────────���─────────────────
 
 interface PushToastProps {
   ticket: Ticket | null;
@@ -480,9 +480,24 @@ export function BOLayout() {
     speak('Au revoir. Déconnexion du Back-Office.');
     setTimeout(() => { 
       setBOUser(null); 
+      localStorage.removeItem('julaba_access_token');
+      localStorage.removeItem('julaba_refresh_token');
       navigate('/backoffice/login'); 
     }, 1000);
   };
+
+  // ── Détecter la session expirée (événement émis par backoffice-api) ────────
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setBOUser(null);
+      localStorage.removeItem('julaba_bo_user');
+      localStorage.removeItem('julaba_access_token');
+      localStorage.removeItem('julaba_refresh_token');
+      navigate('/backoffice/login');
+    };
+    window.addEventListener('julaba:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('julaba:session-expired', handleSessionExpired);
+  }, [navigate, setBOUser]);
 
   const handleVoirTicket = useCallback((ticketId: string) => {
     navigate('/backoffice/support');
@@ -807,7 +822,7 @@ export function BOLayout() {
         <Outlet />
       </main>
 
-      {/* ── BOTTOM BAR MOBILE ─────────────────────────────────���────────── */}
+      {/* ── BOTTOM BAR MOBILE ─────────────────────────────────────────── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-gray-100 shadow-lg">
         <div className="flex items-center justify-around px-2 py-2">
           {MOBILE_BOTTOM.map(item => {

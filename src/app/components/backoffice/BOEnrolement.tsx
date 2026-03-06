@@ -32,7 +32,7 @@ const MOCK_COOPS = [
 ];
 
 export function BOEnrolement() {
-  const { dossiers, zones, hasPermission, updateDossierStatut, addAuditLog, boUser } = useBackOffice();
+  const { dossiers, zones, hasPermission, updateDossierStatut, addAuditLog, boUser, addBOUser, createIdentificateur } = useBackOffice();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ActiveTab>('dossiers');
   const [formType, setFormType] = useState<FormType>(null);
@@ -43,6 +43,7 @@ export function BOEnrolement() {
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [adminForm, setAdminForm] = useState({ nom: '', prenom: '', email: '', telephone: '', region: '', role: 'admin_national' });
   const [identForm, setIdentForm] = useState({ nom: '', prenom: '', telephone: '', cni: '', zoneId: '', region: '', objectifMensuel: '30', institutionRattachee: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredDossiers = dossiers.filter(d => filterStatut === 'all' || d.statut === filterStatut);
   const zonesDisponibles = zones.filter(z => z.statut === 'active');
@@ -63,22 +64,56 @@ export function BOEnrolement() {
   };
   const handleComplement = (id: string) => { updateDossierStatut(id, 'complement'); toast.info('Demande de complément envoyée'); };
 
-  const handleSubmitAdmin = (e: React.FormEvent) => {
+  const handleSubmitAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminForm.prenom || !adminForm.nom || !adminForm.email) return;
-    if (boUser) addAuditLog({ action: 'CRÉATION compte Admin BO', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: `${adminForm.prenom} ${adminForm.nom}`, ancienneValeur: '—', nouvelleValeur: adminForm.role, ip: '127.0.0.1', module: 'Enrôlement' });
-    toast.success(`Compte "${adminForm.prenom} ${adminForm.nom}" créé — identifiants envoyés par email`);
-    setAdminForm({ nom: '', prenom: '', email: '', telephone: '', region: '', role: 'admin_national' });
-    setFormType(null);
+    const generatedPassword = `Admin${Math.random().toString(36).slice(-6)}!`;
+    setIsSubmitting(true);
+    try {
+      await addBOUser({
+        prenom: adminForm.prenom,
+        nom: adminForm.nom,
+        email: adminForm.email,
+        password: generatedPassword,
+        role: adminForm.role as any,
+        region: adminForm.region || 'National',
+      });
+      toast.success(`Compte "${adminForm.prenom} ${adminForm.nom}" créé — mot de passe provisoire : ${generatedPassword}`);
+      setAdminForm({ nom: '', prenom: '', email: '', telephone: '', region: '', role: 'admin_national' });
+      setFormType(null);
+    } catch (error: any) {
+      console.error('Erreur création admin:', error);
+      toast.error(error?.message || 'Erreur lors de la création du compte');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSubmitIdent = (e: React.FormEvent) => {
+  const handleSubmitIdent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identForm.zoneId) { toast.error('Veuillez sélectionner une zone'); return; }
-    if (boUser) addAuditLog({ action: 'CRÉATION identificateur', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: `${identForm.prenom} ${identForm.nom}`, ancienneValeur: '—', nouvelleValeur: `Zone: ${selectedZone?.nom || identForm.zoneId}`, ip: '127.0.0.1', module: 'Enrôlement' });
-    toast.success(`Identificateur "${identForm.prenom} ${identForm.nom}" créé — Zone : ${selectedZone?.nom}`);
-    setIdentForm({ nom: '', prenom: '', telephone: '', cni: '', zoneId: '', region: '', objectifMensuel: '30', institutionRattachee: '' });
-    setFormType(null);
+    if (!identForm.telephone || !identForm.prenom || !identForm.nom) { toast.error('Prénom, nom et téléphone sont obligatoires'); return; }
+    setIsSubmitting(true);
+    try {
+      await createIdentificateur({
+        prenom: identForm.prenom,
+        nom: identForm.nom,
+        telephone: identForm.telephone,
+        cni: identForm.cni || undefined,
+        region: identForm.region || undefined,
+        zoneId: identForm.zoneId,
+        objectifMensuel: identForm.objectifMensuel,
+        institutionRattachee: identForm.institutionRattachee || undefined,
+      });
+      toast.success(`Identificateur "${identForm.prenom} ${identForm.nom}" créé — Zone : ${selectedZone?.nom}`);
+      setIdentForm({ nom: '', prenom: '', telephone: '', cni: '', zoneId: '', region: '', objectifMensuel: '30', institutionRattachee: '' });
+      setFormType(null);
+    } catch (error: any) {
+      console.error('Erreur création identificateur:', error);
+      toast.error(error?.message || 'Erreur lors de la création de l\'identificateur');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const TABS: { id: ActiveTab; label: string; icon: any; badge?: number }[] = [

@@ -533,7 +533,48 @@ app.post("/make-server-488793d3/auth/logout", async (c) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════
+/**
+ * POST /auth/refresh - Renouveler un access_token via le refresh_token
+ * Body: { refresh_token: string }
+ */
+app.post("/make-server-488793d3/auth/refresh", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { refresh_token } = body;
+
+    if (!refresh_token) {
+      return c.json({ error: 'refresh_token manquant' }, 400);
+    }
+
+    // Utiliser le client Supabase anon pour le refresh (pas le service role)
+    const supabaseAnon = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const { data, error } = await supabaseAnon.auth.refreshSession({ refresh_token });
+
+    if (error || !data.session) {
+      console.log('Refresh token error:', error);
+      return c.json({ error: 'Session expirée, veuillez vous reconnecter' }, 401);
+    }
+
+    return c.json({
+      success: true,
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+    });
+
+  } catch (error) {
+    console.log('Refresh error:', error);
+    return c.json({
+      error: 'Erreur serveur lors du refresh',
+      details: error instanceof Error ? error.message : 'Erreur inconnue'
+    }, 500);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
 // GESTION DES MOTS DE PASSE
 // ═══════════════════════════════════════════════════════════════════
 
@@ -688,7 +729,7 @@ app.post("/make-server-488793d3/auth/reset-user-password", async (c) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════��═══════════════════════════════════════════
 // PARAMÈTRES SYSTÈME
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1210,6 +1251,13 @@ app.post("/make-server-488793d3/api/cooperatives/:id/membres", cooperatives.addM
 app.delete("/make-server-488793d3/api/cooperatives/:id/membres/:membreId", cooperatives.removeMembre);
 app.get("/make-server-488793d3/api/cooperatives/:id/tresorerie", cooperatives.getTresorerie);
 
+// Routes coopérative de l'utilisateur connecté (singulier)
+app.get("/make-server-488793d3/api/cooperative", cooperatives.getCooperative);
+app.get("/make-server-488793d3/api/cooperative/membres", cooperatives.getCooperativeMembres);
+app.post("/make-server-488793d3/api/cooperative/membres", cooperatives.addCooperativeMembre);
+app.get("/make-server-488793d3/api/cooperative/tresorerie", cooperatives.getCooperativeTresorerie);
+app.post("/make-server-488793d3/api/cooperative/tresorerie", cooperatives.addTresorerieTransaction);
+
 // Identifications
 app.get("/make-server-488793d3/api/identifications", identifications.getIdentifications);
 app.post("/make-server-488793d3/api/identifications", identifications.createIdentification);
@@ -1249,6 +1297,8 @@ app.get("/make-server-488793d3/backoffice/transactions", bo.getTransactions);
 
 // Zones
 app.get("/make-server-488793d3/backoffice/zones", bo.getZones);
+app.post("/make-server-488793d3/backoffice/zones", bo.createZone);
+app.patch("/make-server-488793d3/backoffice/zones/:id", bo.updateZone);
 app.patch("/make-server-488793d3/backoffice/zones/:id/statut", bo.updateZoneStatut);
 
 // Commissions
@@ -1260,6 +1310,8 @@ app.get("/make-server-488793d3/backoffice/audit", bo.getAuditLogs);
 
 // Utilisateurs BO
 app.get("/make-server-488793d3/backoffice/users", bo.getBOUsers);
+app.post("/make-server-488793d3/backoffice/users", bo.createBOUser);
+app.patch("/make-server-488793d3/backoffice/users/:id/actif", bo.updateBOUserActif);
 
 // Institutions
 app.get("/make-server-488793d3/backoffice/institutions", bo.getInstitutions);
@@ -1268,9 +1320,17 @@ app.patch("/make-server-488793d3/backoffice/institutions/:id/modules", bo.update
 app.patch("/make-server-488793d3/backoffice/institutions/:id/statut", bo.updateInstitutionStatut);
 app.delete("/make-server-488793d3/backoffice/institutions/:id", bo.deleteInstitution);
 
+// Missions BO
+app.get("/make-server-488793d3/backoffice/missions", bo.getMissions);
+app.post("/make-server-488793d3/backoffice/missions", bo.createMission);
+app.patch("/make-server-488793d3/backoffice/missions/:id/statut", bo.updateMissionStatut);
+
+// Enrôlement - Création identificateur
+app.post("/make-server-488793d3/backoffice/enrolement/identificateur", bo.createIdentificateur);
+
 // ═══════════════════════════════════════════════════════════════════
 // GESTIONNAIRE D'ERREURS 404 - DOIT RETOURNER JSON
-// ═══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 app.notFound((c) => {
   return c.json({ 
     error: 'Route non trouvée',

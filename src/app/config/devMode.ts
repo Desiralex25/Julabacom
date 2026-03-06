@@ -15,7 +15,7 @@
 // │  false = Mode production (authentification, Supabase actif)     │
 // └─────────────────────────────────────────────────────────────────┘
 
-export const DEV_MODE = true;
+export const DEV_MODE = false;
 
 // Configuration du mode dev
 export const DEV_CONFIG = {

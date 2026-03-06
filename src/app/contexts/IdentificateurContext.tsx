@@ -3,6 +3,7 @@ import * as identificationsApi from '../../imports/identifications-api';
 import * as commissionsApi from '../../imports/commissions-api';
 import * as missionsApi from '../../imports/missions-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Identification {
   id: string;
@@ -81,7 +82,8 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
         commissionPayee: i.commission_payee,
         dateIdentification: i.date_identification,
       })));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading identifications:', error);
     }
   };
@@ -101,7 +103,8 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
         periode: c.periode,
         datePaiement: c.date_paiement,
       })));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading commissions:', error);
     }
   };
@@ -126,7 +129,8 @@ export function IdentificateurProvider({ children }: { children: ReactNode }) {
         dateFin: m.date_fin,
         recompense: m.recompense,
       })));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading missions:', error);
     }
   };

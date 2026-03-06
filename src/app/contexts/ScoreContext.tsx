@@ -8,6 +8,7 @@ import {
 } from '../types/julaba.types';
 import * as scoresApi from '../../imports/scores-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 interface ScoreContextType {
   scores: Map<string, ScoreJulaba>;
@@ -70,7 +71,8 @@ export function ScoreProvider({ children }: { children: ReactNode }) {
       };
       
       setScores(new Map(scores.set(userId, scoreJulaba)));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading score:', error);
     }
   };

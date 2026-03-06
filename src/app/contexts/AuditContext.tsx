@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { AuditEvent, AuditAction, AuditEntityType } from '../types/julaba.types';
 import * as auditApi from '../../imports/audit-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 interface AuditContextType {
   events: AuditEvent[];
@@ -59,7 +60,8 @@ export function AuditProvider({ children }: { children: ReactNode }) {
       }));
 
       setEvents(eventsList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading audit logs:', error);
     } finally {
       setLoading(false);

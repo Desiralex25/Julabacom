@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as stocksApi from '../../imports/stocks-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface StockItem {
   id: string;
@@ -57,7 +58,8 @@ export function StockProvider({ children }: { children: ReactNode }) {
       }));
 
       setStocks(stockList);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading stocks:', error);
     } finally {
       setLoading(false);

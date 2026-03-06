@@ -81,12 +81,12 @@ function RoleBadge({ role }: { role: BORoleType }) {
 }
 
 export function BOUtilisateurs() {
-  const { boUsers, boUser, hasPermission, addBOUser, addAuditLog } = useBackOffice();
+  const { boUsers, boUser, hasPermission, addBOUser, updateBOUserActif } = useBackOffice();
   const [showCreate, setShowCreate] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [localUsers, setLocalUsers] = useState(boUsers);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRolePreview, setSelectedRolePreview] = useState<BORoleType>('admin_national');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     prenom: '', nom: '', email: '',
@@ -99,37 +99,47 @@ export function BOUtilisateurs() {
   const canCreate = hasPermission('utilisateurs.write');
   const canDelete = hasPermission('utilisateurs.delete');
 
-  const handleToggleActif = (id: string) => {
-    setLocalUsers(prev => prev.map(u => {
-      if (u.id !== id) return u;
-      const newActif = !u.actif;
-      if (boUser) {
-        addAuditLog({
-          action: newActif ? 'RÉACTIVATION utilisateur BO' : 'DÉSACTIVATION utilisateur BO',
-          utilisateurBO: `${boUser.prenom} ${boUser.nom}`,
-          roleBO: boUser.role,
-          acteurImpacte: `${u.prenom} ${u.nom}`,
-          ancienneValeur: u.actif ? 'actif' : 'inactif',
-          nouvelleValeur: newActif ? 'actif' : 'inactif',
-          ip: '127.0.0.1',
-          module: 'Utilisateurs',
-        });
-      }
-      return { ...u, actif: newActif };
-    }));
-    toast.success('Statut mis à jour');
+  const handleToggleActif = async (id: string) => {
+    const user = boUsers.find(u => u.id === id);
+    if (!user) return;
+    try {
+      await updateBOUserActif(id, !user.actif);
+      toast.success(`Utilisateur ${!user.actif ? 'réactivé' : 'désactivé'}`);
+    } catch (error) {
+      console.error('Erreur toggle actif:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
+    }
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.prenom || !form.nom || !form.email || !form.password) {
       toast.error('Tous les champs obligatoires doivent être remplis');
       return;
     }
-    addBOUser({ prenom: form.prenom, nom: form.nom, email: form.email, role: form.role, region: form.region, actif: true });
-    toast.success(`Compte créé pour ${form.prenom} ${form.nom}`);
-    setForm({ prenom: '', nom: '', email: '', role: 'admin_national', region: 'National', password: '', actif: true });
-    setShowCreate(false);
+    if (form.password.length < 8) {
+      toast.error('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await addBOUser({
+        prenom: form.prenom,
+        nom: form.nom,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+        region: form.region,
+      });
+      toast.success(`Compte créé pour ${form.prenom} ${form.nom}`);
+      setForm({ prenom: '', nom: '', email: '', role: 'admin_national', region: 'National', password: '', actif: true });
+      setShowCreate(false);
+    } catch (error: any) {
+      console.error('Erreur création utilisateur BO:', error);
+      toast.error(error?.message || 'Erreur lors de la création du compte');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -140,7 +150,7 @@ export function BOUtilisateurs() {
         className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-black text-gray-900">Utilisateurs Back-Office</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestion des accès RBAC — {localUsers.length} comptes</p>
+          <p className="text-sm text-gray-500 mt-0.5">Gestion des accès RBAC — {boUsers.length} comptes</p>
         </div>
         {canCreate && (
           <motion.button onClick={() => setShowCreate(true)}
@@ -157,7 +167,7 @@ export function BOUtilisateurs() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {(Object.entries(ROLE_CONFIG) as [BORoleType, typeof ROLE_CONFIG[BORoleType]][]).map(([role, conf], i) => {
           const Icon = conf.icon;
-          const count = localUsers.filter(u => u.role === role).length;
+          const count = boUsers.filter(u => u.role === role).length;
           return (
             <motion.div key={role} className="bg-white rounded-2xl p-4 shadow-sm border-2 border-gray-100"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
@@ -224,7 +234,7 @@ export function BOUtilisateurs() {
 
       {/* Liste utilisateurs */}
       <div className="space-y-3">
-        {localUsers.map((user, index) => {
+        {boUsers.map((user, index) => {
           const conf = ROLE_CONFIG[user.role];
           const Icon = conf.icon;
           const isExpanded = expanded === user.id;
@@ -420,12 +430,12 @@ export function BOUtilisateurs() {
                     className="flex-1 py-3.5 rounded-2xl border-2 border-gray-200 font-bold text-gray-700">
                     Annuler
                   </button>
-                  <motion.button type="submit"
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                  <motion.button type="submit" disabled={isSubmitting}
+                    className="flex-1 py-3.5 rounded-2xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                     style={{ backgroundColor: BO_PRIMARY }}
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                     <Save className="w-5 h-5" />
-                    Créer le compte
+                    {isSubmitting ? 'Création...' : 'Créer le compte'}
                   </motion.button>
                 </div>
               </form>

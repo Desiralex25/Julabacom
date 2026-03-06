@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as cooperativesApi from '../../imports/cooperatives-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface Cooperative {
   id: string;
@@ -67,7 +68,8 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
         secretaireId: data.secretaire_id,
         soldeTresorerie: data.solde_tresorerie,
       });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return; // Pas connecté, normal
       console.error('Error loading cooperative:', error);
     }
   };
@@ -88,7 +90,8 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
         cotisationPayee: m.cotisation_payee,
         actif: m.actif,
       })));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading membres:', error);
     }
   };
@@ -109,7 +112,8 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
         description: t.description,
         date: t.created_at,
       })));
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading tresorerie:', error);
     }
   };

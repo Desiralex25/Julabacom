@@ -9,8 +9,9 @@ import { useBackOffice } from '../../contexts/BackOfficeContext';
 import { Button } from '../ui/button';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { supabase } from '../../services/supabaseClient';
 
-const logoJulabaBlanc = '/images/logo-julaba-blanc.svg';
+import logoJulabaBlanc from '/logo-julaba.svg';
 const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
@@ -265,6 +266,15 @@ export function LoginPassword() {
 
       if (result.accessToken) {
         localStorage.setItem('julaba_access_token', result.accessToken);
+        // ✅ Stocker l'ID utilisateur pour la restauration de session au redémarrage
+        if (result.user?.id) {
+          localStorage.setItem('julaba_user_id', result.user.id);
+        }
+        // Injecter la session dans le singleton Supabase pour le refresh automatique
+        await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken || '',
+        });
       }
       if (result.refreshToken) {
         localStorage.setItem('julaba_refresh_token', result.refreshToken);

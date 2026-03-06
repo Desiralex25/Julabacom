@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import * as recoltesApi from '../../imports/recoltes-api';
 import * as commandesApi from '../../imports/commandes-api';
 import { DEV_MODE, devLog } from '../config/devMode';
+import { NOT_AUTHENTICATED } from '../../imports/api-client';
 
 export interface ProducteurStats {
   recoltesTotales: number;
@@ -65,7 +66,13 @@ export function ProducteurProvider({ children }: { children: ReactNode }) {
 
       setStats(stats);
       return stats;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === NOT_AUTHENTICATED) {
+        setLoading(false);
+        const defaultStats: ProducteurStats = { recoltesTotales: 0, recoltesVendues: 0, revenusTotal: 0, commandesEnCours: 0 };
+        setStats(defaultStats);
+        return defaultStats;
+      }
       console.error('Error loading producteur stats:', error);
       
       const defaultStats: ProducteurStats = {

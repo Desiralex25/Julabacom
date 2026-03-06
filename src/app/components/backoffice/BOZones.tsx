@@ -11,23 +11,36 @@ const GESTIONNAIRES = ['KOFFI Ange-Désiré', 'DIALLO Mamadou', 'ASSI Roméo', '
 const REGIONS_LIST = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'Korhogo', 'San Pédro', 'Man', 'Daloa'];
 
 export function BOZones() {
-  const { zones, hasPermission, addAuditLog, boUser, updateZoneStatut } = useBackOffice();
+  const { zones, hasPermission, addAuditLog, boUser, updateZoneStatut, addZone, updateZoneData } = useBackOffice();
   const [showCreate, setShowCreate] = useState(false);
   const [editZone, setEditZone] = useState<BOZone | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [form, setForm] = useState({ nom: '', region: '', gestionnaire: '' });
   const [editForm, setEditForm] = useState({ nom: '', region: '', gestionnaire: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalActeurs = zones.reduce((s, z) => s + z.nbActeurs, 0);
   const totalVolume = zones.reduce((s, z) => s + z.volumeTotal, 0);
   const zoneActive = zones.filter(z => z.statut === 'active').length;
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (boUser) addAuditLog({ action: 'CRÉATION zone', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: form.nom, ancienneValeur: '—', nouvelleValeur: form.region, ip: '127.0.0.1', module: 'Zones' });
-    toast.success(`Zone "${form.nom}" créée avec succès`);
-    setShowCreate(false);
-    setForm({ nom: '', region: '', gestionnaire: '' });
+    setIsSubmitting(true);
+    try {
+      await addZone({
+        nom: form.nom,
+        region: form.region,
+        gestionnaire: form.gestionnaire || undefined,
+      });
+      toast.success(`Zone "${form.nom}" créée avec succès`);
+      setShowCreate(false);
+      setForm({ nom: '', region: '', gestionnaire: '' });
+    } catch (error) {
+      console.error('Erreur création zone:', error);
+      toast.error('Erreur lors de la création de la zone');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const openEdit = (e: React.MouseEvent, zone: BOZone) => {
@@ -36,11 +49,24 @@ export function BOZones() {
     setEditForm({ nom: zone.nom, region: zone.region, gestionnaire: zone.gestionnaire || '' });
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (boUser && editZone) addAuditLog({ action: 'MODIFICATION zone', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: editZone.nom, ancienneValeur: `${editZone.gestionnaire || 'sans gestionnaire'}`, nouvelleValeur: editForm.gestionnaire || 'sans gestionnaire', ip: '127.0.0.1', module: 'Zones' });
-    toast.success(`Zone "${editForm.nom}" mise à jour avec succès`);
-    setEditZone(null);
+    if (!editZone) return;
+    setIsSubmitting(true);
+    try {
+      await updateZoneData(editZone.id, {
+        nom: editForm.nom,
+        region: editForm.region,
+        gestionnaire: editForm.gestionnaire || undefined,
+      });
+      toast.success(`Zone "${editForm.nom}" mise à jour avec succès`);
+      setEditZone(null);
+    } catch (error) {
+      console.error('Erreur modification zone:', error);
+      toast.error('Erreur lors de la mise à jour de la zone');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleToggleStatut = (e: React.MouseEvent, zone: BOZone) => {
@@ -228,9 +254,9 @@ export function BOZones() {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 font-bold text-gray-700">Annuler</button>
-                  <motion.button type="submit" className="flex-1 py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                  <motion.button type="submit" disabled={isSubmitting} className="flex-1 py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                     style={{ backgroundColor: BO_PRIMARY }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Save className="w-4 h-4" /> Créer
+                    <Save className="w-4 h-4" /> {isSubmitting ? 'Création...' : 'Créer'}
                   </motion.button>
                 </div>
               </form>
@@ -290,9 +316,9 @@ export function BOZones() {
 
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setEditZone(null)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 font-bold text-gray-700">Annuler</button>
-                  <motion.button type="submit" className="flex-1 py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                  <motion.button type="submit" disabled={isSubmitting} className="flex-1 py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                     style={{ backgroundColor: BO_DARK }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                    <Save className="w-4 h-4" /> Enregistrer
+                    <Save className="w-4 h-4" /> {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
                   </motion.button>
                 </div>
               </form>
