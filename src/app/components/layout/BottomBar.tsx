@@ -237,7 +237,7 @@ export function BottomBar({ role, onMicClick }: BottomBarProps) {
                             }}
                           >
                             <motion.img
-                              src={tantieSagesseImage}
+                              src="figma:asset/bc1f3e26cfe1904d7361a51ef6162a7719bb55d9.png"
                               alt="Tantie Sagesse"
                               className="w-full h-full object-cover"
                               animate={isListening ? { 

@@ -235,14 +235,14 @@ export function GestionStock() {
       if (lowerCommand.includes('oui') || lowerCommand.includes('confirme') || lowerCommand.includes('ok')) {
         if (pendingAction.type === 'add') {
           const { name, quantity } = pendingAction;
-          stockCtx.addProduct({ name, category: 'cereales', unit: 'kg', quantity, purchasePrice: 0, salePrice: 0, seuilAlerte: 10 });
+          stockCtx.addStock({ marchandId: '', produit: name, unite: 'kg', quantite: quantity, prixUnitaire: 0 });
           addProduct({ name, category: 'Céréales', price: 0, stock: quantity, unit: 'kg' });
           speak(`Parfait ! ${quantity} kg de ${name} ajouté au stock`);
           showToast(`${quantity} kg de ${name} ajouté au stock`, 'success');
         } else if (pendingAction.type === 'update') {
           const { stock: s, quantity } = pendingAction;
           const newQty = s.quantity + quantity;
-          stockCtx.updateProduct(s.id, { quantity: newQty });
+          stockCtx.updateStock(s.id, { quantite: newQty });
           updateProduct(s.id, { stock: newQty });
           speak(`Stock mis à jour ! ${s.name} : ${newQty} ${s.unit}`);
           showToast(`Stock mis à jour : ${s.name}`, 'success');
@@ -434,14 +434,12 @@ export function GestionStock() {
 
   const addStock = () => {
     // StockContext — source de vérité
-    stockCtx.addProduct({
-      name: newStock.name,
-      category: newStock.category,
-      unit: newStock.unit,
-      quantity: newStock.quantity,
-      purchasePrice: newStock.purchasePrice,
-      salePrice: newStock.salePrice,
-      seuilAlerte: newStock.threshold,
+    stockCtx.addStock({
+      marchandId: '',
+      produit: newStock.name,
+      unite: newStock.unit,
+      quantite: newStock.quantity,
+      prixUnitaire: newStock.purchasePrice,
     });
     // CaisseContext — sync pour la caisse / POS
     addProduct({

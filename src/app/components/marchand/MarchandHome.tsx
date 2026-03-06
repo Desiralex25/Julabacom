@@ -16,7 +16,6 @@ import {
   ScoreModal,
   ResumeModal,
 } from './MarchandModals';
-const tantieSagesseImgMarchand = '/images/tantie-sagesse.png';
 
 export function MarchandHome() {
   const navigate = useNavigate();
@@ -123,7 +122,7 @@ export function MarchandHome() {
         onDismissCoachMark={() => setShowCoachMark(false)}
         hasSessionManagement={true}
         showWallet={true}
-        tantieSagesseImgSrc={tantieSagesseImgMarchand}
+        tantieSagesseImgSrc="/images/tantie-sagesse-vente.png"
         onAcademyClick={() => navigate('/marchand/academy')}
         alertes={alertesMarchand}
       />

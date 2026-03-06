@@ -204,10 +204,10 @@ export function SupportContact({ role, userName = 'Utilisateur' }: SupportContac
   const [viewThread, setViewThread] = useState<Ticket | null>(null);
 
   // Mes tickets récents (créés dans cette session via localStorage)
-  const mesTickets = tickets.filter(t => t.messages[0]?.auteurNom === userName).slice(0, 3);
+  const mesTickets = (tickets || []).filter(t => t.messages[0]?.auteurNom === userName).slice(0, 3);
 
   // Compter les réponses BO non lues
-  const reponsesNonLues = tickets.filter(
+  const reponsesNonLues = (tickets || []).filter(
     t => !t.luParUser && t.messages.some(m => m.auteur === 'bo' && !m.lu) && t.messages[0]?.auteurNom === userName
   ).length;
 
@@ -247,8 +247,8 @@ export function SupportContact({ role, userName = 'Utilisateur' }: SupportContac
     }
   };
 
-  const activeContacts = config.contacts.filter(c => c.actif);
-  const activeFAQ = config.faq.filter(f => f.actif).sort((a, b) => a.ordre - b.ordre);
+  const activeContacts = (config?.contacts || []).filter(c => c.actif);
+  const activeFAQ = (config?.faq || []).filter(f => f.actif).sort((a, b) => a.ordre - b.ordre);
 
   return (
     <div className="min-h-screen pb-32" style={{ backgroundColor: '#F5F5F5' }}>

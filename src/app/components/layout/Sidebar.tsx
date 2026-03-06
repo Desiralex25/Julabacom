@@ -361,7 +361,7 @@ export function Sidebar({ role, onMicClick }: SidebarProps) {
                   className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-md"
                   style={{ backgroundColor: activeColor }}
                 >
-                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                  {(user.firstName || '?').charAt(0)}{(user.lastName || '').charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-gray-900 truncate">

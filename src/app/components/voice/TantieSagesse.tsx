@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 const tantieSagesseAvatar = '/images/tantie-sagesse.png';
+import tantiePortrait from 'figma:asset/29101683deddffc08ca005d5e1ca2ad8906b7bd4.png';
 
 interface TantieSagesseProps {
   isVisible: boolean;
@@ -118,11 +119,21 @@ export function TantieSagesse({ isVisible, isSpeaking, onSkip }: TantieSagessePr
                 )}
               </AnimatePresence>
 
-              <img
-                src={tantieSagesseAvatar}
-                alt="Tantie Sagesse"
-                className="w-full h-full object-contain"
-              />
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <motion.img
+                  src={tantiePortrait}
+                  alt="Tantie Sagesse"
+                  className="w-full h-full object-contain"
+                  animate={{
+                    scale: [1, 1.04, 1],
+                  }}
+                  transition={{
+                    duration: 3.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+              </div>
             </motion.div>
 
             {/* Particules flottantes */}

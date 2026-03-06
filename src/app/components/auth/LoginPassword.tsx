@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mic, ArrowRight, CheckCircle, Eye, EyeOff, X, AlertCircle } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
-import { useBackOffice } from '../../contexts/BackOfficeContext';
+import { useBackOfficeOptional } from '../../contexts/BackOfficeContext';
 import { Button } from '../ui/button';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
@@ -13,6 +13,8 @@ import { supabase } from '../../services/supabaseClient';
 
 import logoJulabaBlanc from '/logo-julaba.svg';
 const tantieSagesseImg = '/images/tantie-sagesse.svg';
+import tantieImage from 'figma:asset/bbbed5e7a47cbae1386ba85eae6a6f46b77564ff.png';
+import newLogoImage from 'figma:asset/54872e2911223a687a64213d3c9b5c2dc0d3d160.png';
 
 const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
 
@@ -25,7 +27,8 @@ export function LoginPassword() {
   const navigate = useNavigate();
   const { setUser: setAppUser } = useApp();
   const { setUser: setUserProfile } = useUser();
-  const { setBOUser } = useBackOffice();
+  const backOfficeCtx = useBackOfficeOptional();
+  const setBOUser = backOfficeCtx?.setBOUser ?? (() => {});
   
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -384,7 +387,7 @@ export function LoginPassword() {
           className="text-center mb-4"
         >
           <img 
-            src={logoJulabaBlanc} 
+            src={newLogoImage} 
             alt="JÙLABA" 
             className="h-20 w-auto mx-auto cursor-pointer"
             onClick={handleLogoClick}
@@ -660,7 +663,7 @@ export function LoginPassword() {
               className="relative z-10 w-full h-full rounded-full overflow-hidden"
             >
               <img 
-                src={tantieSagesseImg} 
+                src={tantieImage}
                 alt="Tantie Sagesse" 
                 className="w-full h-full object-cover"
               />

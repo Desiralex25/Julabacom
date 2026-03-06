@@ -588,10 +588,10 @@ export function BOLayout() {
               className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shadow"
               style={{ backgroundColor: ROLE_COLORS[boUser.role] }}
             >
-              {boUser.prenom.charAt(0)}{boUser.nom.charAt(0)}
+              {(boUser.prenom || boUser.firstName || '?').charAt(0)}{(boUser.nom || boUser.lastName || '').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-white text-sm truncate">{boUser.prenom} {boUser.nom}</p>
+              <p className="font-bold text-white text-sm truncate">{boUser.prenom || boUser.firstName} {boUser.nom || boUser.lastName}</p>
               <p className="text-xs font-semibold truncate" style={{ color: BO_PRIMARY }}>{ROLE_LABELS[boUser.role]}</p>
             </div>
           </div>
@@ -617,7 +617,7 @@ export function BOLayout() {
             <span className="font-semibold text-xs text-red-300">Simuler ticket entrant</span>
           </motion.button>
           <motion.button
-            onClick={() => speak(`Bonjour ${boUser.prenom}. Vous êtes connecté en tant que ${ROLE_LABELS[boUser.role]}. Il y a ${nouveauxCount} ticket${nouveauxCount > 1 ? 's' : ''} en attente. Comment puis-je vous aider ?`)}
+            onClick={() => speak(`Bonjour ${boUser.prenom || boUser.firstName}. Vous êtes connecté en tant que ${ROLE_LABELS[boUser.role]}. Il y a ${nouveauxCount} ticket${nouveauxCount > 1 ? 's' : ''} en attente. Comment puis-je vous aider ?`)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl"
             style={{ backgroundColor: `${BO_PRIMARY}20` }}
             whileHover={{ scale: 1.02 }}
@@ -712,10 +712,10 @@ export function BOLayout() {
             className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-xs"
             style={{ backgroundColor: ROLE_COLORS[boUser.role] }}
           >
-            {boUser.prenom.charAt(0)}{boUser.nom.charAt(0)}
+            {(boUser.prenom || boUser.firstName || '?').charAt(0)}{(boUser.nom || boUser.lastName || '').charAt(0)}
           </div>
           <div className="hidden xl:block">
-            <p className="text-sm font-bold text-gray-900">{boUser.prenom}</p>
+            <p className="text-sm font-bold text-gray-900">{boUser.prenom || boUser.firstName}</p>
             <p className="text-xs text-gray-500">{ROLE_LABELS[boUser.role]}</p>
           </div>
         </div>
@@ -791,7 +791,7 @@ export function BOLayout() {
             >
               <div className="px-6 py-6 border-b border-white/10 flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-white" style={{ fontFamily: "'Calisga', serif" }}>{boUser.prenom} {boUser.nom}</p>
+                  <p className="font-bold text-white" style={{ fontFamily: "'Calisga', serif" }}>{boUser.prenom || boUser.firstName} {boUser.nom || boUser.lastName}</p>
                   <p className="text-xs font-semibold" style={{ color: BO_PRIMARY }}>{ROLE_LABELS[boUser.role]}</p>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)}><X className="w-5 h-5 text-white/80" /></button>

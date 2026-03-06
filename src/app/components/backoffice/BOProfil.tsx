@@ -76,7 +76,7 @@ export function BOProfil() {
             style={{ backgroundColor: roleColor }}
             animate={{ rotate: [0, 3, -3, 0] }}
             transition={{ duration: 4, repeat: Infinity }}>
-            {boUser.prenom.charAt(0)}{boUser.nom.charAt(0)}
+            {(boUser.prenom || boUser.firstName || '?').charAt(0)}{(boUser.nom || boUser.lastName || '').charAt(0)}
           </motion.div>
           <div className="flex-1">
             <h2 className="text-xl font-black text-gray-900">{boUser.prenom} {boUser.nom}</h2>

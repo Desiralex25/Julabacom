@@ -259,6 +259,8 @@ interface BackOfficeContextType {
 
 const BackOfficeContext = createContext<BackOfficeContextType | null>(null);
 
+export { BackOfficeContext };
+
 export function BackOfficeProvider({ children }: { children: ReactNode }) {
   // ✅ PERSISTANCE BO : Restaurer depuis Supabase session au démarrage
   // Le boUser est stocké en localStorage uniquement comme cache UI — le token Supabase fait foi
@@ -273,14 +275,21 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Vérifier la session Supabase au démarrage — si pas de session, on nettoie boUser
+  // Ecouter les changements d'etat auth Supabase
+  // SIGNED_OUT = session invalide → on nettoie boUser
+  // SIGNED_IN / TOKEN_REFRESHED = on garde boUser intact
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
         setBOUser(null);
         localStorage.removeItem('julaba_bo_user');
+        localStorage.removeItem('julaba_access_token');
+        localStorage.removeItem('julaba_refresh_token');
+        localStorage.removeItem('julaba_user');
       }
-    }).catch((e) => console.warn('[BO] Erreur vérification session Supabase:', e));
+      // Pour SIGNED_IN et TOKEN_REFRESHED on ne touche pas boUser (il est géré par BOLogin)
+    });
+    return () => subscription.unsubscribe();
   }, []);
   
   // ✅ Sauvegarder boUser dans localStorage quand il change
@@ -607,4 +616,9 @@ export function useBackOffice() {
   const ctx = useContext(BackOfficeContext);
   if (!ctx) throw new Error('useBackOffice must be used within BackOfficeProvider');
   return ctx;
+}
+
+// Version optionnelle — ne throw pas (usage hors provider toléré)
+export function useBackOfficeOptional() {
+  return useContext(BackOfficeContext);
 }

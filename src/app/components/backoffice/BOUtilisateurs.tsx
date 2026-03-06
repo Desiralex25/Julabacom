@@ -250,7 +250,7 @@ export function BOUtilisateurs() {
                   {/* Avatar */}
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm"
                     style={{ backgroundColor: conf.color }}>
-                    {user.prenom.charAt(0)}{user.nom.charAt(0)}
+                    {(user.prenom || user.firstName || '?').charAt(0)}{(user.nom || user.lastName || '').charAt(0)}
                   </div>
 
                   <div className="flex-1 min-w-0">

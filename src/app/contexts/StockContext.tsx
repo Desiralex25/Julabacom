@@ -72,11 +72,11 @@ export function StockProvider({ children }: { children: ReactNode }) {
 
   const addStock = async (data: Omit<StockItem, 'id' | 'derniereModification'>) => {
     try {
-      await stocksApi.createStock({
+      await stocksApi.upsertStock({
         produit: data.produit,
         quantite: data.quantite,
         unite: data.unite,
-        prix_unitaire: data.prixUnitaire,
+        prix_achat: data.prixUnitaire,
       });
       await loadStocks();
     } catch (error) {
@@ -89,7 +89,7 @@ export function StockProvider({ children }: { children: ReactNode }) {
     try {
       await stocksApi.updateStock(id, {
         quantite: data.quantite,
-        prix_unitaire: data.prixUnitaire,
+        prix_achat: data.prixUnitaire,
       });
       await loadStocks();
     } catch (error) {
