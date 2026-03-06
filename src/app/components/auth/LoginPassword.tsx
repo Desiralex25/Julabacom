@@ -25,7 +25,7 @@ const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes en millisecondes
 
 export function LoginPassword() {
   const navigate = useNavigate();
-  const { setUser: setAppUser } = useApp();
+  const { setUser: setAppUser, setAccessToken } = useApp();
   const { setUser: setUserProfile } = useUser();
   const backOfficeCtx = useBackOfficeOptional();
   const setBOUser = backOfficeCtx?.setBOUser ?? (() => {});
@@ -282,6 +282,9 @@ export function LoginPassword() {
         // Utilisateur terrain normal
         setAppUser(user);
         setUserProfile(user);
+        if (result.accessToken) {
+          setAccessToken(result.accessToken);
+        }
       }
 
       if (result.accessToken) {

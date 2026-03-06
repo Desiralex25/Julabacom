@@ -101,6 +101,7 @@ interface AppContextType {
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
   accessToken: string | null;
+  setAccessToken: (token: string | null) => void;
   loading: boolean;
   
   // Transactions
@@ -170,14 +171,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ═══════════════════════════════════════════════════════════════════
   // AUTHENTIFICATION & CHARGEMENT DONNÉES
-  // ═══════════════════════════════════════════════���═══════════════════
+  // ══════════════════════════════���════════════════════════════════════
 
   // Charger les données utilisateur depuis Supabase
   const loadUserData = async (userId: string, token: string) => {
     try {
-      // Charger profil utilisateur
+      // Charger profil utilisateur via /auth/me (utilise le token JWT)
       const userResponse = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/users/${userId}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/auth/me`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -191,20 +192,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         
         const mappedUser: User = {
           id: userData.id,
-          phone: userData.telephone,
-          firstName: userData.prenoms,
-          lastName: userData.nom,
-          role: userData.type_acteur as UserRole,
-          region: userData.region,
-          commune: userData.commune,
-          activity: userData.activite || '',
-          market: userData.marche,
+          phone: userData.phone,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          role: userData.role as UserRole,
+          region: userData.region || '',
+          commune: userData.commune || '',
+          activity: userData.activity || '',
+          market: userData.market,
+          cooperativeName: userData.cooperativeName,
           score: userData.score || 0,
-          createdAt: userData.created_at,
-          validated: userData.valide,
+          createdAt: userData.createdAt,
+          validated: userData.validated || false,
           email: userData.email,
-          photo: userData.photo,
-          cni: userData.cni,
+          photo: userData.photoUrl,
         };
 
         setUser(mappedUser);
@@ -663,6 +664,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser,
     isAuthenticated: !!user && !!accessToken,
     accessToken,
+    setAccessToken,
     loading,
     transactions,
     addTransaction,
@@ -697,6 +699,7 @@ export function useApp() {
       setUser: () => {},
       isAuthenticated: false,
       accessToken: null,
+      setAccessToken: () => {},
       loading: false,
       transactions: [],
       addTransaction: () => {},
