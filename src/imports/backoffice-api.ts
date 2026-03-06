@@ -10,24 +10,107 @@ const SUPABASE_URL = `https://${projectId}.supabase.co`;
 const API_URL = `${SUPABASE_URL}/functions/v1/make-server-488793d3/backoffice`;
 
 /**
- * Récupérer un token valide via le SDK Supabase (auto-refresh inclus)
- * Ne retourne jamais publicAnonKey — les endpoints BO nécessitent un token admin valide.
+ * Récupérer un token valide — plusieurs stratégies en cascade :
+ * 1. Session Supabase active (source de vérité)
+ * 2. Refresh automatique si session expirée
+ * 3. Fallback sur les tokens localStorage (héritage BOLogin.persistSession)
+ * 4. Erreur claire si aucun token disponible
  */
 async function getValidToken(): Promise<string> {
+  // 1. Session Supabase active
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.access_token) return session.access_token;
   } catch (e) {
-    console.warn('[BO API] getValidToken: erreur SDK Supabase', e);
+    console.warn('[BO API] getValidToken: erreur getSession SDK', e);
   }
-  return '';
+
+  // 2. Tokens localStorage (sauvegardés par BOLogin.persistSession)
+  const localToken =
+    localStorage.getItem('julaba_access_token') ||
+    sessionStorage.getItem('julaba_access_token');
+  const localRefresh =
+    localStorage.getItem('julaba_refresh_token') ||
+    sessionStorage.getItem('julaba_refresh_token');
+
+  if (localRefresh) {
+    // Tenter de restaurer la session Supabase avec le refresh_token
+    try {
+      const { data, error } = await supabase.auth.setSession({
+        access_token: localToken || localRefresh,
+        refresh_token: localRefresh,
+      });
+      if (!error && data.session?.access_token) {
+        localStorage.setItem('julaba_access_token', data.session.access_token);
+        if (data.session.refresh_token) {
+          localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
+        }
+        console.log('[BO API] Session restaurée depuis localStorage');
+        return data.session.access_token;
+      }
+    } catch (e) {
+      console.warn('[BO API] Impossible de restaurer la session:', e);
+    }
+  }
+
+  // 3. Token brut localStorage en dernier recours
+  if (localToken) {
+    console.warn('[BO API] Utilisation token brut localStorage (peut être expiré)');
+    return localToken;
+  }
+
+  throw new Error('AUCUNE_SESSION_BO');
+}
+
+/**
+ * Forcer un refresh du token BO
+ */
+async function forceRefreshBO(): Promise<string | null> {
+  // Essai 1 : refresh via SDK
+  const { data, error } = await supabase.auth.refreshSession();
+  if (!error && data.session?.access_token) {
+    localStorage.setItem('julaba_access_token', data.session.access_token);
+    if (data.session.refresh_token) {
+      localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
+    }
+    return data.session.access_token;
+  }
+
+  // Essai 2 : setSession avec refresh_token localStorage
+  const refreshToken = localStorage.getItem('julaba_refresh_token') || sessionStorage.getItem('julaba_refresh_token');
+  const accessToken  = localStorage.getItem('julaba_access_token')  || sessionStorage.getItem('julaba_access_token');
+  if (refreshToken) {
+    try {
+      const { data: d2, error: e2 } = await supabase.auth.setSession({
+        access_token: accessToken || refreshToken,
+        refresh_token: refreshToken,
+      });
+      if (!e2 && d2.session?.access_token) {
+        localStorage.setItem('julaba_access_token', d2.session.access_token);
+        if (d2.session.refresh_token) {
+          localStorage.setItem('julaba_refresh_token', d2.session.refresh_token);
+        }
+        return d2.session.access_token;
+      }
+    } catch { /* ignore */ }
+  }
+
+  console.warn('[BO API] forceRefreshBO: échec total du refresh');
+  return null;
 }
 
 /**
  * Effectuer une requête API avec gestion automatique du refresh token
  */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  let token = await getValidToken();
+  let token: string;
+  try {
+    token = await getValidToken();
+  } catch (e: any) {
+    console.error('[BO API] Impossible d\'obtenir un token BO:', e?.message);
+    window.dispatchEvent(new CustomEvent('julaba:session-expired'));
+    throw new Error('SESSION_EXPIRED');
+  }
 
   const doFetch = async (authToken: string) =>
     fetch(`${API_URL}${endpoint}`, {
@@ -41,14 +124,17 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
   let response = await doFetch(token);
 
-  // Si 401 (token expiré), forcer un refresh via le SDK
+  // Si 401 (token JWT invalide/expiré), forcer un refresh
   if (response.status === 401) {
-    console.warn(`[BO API] 401 sur ${endpoint} - tentative de refresh du token...`);
-    const { data, error } = await supabase.auth.refreshSession();
-    if (!error && data.session?.access_token) {
-      token = data.session.access_token;
-      response = await doFetch(token);
+    console.warn(`[BO API] 401 sur ${endpoint} — tentative de refresh JWT...`);
+    const newToken = await forceRefreshBO();
+    if (newToken) {
+      response = await doFetch(newToken);
     } else {
+      // Effacer les tokens corrompus
+      localStorage.removeItem('julaba_access_token');
+      localStorage.removeItem('julaba_refresh_token');
+      localStorage.removeItem('julaba_bo_user');
       window.dispatchEvent(new CustomEvent('julaba:session-expired'));
       throw new Error('SESSION_EXPIRED');
     }
@@ -71,7 +157,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTEURS
-// ──────────────────────────────────────────────────────────────────────���──────
+// ────────────────────────────────────────────────────────────────────────────
 
 export async function fetchActeurs() {
   return apiRequest<{ acteurs: any[] }>('/acteurs');
@@ -101,7 +187,7 @@ export async function updateDossierStatut(id: string, statut: string, motif?: st
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRANSACTIONS
-// ─────��──────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
 
 export async function fetchTransactions() {
   return apiRequest<{ transactions: any[] }>('/transactions');
