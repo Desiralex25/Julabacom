@@ -35,42 +35,11 @@ interface AcademyModule {
   image: string;
 }
 
-const MOCK_MODULES: AcademyModule[] = [
-  { id: 'm1', titre: 'Gestion des stocks quotidienne', description: 'Apprendre à suivre ses stocks chaque jour pour éviter les pertes', type: 'audio', niveau: 'debutant', profil: 'marchand', duree: 8, points: 50, statut: 'publie', nbInscrits: 1240, tauxCompletion: 74, dateCreation: '2025-10-01', image: '' },
-  { id: 'm2', titre: 'Identifier un acteur en 5 minutes', description: 'Méthode rapide et complète pour l\'enrôlement terrain', type: 'video', niveau: 'intermediaire', profil: 'identificateur', duree: 15, points: 100, statut: 'publie', nbInscrits: 456, tauxCompletion: 82, dateCreation: '2025-10-15', image: '' },
-  { id: 'm3', titre: 'Gérer une coopérative efficacement', description: 'Les fondamentaux de la gestion coopérative agricale', type: 'quiz', niveau: 'avance', profil: 'cooperative', duree: 20, points: 150, statut: 'publie', nbInscrits: 234, tauxCompletion: 61, dateCreation: '2025-11-01', image: '' },
-  { id: 'm4', titre: 'Mobile Money pour les producteurs', description: 'Utiliser Orange Money et Wave pour ses transactions', type: 'video', niveau: 'debutant', profil: 'producteur', duree: 10, points: 75, statut: 'publie', nbInscrits: 889, tauxCompletion: 88, dateCreation: '2025-11-20', image: '' },
-  { id: 'm5', titre: 'Stratégies de vente au marché', description: 'Techniques de négociation et fidélisation clients', type: 'audio', niveau: 'intermediaire', profil: 'marchand', duree: 12, points: 80, statut: 'brouillon', nbInscrits: 0, tauxCompletion: 0, dateCreation: '2026-02-15', image: '' },
-  { id: 'm6', titre: 'Introduction à Jùlaba', description: 'Découvrir la plateforme et ses fonctionnalités essentielles', type: 'texte', niveau: 'debutant', profil: 'tous', duree: 5, points: 30, statut: 'publie', nbInscrits: 3210, tauxCompletion: 91, dateCreation: '2025-09-01', image: '' },
-];
-
-const TYPE_CONFIG: Record<ModuleType, { label: string; icon: any; color: string }> = {
-  video: { label: 'Vidéo', icon: Video, color: '#EF4444' },
-  audio: { label: 'Audio', icon: Mic, color: '#8B5CF6' },
-  quiz: { label: 'Quiz', icon: Award, color: '#F59E0B' },
-  texte: { label: 'Texte', icon: FileText, color: '#3B82F6' },
-};
-
-const NIVEAU_CONFIG: Record<NiveauType, { label: string; color: string }> = {
-  debutant: { label: 'Débutant', color: '#10B981' },
-  intermediaire: { label: 'Intermédiaire', color: '#F59E0B' },
-  avance: { label: 'Avancé', color: '#EF4444' },
-};
-
-const STATUT_CONFIG = {
-  publie: { label: 'Publié', bg: 'bg-green-100', text: 'text-green-700' },
-  brouillon: { label: 'Brouillon', bg: 'bg-gray-100', text: 'text-gray-600' },
-  archive: { label: 'Archivé', bg: 'bg-red-100', text: 'text-red-600' },
-};
-
-type ActiveTab = 'modules' | 'questions';
-
-const BO_PRIMARY = '#E6A817';
-const BO_DARK    = '#1E293B';
+const MOCK_MODULES: AcademyModule[] = [];
 
 export function BOAcademy() {
   const { hasPermission, addAuditLog, boUser } = useBackOffice();
-  const [modules, setModules] = useState<AcademyModule[]>(MOCK_MODULES);
+  const [modules, setModules] = useState<AcademyModule[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [filterStatut, setFilterStatut] = useState<string>('all');
   const [filterProfil, setFilterProfil] = useState<string>('all');

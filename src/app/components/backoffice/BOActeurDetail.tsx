@@ -43,15 +43,6 @@ const TABS = [
   { id: 'historique',label: 'Historique',   icon: Clock },
 ];
 
-// Documents mockés par acteur
-const MOCK_DOCS = [
-  { nom: 'CNI recto', type: 'image/jpeg', taille: '1.2 Mo', date: '2025-11-10', statut: 'validé' },
-  { nom: 'CNI verso', type: 'image/jpeg', taille: '1.1 Mo', date: '2025-11-10', statut: 'validé' },
-  { nom: 'Photo identité', type: 'image/jpeg', taille: '0.8 Mo', date: '2025-11-10', statut: 'validé' },
-  { nom: 'Fiche métier signée', type: 'application/pdf', taille: '0.4 Mo', date: '2025-11-12', statut: 'validé' },
-  { nom: 'Contrat de zone', type: 'application/pdf', taille: '0.6 Mo', date: '2025-11-15', statut: 'en attente' },
-];
-
 function ConfirmModal({ open, title, message, onConfirm, onCancel, danger }: any) {
   if (!open) return null;
   return (
@@ -363,39 +354,30 @@ export function BOActeurDetail() {
             <div>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-black text-gray-900 text-lg">Documents officiels</h3>
-                <span className="text-xs font-bold px-3 py-1 rounded-xl" style={{ backgroundColor: `${BO_PRIMARY}20`, color: BO_PRIMARY }}>
-                  {MOCK_DOCS.length} fichiers
-                </span>
               </div>
               <div className="space-y-3">
-                {MOCK_DOCS.map((doc, i) => (
-                  <motion.div key={doc.nom} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border-2 border-gray-100 hover:border-gray-200 transition-all">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: doc.type.includes('pdf') ? '#EF444420' : '#3B82F620' }}>
-                      <Paperclip className="w-5 h-5" style={{ color: doc.type.includes('pdf') ? '#EF4444' : '#3B82F6' }} />
+                {acteur.cni ? (
+                  <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border-2 border-gray-100">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-50">
+                      <Paperclip className="w-5 h-5 text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-gray-900">{doc.nom}</p>
-                      <p className="text-xs text-gray-500">{doc.taille} • {new Date(doc.date).toLocaleDateString('fr-FR')}</p>
+                      <p className="font-bold text-sm text-gray-900">CNI : {acteur.cni}</p>
+                      <p className="text-xs text-gray-500">Numero de CNI enregistre</p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${doc.statut === 'validé' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                        {doc.statut}
-                      </span>
-                      {hasPermission('acteurs.read') && (
-                        <motion.button onClick={() => toast.info(`Téléchargement : ${doc.nom} — simulation`)}
-                          className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center"
-                          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                          <Download className="w-4 h-4 text-gray-600" />
-                        </motion.button>
-                      )}
-                    </div>
+                    <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-green-100 text-green-700">valide</span>
                   </motion.div>
-                ))}
+                ) : (
+                  <div className="py-10 flex flex-col items-center justify-center text-gray-400">
+                    <Paperclip className="w-10 h-10 mb-2 opacity-30" />
+                    <p className="text-sm font-semibold">Aucun document enregistre</p>
+                    <p className="text-xs mt-1">Les documents soumis lors de l'identification apparaitront ici</p>
+                  </div>
+                )}
               </div>
               {hasPermission('acteurs.write') && (
-                <motion.button onClick={() => toast.info('Ajout de document — à implémenter avec upload')}
+                <motion.button onClick={() => toast.info('Ajout de document — a implementer avec upload')}
                   className="mt-4 flex items-center gap-2 px-4 py-3 rounded-2xl border-2 border-dashed border-gray-300 text-sm font-bold text-gray-500 w-full justify-center hover:border-gray-400 transition-colors"
                   whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                   <Paperclip className="w-4 h-4" /> Ajouter un document

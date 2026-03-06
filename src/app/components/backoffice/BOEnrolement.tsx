@@ -25,11 +25,7 @@ type FormType = 'admin' | 'identificateur' | 'institution' | null;
 type ActiveTab = 'dossiers' | 'creer' | 'cooperatives';
 const REGIONS = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'Korhogo', 'San Pédro', 'Man', 'Daloa', 'Divo', 'Abengourou'];
 
-const MOCK_COOPS = [
-  { id: 'co1', nom: 'Coopérative Maraîchère Adjamé', president: 'COULIBALY Inza', membres: 47, region: 'Abidjan', statut: 'pending', dateDepot: '2026-02-28', docs: ['Statuts signés', 'Liste membres', 'CNI président', 'PV AG'], capital: '2 500 000 FCFA' },
-  { id: 'co2', nom: 'Groupement Femmes Producteurs Bouaké', president: 'KONE Mariam', membres: 23, region: 'Bouaké', statut: 'complement', dateDepot: '2026-02-10', docs: ['Statuts signés', 'CNI président'], capital: '800 000 FCFA' },
-  { id: 'co3', nom: 'Coopérative Vivrière Korhogo', president: 'SORO Abib', membres: 31, region: 'Korhogo', statut: 'approved', dateDepot: '2026-01-15', docs: ['Statuts', 'Liste membres', 'CNI président', 'PV AG', 'Attestation MINADER'], capital: '1 200 000 FCFA' },
-];
+// MOCK_COOPS supprimé — on utilise les vrais dossiers coopératives
 
 export function BOEnrolement() {
   const { dossiers, zones, hasPermission, updateDossierStatut, addAuditLog, boUser, addBOUser, createIdentificateur } = useBackOffice();
@@ -45,21 +41,18 @@ export function BOEnrolement() {
   const [identForm, setIdentForm] = useState({ nom: '', prenom: '', telephone: '', cni: '', zoneId: '', region: '', objectifMensuel: '30', institutionRattachee: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredDossiers = dossiers.filter(d => filterStatut === 'all' || d.statut === filterStatut);
+  // Dossiers coopératives filtrés depuis les vraies données
+  const coopDossiers = dossiers.filter(d => d.acteurType === 'cooperative');
+
+  const filteredDossiers = dossiers.filter(d => (filterStatut === 'all' || d.statut === filterStatut) && d.acteurType !== 'cooperative');
   const zonesDisponibles = zones.filter(z => z.statut === 'active');
   const selectedZone = zonesDisponibles.find(z => z.id === identForm.zoneId);
 
   const handleValider = (id: string) => { updateDossierStatut(id, 'approved'); toast.success('Dossier approuvé'); };
   const handleRejeter = () => {
     if (!rejetModal.dossierId || !motifRejet.trim()) { toast.error('Motif de rejet obligatoire'); return; }
-    if (rejetModal.dossierId.startsWith('coop_')) {
-      const coopNom = MOCK_COOPS.find(c => `coop_${c.id}` === rejetModal.dossierId)?.nom || '';
-      if (boUser) addAuditLog({ action: 'REJET coopérative', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: coopNom, ancienneValeur: 'pending', nouvelleValeur: 'rejected', ip: '127.0.0.1', module: 'Enrôlement' });
-      toast.error('Coopérative rejetée');
-    } else {
-      updateDossierStatut(rejetModal.dossierId, 'rejected', motifRejet);
-      toast.error('Dossier rejeté');
-    }
+    updateDossierStatut(rejetModal.dossierId, 'rejected', motifRejet);
+    toast.error('Dossier rejeté');
     setRejetModal({ open: false, dossierId: null }); setMotifRejet('');
   };
   const handleComplement = (id: string) => { updateDossierStatut(id, 'complement'); toast.info('Demande de complément envoyée'); };
@@ -105,7 +98,7 @@ export function BOEnrolement() {
         objectifMensuel: identForm.objectifMensuel,
         institutionRattachee: identForm.institutionRattachee || undefined,
       });
-      toast.success(`Identificateur "${identForm.prenom} ${identForm.nom}" créé — Zone : ${selectedZone?.nom}`);
+      toast.success(`Identificateur "${identForm.prenom} ${identForm.nom}" cr��é — Zone : ${selectedZone?.nom}`);
       setIdentForm({ nom: '', prenom: '', telephone: '', cni: '', zoneId: '', region: '', objectifMensuel: '30', institutionRattachee: '' });
       setFormType(null);
     } catch (error: any) {
@@ -118,8 +111,8 @@ export function BOEnrolement() {
 
   const TABS: { id: ActiveTab; label: string; icon: any; badge?: number }[] = [
     { id: 'dossiers', label: 'Dossiers', icon: FileText, badge: dossiers.filter(d => d.statut === 'pending').length },
-    { id: 'cooperatives', label: 'Coopératives', icon: Users, badge: MOCK_COOPS.filter(c => c.statut === 'pending').length },
-    { id: 'creer', label: 'Créer un compte', icon: Plus },
+    { id: 'cooperatives', label: 'Cooperatives', icon: Users, badge: coopDossiers.filter(c => c.statut === 'pending').length },
+    { id: 'creer', label: 'Creer un compte', icon: Plus },
   ];
   const inputCls = 'w-full px-4 py-3 rounded-2xl border-2 border-gray-200 focus:border-[#E6A817] focus:outline-none text-sm';
 
@@ -233,9 +226,9 @@ export function BOEnrolement() {
           <motion.div key="cooperatives" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <div className="grid grid-cols-3 gap-4 mb-5">
               {[
-                { label: 'En attente validation', value: MOCK_COOPS.filter(c => c.statut === 'pending').length, color: '#F59E0B' },
-                { label: 'Agréées', value: MOCK_COOPS.filter(c => c.statut === 'approved').length, color: '#10B981' },
-                { label: 'Complément requis', value: MOCK_COOPS.filter(c => c.statut === 'complement').length, color: '#3B82F6' },
+                { label: 'En attente validation', value: coopDossiers.filter(c => c.statut === 'pending').length, color: '#F59E0B' },
+                { label: 'Agréées', value: coopDossiers.filter(c => c.statut === 'approved').length, color: '#10B981' },
+                { label: 'Complément requis', value: coopDossiers.filter(c => c.statut === 'complement').length, color: '#3B82F6' },
               ].map((s, i) => (
                 <motion.div key={s.label} className="bg-white rounded-2xl p-4 border-2 border-gray-100 shadow-sm"
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
@@ -245,7 +238,14 @@ export function BOEnrolement() {
               ))}
             </div>
             <div className="space-y-3">
-              {MOCK_COOPS.map((coop, i) => {
+              {coopDossiers.length === 0 ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="bg-white rounded-3xl p-12 border-2 border-gray-100 text-center">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="font-bold text-gray-500">Aucune coopérative enregistrée</p>
+                  <p className="text-sm text-gray-400 mt-1">Les dossiers coopératives apparaitront ici</p>
+                </motion.div>
+              ) : coopDossiers.map((coop, i) => {
                 const conf = STATUT_CONFIG[coop.statut] || STATUT_CONFIG.pending;
                 const Icon = conf.icon;
                 const expanded = expandedCoop === coop.id;
@@ -258,7 +258,7 @@ export function BOEnrolement() {
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0"><Users className="w-5 h-5 text-blue-700" /></div>
                           <div className="min-w-0">
-                            <p className="font-bold text-gray-900">{coop.nom}</p>
+                            <p className="font-bold text-gray-900">{coop.acteurNom}</p>
                             <p className="text-xs text-gray-500">Président : {coop.president} • {coop.membres} membres</p>
                             <div className="flex items-center gap-3 mt-0.5">
                               <p className="text-xs text-gray-400">{coop.region} • Déposé le {new Date(coop.dateDepot).toLocaleDateString('fr-FR')}</p>
@@ -288,8 +288,8 @@ export function BOEnrolement() {
                             {hasPermission('enrolement.validate') && coop.statut === 'pending' && (
                               <div className="flex gap-3 flex-wrap">
                                 <motion.button onClick={() => {
-                                  if (boUser) addAuditLog({ action: 'AGRÉMENT coopérative', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: coop.nom, ancienneValeur: 'pending', nouvelleValeur: 'approved', ip: '127.0.0.1', module: 'Enrôlement' });
-                                  toast.success(`Coopérative "${coop.nom}" agréée`);
+                                  if (boUser) addAuditLog({ action: 'AGRÉMENT coopérative', utilisateurBO: `${boUser.prenom} ${boUser.nom}`, roleBO: boUser.role, acteurImpacte: coop.acteurNom, ancienneValeur: 'pending', nouvelleValeur: 'approved', ip: '127.0.0.1', module: 'Enrôlement' });
+                                  toast.success(`Coopérative "${coop.acteurNom}" agréée`);
                                 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-sm text-white" style={{ backgroundColor: '#10B981' }} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}><CheckCircle2 className="w-4 h-4" /> Agréer</motion.button>
                                 <motion.button onClick={() => toast.info('Demande de complément envoyée')} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-sm border-2 border-blue-300 text-blue-700" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}><MessageSquare className="w-4 h-4" /> Complément</motion.button>
                                 {/* Rejet avec modal motif obligatoire */}

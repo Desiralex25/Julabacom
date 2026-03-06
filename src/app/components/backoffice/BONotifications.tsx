@@ -45,106 +45,149 @@ const CATEGORY_LABELS: Record<NotifCategory, string> = {
   academy: 'Academy',
 };
 
-const MOCK_NOTIFS: Notification[] = [
-  {
-    id: 'n1', level: 'critical', category: 'fraude', lu: false,
-    icon: ShieldAlert,
-    titre: 'Activité frauduleuse suspectée',
-    desc: 'Le compte BAMBA Koffi (Adjamé) a effectué 47 transactions identiques en 2h pour un montant total de 235 000 FCFA. Suspension automatique déclenchée.',
-    region: 'Abidjan', temps: 'Il y a 8 min',
-    action: '/backoffice/supervision', actionLabel: 'Voir transaction',
-  },
-  {
-    id: 'n2', level: 'critical', category: 'fraude', lu: false,
-    icon: ShieldAlert,
-    titre: 'Tentative de double enrôlement',
-    desc: 'Même numéro CNI (CI-AB-2021-009876) utilisé pour 2 dossiers distincts : KOUAME Aya (Marchand) et KOUAME Aya (Producteur). Blocage automatique activé.',
-    region: 'Abidjan', temps: 'Il y a 24 min',
-    action: '/backoffice/enrolement', actionLabel: 'Voir dossiers',
-  },
-  {
-    id: 'n3', level: 'warning', category: 'dossiers', lu: false,
-    icon: Clock,
-    titre: '5 dossiers en attente depuis +72h',
-    desc: 'Les dossiers D-2026-0847, D-2026-0849, D-2026-0851, D-2026-0853, D-2026-0857 n\'ont reçu aucune réponse de validation depuis plus de 72 heures.',
-    region: 'National', temps: 'Il y a 2h',
-    action: '/backoffice/enrolement', actionLabel: 'Traiter maintenant',
-  },
-  {
-    id: 'n4', level: 'warning', category: 'transactions', lu: false,
-    icon: Wallet,
-    titre: 'Pic de volume inhabituel',
-    desc: 'Volume de transactions sur le Marché d\'Adjamé x3.2 par rapport à la moyenne habituelle ce matin (08h-11h). Surveillance renforcée activée.',
-    region: 'Abidjan', temps: 'Il y a 3h',
-    action: '/backoffice/supervision', actionLabel: 'Superviser',
-  },
-  {
-    id: 'n5', level: 'warning', category: 'systeme', lu: true,
-    icon: Activity,
-    titre: 'Inactivité prolongée — Zone Yamoussoukro',
-    desc: 'La zone Yamoussoukro Centre n\'a enregistré aucune transaction depuis 8 jours consécutifs. Le gestionnaire de zone n\'a pas répondu aux notifications.',
-    region: 'Yamoussoukro', temps: 'Il y a 1 jour',
-    action: '/backoffice/zones', actionLabel: 'Voir la zone',
-  },
-  {
-    id: 'n6', level: 'info', category: 'dossiers', lu: true,
-    icon: UserPlus,
-    titre: 'Nouveau dossier soumis',
-    desc: 'L\'identificateur GNAGNE Brice-Olivier a soumis un nouveau dossier pour KONE Fatima (Marchand, Zone Cocody). Documents complets.',
-    region: 'Abidjan', temps: 'Il y a 4h',
-    action: '/backoffice/enrolement', actionLabel: 'Valider le dossier',
-  },
-  {
-    id: 'n7', level: 'info', category: 'systeme', lu: true,
-    icon: Users,
-    titre: 'Milestone : 12 000 acteurs atteint',
-    desc: 'La plateforme Jùlaba a franchi le cap des 12 000 acteurs enrôlés et validés. Objectif Q1 2026 : 15 000. Progression : 80%.',
-    region: 'National', temps: 'Il y a 6h',
-  },
-  {
-    id: 'n8', level: 'success', category: 'dossiers', lu: true,
-    icon: CheckCircle2,
-    titre: 'Lot de dossiers validé',
-    desc: '23 dossiers en attente pour la région de Bouaké ont été validés en lot par l\'Admin National BAMBA Fatoumata. Acteurs notifiés.',
-    region: 'Bouaké', temps: 'Il y a 8h',
-  },
-  {
-    id: 'n9', level: 'success', category: 'transactions', lu: true,
-    icon: Wallet,
-    titre: 'Commission Q1 traitée',
-    desc: 'Les commissions du mois de Février 2026 ont été calculées et validées. Total : 4 680 000 FCFA. Paiement en cours de traitement.',
-    region: 'National', temps: 'Il y a 12h',
-    action: '/backoffice/commissions', actionLabel: 'Voir commissions',
-  },
-  {
-    id: 'n10', level: 'info', category: 'academy', lu: true,
-    icon: BookOpen,
-    titre: 'Academy — Taux de complétion record',
-    desc: '847 acteurs ont complété leur formation du jour sur Jùlaba Academy. Taux de complétion : 73%. Record absolu depuis le lancement.',
-    region: 'National', temps: 'Il y a 1 jour',
-    action: '/backoffice/academy', actionLabel: 'Voir Academy',
-  },
-  {
-    id: 'n11', level: 'warning', category: 'systeme', lu: false,
-    icon: Zap,
-    titre: 'Connexion inhabituelle détectée',
-    desc: 'Une tentative de connexion au Back-Office a été détectée depuis une adresse IP non reconnue (197.145.88.23 — Lagos, Nigeria). Accès bloqué.',
-    region: 'Système', temps: 'Il y a 2 jours',
-    action: '/backoffice/audit', actionLabel: 'Voir les logs',
-  },
-  {
-    id: 'n12', level: 'info', category: 'dossiers', lu: true,
-    icon: MapPin,
-    titre: 'Nouvelle zone créée — Man',
-    desc: 'La zone "Man Centre" a été créée et activée. Gestionnaire assigné : TOURE Aminata. 0 acteurs enrôlés pour le moment.',
-    region: 'Man', temps: 'Il y a 2 jours',
-    action: '/backoffice/zones', actionLabel: 'Voir la zone',
-  },
-];
-
+const MOCK_NOTIFS: Notification[] = [];
 export function BONotifications() {
-  const { boUser, hasPermission } = useBackOffice();
-  const [notifs, setNotifs] = useState<Notification[]>(MOCK_NOTIFS);
+  const { boUser, hasPermission, dossiers, commissions, zones, acteurs, auditLogs } = useBackOffice();
+
+  // Générer les notifications depuis les vraies données
+  const generatedNotifs = React.useMemo((): Notification[] => {
+    const list: Notification[] = [];
+    let idCounter = 1;
+
+    // Dossiers en attente
+    const pending = dossiers.filter(d => d.statut === 'pending');
+    if (pending.length > 0) {
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'warning',
+        category: 'dossiers',
+        lu: false,
+        icon: Clock,
+        titre: `${pending.length} dossier${pending.length > 1 ? 's' : ''} en attente de validation`,
+        desc: `${pending.length} dossier${pending.length > 1 ? 's' : ''} nécessite${pending.length === 1 ? '' : 'nt'} votre validation.`,
+        region: 'National',
+        temps: 'maintenant',
+        action: '/backoffice/enrolement',
+        actionLabel: 'Traiter maintenant',
+      });
+    }
+
+    // Acteurs suspendus
+    const suspendus = acteurs.filter(a => a.statut === 'suspendu');
+    if (suspendus.length > 0) {
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'critical',
+        category: 'fraude',
+        lu: false,
+        icon: ShieldAlert,
+        titre: `${suspendus.length} acteur${suspendus.length > 1 ? 's' : ''} suspendu${suspendus.length > 1 ? 's' : ''}`,
+        desc: `${suspendus.map(a => `${a.prenoms} ${a.nom}`).slice(0, 3).join(', ')}${suspendus.length > 3 ? ` et ${suspendus.length - 3} autre(s)` : ''} — comptes suspendus.`,
+        region: 'National',
+        temps: 'maintenant',
+        action: '/backoffice/acteurs',
+        actionLabel: 'Voir acteurs',
+      });
+    }
+
+    // Commissions en attente
+    const commEn = commissions.filter(c => c.statut === 'en_attente');
+    if (commEn.length > 0) {
+      const totalComm = commEn.reduce((s, c) => s + c.montantTotal, 0);
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'info',
+        category: 'transactions',
+        lu: false,
+        icon: Wallet,
+        titre: `${commEn.length} commission${commEn.length > 1 ? 's' : ''} à valider`,
+        desc: `Total : ${totalComm.toLocaleString('fr-FR')} FCFA en attente de paiement.`,
+        region: 'National',
+        temps: 'maintenant',
+        action: '/backoffice/commissions',
+        actionLabel: 'Voir commissions',
+      });
+    }
+
+    // Zones inactives
+    const zonesInactives = zones.filter(z => z.statut === 'inactive');
+    if (zonesInactives.length > 0) {
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'warning',
+        category: 'systeme',
+        lu: true,
+        icon: MapPin,
+        titre: `${zonesInactives.length} zone${zonesInactives.length > 1 ? 's' : ''} inactive${zonesInactives.length > 1 ? 's' : ''}`,
+        desc: `Zone${zonesInactives.length > 1 ? 's' : ''} désactivée${zonesInactives.length > 1 ? 's' : ''} : ${zonesInactives.map(z => z.nom).slice(0, 3).join(', ')}.`,
+        region: 'National',
+        temps: 'maintenant',
+        action: '/backoffice/zones',
+        actionLabel: 'Voir zones',
+      });
+    }
+
+    // Dossiers approuvés récemment (succès)
+    const approuves = dossiers.filter(d => d.statut === 'approved');
+    if (approuves.length > 0) {
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'success',
+        category: 'dossiers',
+        lu: true,
+        icon: CheckCircle2,
+        titre: `${approuves.length} dossier${approuves.length > 1 ? 's' : ''} approuvé${approuves.length > 1 ? 's' : ''}`,
+        desc: `${approuves.length} acteur${approuves.length > 1 ? 's' : ''} validé${approuves.length > 1 ? 's' : ''} avec succès sur la plateforme.`,
+        region: 'National',
+        temps: 'récemment',
+        action: '/backoffice/enrolement',
+        actionLabel: 'Voir dossiers',
+      });
+    }
+
+    // Derniers audit logs significatifs
+    const recentLogs = auditLogs.slice(0, 3);
+    recentLogs.forEach(log => {
+      list.push({
+        id: `gen_${idCounter++}`,
+        level: 'info',
+        category: 'systeme',
+        lu: true,
+        icon: Activity,
+        titre: log.action,
+        desc: `${log.utilisateurBO} — ${log.acteurImpacte || log.module}`,
+        region: 'National',
+        temps: new Date(log.date).toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }),
+        action: '/backoffice/audit',
+        actionLabel: 'Voir logs',
+      });
+    });
+
+    // Si aucune notification, afficher un message positif
+    if (list.length === 0) {
+      list.push({
+        id: 'gen_empty',
+        level: 'success',
+        category: 'systeme',
+        lu: true,
+        icon: CheckCircle2,
+        titre: 'Tout est en ordre',
+        desc: 'Aucune alerte active. La plateforme fonctionne normalement.',
+        region: 'National',
+        temps: 'maintenant',
+      });
+    }
+
+    return list;
+  }, [dossiers, commissions, zones, acteurs, auditLogs]);
+
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+
+  // Synchroniser avec les données générées
+  React.useEffect(() => {
+    setNotifs(generatedNotifs);
+  }, [generatedNotifs]);
+
   const [category, setCategory] = useState<NotifCategory>('all');
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);

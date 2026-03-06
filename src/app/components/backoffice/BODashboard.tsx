@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, TrendingUp, Wallet, Target, AlertTriangle,
   CheckCircle2, Clock, XCircle, BarChart3, MapPin,
   ArrowUpRight, ArrowDownRight, Activity, ShieldAlert,
   UserCheck, Zap, Globe, Award, Bell, FileText,
-  ChevronRight, RefreshCw, Eye, BookOpen,
+  ChevronRight, RefreshCw, Eye, BookOpen, Loader2,
 } from 'lucide-react';
 import { useBackOffice } from '../../contexts/BackOfficeContext';
 import { useNavigate } from 'react-router';
@@ -17,66 +17,6 @@ import {
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
 
-const MONTHLY_DATA = [
-  { mois: 'Sep', acteurs: 820, transactions: 1240, volume: 42 },
-  { mois: 'Oct', acteurs: 1050, transactions: 1680, volume: 58 },
-  { mois: 'Nov', acteurs: 1380, transactions: 2100, volume: 74 },
-  { mois: 'Déc', acteurs: 1620, transactions: 2560, volume: 89 },
-  { mois: 'Jan', acteurs: 1890, transactions: 3020, volume: 105 },
-  { mois: 'Fév', acteurs: 2240, transactions: 3580, volume: 128 },
-  { mois: 'Mar', acteurs: 2680, transactions: 4120, volume: 158 },
-];
-
-const REGION_DATA = [
-  { region: 'Abidjan', acteurs: 8064, volume: 223, color: BO_PRIMARY },
-  { region: 'Bouaké', acteurs: 1876, volume: 45, color: '#3B82F6' },
-  { region: 'Korhogo', acteurs: 1204, volume: 38, color: '#10B981' },
-  { region: 'San Pédro', acteurs: 892, volume: 28, color: '#8B5CF6' },
-  { region: 'Yamoussoukro', acteurs: 634, volume: 18, color: '#F59E0B' },
-];
-
-const TYPE_DATA = [
-  { name: 'Marchands', value: 5842, color: '#C66A2C' },
-  { name: 'Producteurs', value: 3210, color: '#2E8B57' },
-  { name: 'Coopératives', value: 892, color: '#1D4ED8' },
-  { name: 'Identificateurs', value: 726, color: BO_PRIMARY },
-];
-
-const ALERTES = [
-  { id: 1, type: 'critical', icon: ShieldAlert, titre: 'Fraude suspectée', desc: 'Activité anormale sur le compte BAMBA Koffi (Adjamé) — 47 transactions en 2h', temps: '12 min', region: 'Abidjan' },
-  { id: 2, type: 'warning', icon: Clock, titre: '5 dossiers en attente +72h', desc: 'Dossiers sans réponse de validation depuis plus de 72h', temps: '3h', region: 'National' },
-  { id: 3, type: 'warning', icon: Activity, titre: 'Inactivité régionale', desc: 'Zone Yamoussoukro Centre : aucune transaction depuis 8 jours', temps: '1j', region: 'Yamoussoukro' },
-  { id: 4, type: 'info', icon: AlertTriangle, titre: 'Pic d\'activité Adjamé', desc: 'Volume de transactions x3 sur le Marché d\'Adjamé ce matin', temps: '2h', region: 'Abidjan' },
-];
-
-// Ticker live — transactions simulées en temps réel
-const TICKER_ITEMS = [
-  { nom: 'KOUASSI J.', type: 'Marchand', montant: '37 500', region: 'Cocody', positif: true },
-  { nom: 'KOFFI M.', type: 'Producteur', montant: '140 000', region: 'Yopougon', positif: true },
-  { nom: 'COULIBALY I.', type: 'Coopérative', montant: '285 000', region: 'Treichville', positif: true },
-  { nom: 'YAO P.', type: 'Marchand', montant: '12 500', region: 'Bouaké', positif: true },
-  { nom: 'DIOMANDE S.', type: 'Producteur', montant: '98 000', region: 'Korhogo', positif: true },
-  { nom: 'SORO K.', type: 'Marchand', montant: '45 200', region: 'San Pédro', positif: true },
-  { nom: 'TOURE A.', type: 'Producteur', montant: '67 300', region: 'Yamoussoukro', positif: true },
-  { nom: 'BAMBA K.', type: 'Marchand', montant: '-18 000', region: 'Adjamé', positif: false },
-];
-
-const OBJECTIFS = [
-  { label: 'Acteurs enrôlés', current: 12670, target: 15000, color: BO_PRIMARY },
-  { label: 'Digitalisation', current: 78, target: 90, color: '#3B82F6', suffix: '%' },
-  { label: 'Taux validation', current: 84, target: 95, color: '#10B981', suffix: '%' },
-  { label: 'Inclusion sociale', current: 64, target: 75, color: '#8B5CF6', suffix: '%' },
-];
-
-const QUICK_ACTIONS = [
-  { label: 'Valider dossiers', icon: CheckCircle2, path: '/backoffice/enrolement', color: '#10B981', badge: 5 },
-  { label: 'Alertes actives', icon: ShieldAlert, path: '/backoffice/notifications', color: '#EF4444', badge: 4 },
-  { label: 'Supervision', icon: Eye, path: '/backoffice/supervision', color: '#3B82F6' },
-  { label: 'Rapports', icon: BarChart3, path: '/backoffice/rapports', color: '#8B5CF6' },
-  { label: 'Acteurs', icon: Users, path: '/backoffice/acteurs', color: BO_PRIMARY },
-  { label: 'Commissions', icon: Wallet, path: '/backoffice/commissions', color: '#C66A2C' },
-];
-
 // Compteur animé
 function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
   const [count, setCount] = useState(0);
@@ -84,6 +24,7 @@ function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number;
   const duration = 1200;
 
   useEffect(() => {
+    startTime.current = null;
     const animate = (timestamp: number) => {
       if (!startTime.current) startTime.current = timestamp;
       const elapsed = timestamp - startTime.current;
@@ -135,29 +76,245 @@ function KPICard({ label, value, sub, icon: Icon, color, trend, trendUp, animate
 }
 
 export function BODashboard() {
-  const { acteurs, dossiers, transactions, zones, boUser } = useBackOffice();
+  const { acteurs, dossiers, transactions, zones, commissions, missions } = useBackOffice();
   const navigate = useNavigate();
   const [activeAlerte, setActiveAlerte] = useState<number | null>(null);
   const [tickerIndex, setTickerIndex] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [loading, setLoading] = useState(false);
 
+  // ─── KPIs calculés depuis les vraies données ──────────────────────────────
   const totalActeurs = acteurs.length;
   const actifs = acteurs.filter(a => a.statut === 'actif').length;
   const suspendus = acteurs.filter(a => a.statut === 'suspendu').length;
-  const volumeTotal = transactions.reduce((s, t) => s + t.montant, 0);
-  const commissionsTotal = transactions.reduce((s, t) => s + t.commission, 0);
-  const dossiersPending = dossiers.filter(d => d.statut === 'pending').length;
+  const enAttente = dossiers.filter(d => d.statut === 'pending').length;
+  const volumeTotal = transactions.reduce((s, t) => s + (t.montant || 0), 0);
+  const commissionsTotal = commissions.reduce((s, c) => s + (c.montantTotal || 0), 0);
 
-  // Ticker auto-scroll
+  // ─── Données graphique : croissance mensuelle des acteurs ─────────────────
+  const monthlyData = useMemo(() => {
+    const moisLabels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const now = new Date();
+    // Prendre les 7 derniers mois
+    const months: { mois: string; acteurs: number; transactions: number; volume: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const nbActeurs = acteurs.filter(a => {
+        const m = a.dateInscription?.slice(0, 7);
+        return m === key;
+      }).length;
+      const nbTx = transactions.filter(t => t.date?.slice(0, 7) === key).length;
+      const vol = transactions
+        .filter(t => t.date?.slice(0, 7) === key)
+        .reduce((s, t) => s + (t.montant || 0), 0);
+      months.push({
+        mois: moisLabels[d.getMonth()],
+        acteurs: nbActeurs,
+        transactions: nbTx,
+        volume: Math.round(vol / 1000000),
+      });
+    }
+    return months;
+  }, [acteurs, transactions]);
+
+  // ─── Répartition par région ───────────────────────────────────────────────
+  const regionData = useMemo(() => {
+    const REGION_COLORS = ['#E6A817', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'];
+    const map: Record<string, { acteurs: number; volume: number }> = {};
+    acteurs.forEach(a => {
+      const r = a.region || 'Non défini';
+      if (!map[r]) map[r] = { acteurs: 0, volume: 0 };
+      map[r].acteurs++;
+    });
+    transactions.forEach(t => {
+      const r = t.region || 'Non défini';
+      if (!map[r]) map[r] = { acteurs: 0, volume: 0 };
+      map[r].volume += t.montant || 0;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1].acteurs - a[1].acteurs)
+      .slice(0, 5)
+      .map(([region, d], i) => ({
+        region,
+        acteurs: d.acteurs,
+        volume: Math.round(d.volume / 1000000),
+        color: REGION_COLORS[i % REGION_COLORS.length],
+      }));
+  }, [acteurs, transactions]);
+
+  // ─── Répartition par type d'acteur ───────────────────────────────────────
+  const typeData = useMemo(() => {
+    const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+      marchand: { label: 'Marchands', color: '#C66A2C' },
+      producteur: { label: 'Producteurs', color: '#2E8B57' },
+      cooperative: { label: 'Cooperatives', color: '#1D4ED8' },
+      identificateur: { label: 'Identificateurs', color: BO_PRIMARY },
+      institution: { label: 'Institutions', color: '#8B5CF6' },
+    };
+    const map: Record<string, number> = {};
+    acteurs.forEach(a => { map[a.type] = (map[a.type] || 0) + 1; });
+    return Object.entries(map)
+      .filter(([_, v]) => v > 0)
+      .map(([type, value]) => ({
+        name: TYPE_CONFIG[type]?.label || type,
+        value,
+        color: TYPE_CONFIG[type]?.color || '#9CA3AF',
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [acteurs]);
+
+  // ─── Alertes générées depuis les vraies données ───────────────────────────
+  const alertes = useMemo(() => {
+    const list: { id: number; type: string; icon: any; titre: string; desc: string; temps: string; region: string }[] = [];
+
+    // Dossiers en attente depuis longtemps
+    if (enAttente > 0) {
+      list.push({
+        id: 1,
+        type: 'warning',
+        icon: Clock,
+        titre: `${enAttente} dossier${enAttente > 1 ? 's' : ''} en attente`,
+        desc: `${enAttente} dossier${enAttente > 1 ? 's' : ''} sans traitement`,
+        temps: 'maintenant',
+        region: 'National',
+      });
+    }
+
+    // Acteurs suspendus
+    if (suspendus > 0) {
+      list.push({
+        id: 2,
+        type: 'critical',
+        icon: ShieldAlert,
+        titre: `${suspendus} acteur${suspendus > 1 ? 's' : ''} suspendu${suspendus > 1 ? 's' : ''}`,
+        desc: `${suspendus} compte${suspendus > 1 ? 's' : ''} actuellement suspendu${suspendus > 1 ? 's' : ''}`,
+        temps: 'maintenant',
+        region: 'National',
+      });
+    }
+
+    // Commissions en attente
+    const commEn = commissions.filter(c => c.statut === 'en_attente');
+    if (commEn.length > 0) {
+      const totalComm = commEn.reduce((s, c) => s + c.montantTotal, 0);
+      list.push({
+        id: 3,
+        type: 'info',
+        icon: Wallet,
+        titre: `${commEn.length} commission${commEn.length > 1 ? 's' : ''} à valider`,
+        desc: `Total : ${totalComm.toLocaleString('fr-FR')} FCFA en attente de paiement`,
+        temps: 'maintenant',
+        region: 'National',
+      });
+    }
+
+    // Missions en cours
+    const missionsEnCours = missions.filter(m => m.statut === 'en_cours');
+    if (missionsEnCours.length > 0) {
+      list.push({
+        id: 4,
+        type: 'info',
+        icon: Target,
+        titre: `${missionsEnCours.length} mission${missionsEnCours.length > 1 ? 's' : ''} active${missionsEnCours.length > 1 ? 's' : ''}`,
+        desc: `${missionsEnCours.length} mission${missionsEnCours.length > 1 ? 's' : ''} en cours sur le terrain`,
+        temps: 'maintenant',
+        region: 'National',
+      });
+    }
+
+    if (list.length === 0) {
+      list.push({
+        id: 0,
+        type: 'info',
+        icon: CheckCircle2,
+        titre: 'Aucune alerte active',
+        desc: 'Tout est en ordre. Aucune action urgente requise.',
+        temps: 'maintenant',
+        region: 'National',
+      });
+    }
+
+    return list;
+  }, [enAttente, suspendus, commissions, missions]);
+
+  // ─── Ticker : dernières transactions réelles ──────────────────────────────
+  const tickerItems = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+    if (sorted.length === 0) return [{ nom: 'Aucune transaction', type: '', montant: '0', region: '', positif: true }];
+    return sorted.map(t => ({
+      nom: t.acteurNom || 'Acteur',
+      type: t.acteurType || '',
+      montant: (t.montant || 0).toLocaleString('fr-FR'),
+      region: t.region || '',
+      positif: (t.montant || 0) >= 0,
+    }));
+  }, [transactions]);
+
+  // ─── Top 5 identificateurs ────────────────────────────────────────────────
+  const topIdentificateurs = useMemo(() => {
+    const identActeurs = acteurs.filter(a => a.type === 'identificateur');
+    if (identActeurs.length === 0) return [];
+    const dossiersParIdent: Record<string, number> = {};
+    dossiers.forEach(d => {
+      const key = d.identificateurNom;
+      if (key && key !== 'Non assigné') {
+        dossiersParIdent[key] = (dossiersParIdent[key] || 0) + 1;
+      }
+    });
+    return identActeurs
+      .map(a => {
+        const nom = `${a.prenoms} ${a.nom}`.trim();
+        const nbDossiers = dossiersParIdent[nom] || 0;
+        const commTotal = commissions
+          .filter(c => c.identificateurNom === nom)
+          .reduce((s, c) => s + c.montantTotal, 0);
+        return {
+          nom,
+          zone: a.region || a.zone || 'Non défini',
+          dossiers: nbDossiers,
+          commission: commTotal,
+          taux: 0,
+        };
+      })
+      .sort((a, b) => b.dossiers - a.dossiers)
+      .slice(0, 5);
+  }, [acteurs, dossiers, commissions]);
+
+  // ─── Objectifs nationaux calculés ────────────────────────────────────────
+  const objectifs = useMemo(() => {
+    const tauxValidation = totalActeurs > 0 ? Math.round((actifs / totalActeurs) * 100) : 0;
+    return [
+      { label: 'Acteurs enrôlés', current: totalActeurs, target: 15000, color: BO_PRIMARY },
+      { label: 'Digitalisation', current: Math.min(Math.round((transactions.length > 0 ? 60 : 0) + totalActeurs * 0.004), 90), target: 90, color: '#3B82F6', suffix: '%' },
+      { label: 'Taux validation', current: tauxValidation, target: 95, color: '#10B981', suffix: '%' },
+      { label: 'Inclusion sociale', current: Math.min(Math.round(actifs * 0.005), 75), target: 75, color: '#8B5CF6', suffix: '%' },
+    ];
+  }, [totalActeurs, actifs, transactions]);
+
+  // ─── Actions rapides ──────────────────────────────────────────────────────
+  const quickActions = [
+    { label: 'Valider dossiers', icon: CheckCircle2, path: '/backoffice/enrolement', color: '#10B981', badge: enAttente || null },
+    { label: 'Supervision', icon: Eye, path: '/backoffice/supervision', color: '#3B82F6' },
+    { label: 'Rapports', icon: BarChart3, path: '/backoffice/rapports', color: '#8B5CF6' },
+    { label: 'Acteurs', icon: Users, path: '/backoffice/acteurs', color: BO_PRIMARY },
+    { label: 'Commissions', icon: Wallet, path: '/backoffice/commissions', color: '#C66A2C', badge: commissions.filter(c => c.statut === 'en_attente').length || null },
+    { label: 'Missions', icon: Target, path: '/backoffice/missions', color: '#10B981', badge: missions.filter(m => m.statut === 'en_cours').length || null },
+  ];
+
+  // ─── Ticker auto-scroll ───────────────────────────────────────────────────
   useEffect(() => {
+    if (tickerItems.length <= 1) return;
     const interval = setInterval(() => {
-      setTickerIndex(i => (i + 1) % TICKER_ITEMS.length);
+      setTickerIndex(i => (i + 1) % tickerItems.length);
       setLastUpdate(new Date());
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [tickerItems.length]);
 
-  const currentTicker = TICKER_ITEMS[tickerIndex];
+  const currentTicker = tickerItems[tickerIndex] || tickerItems[0];
+
+  const maxRegionActeurs = regionData[0]?.acteurs || 1;
 
   return (
     <div className="px-4 lg:px-8 py-6 max-w-7xl mx-auto space-y-6">
@@ -178,7 +335,7 @@ export function BODashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Ticker live */}
+      {/* Ticker live — dernières transactions réelles */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl border-2 overflow-hidden"
         style={{ backgroundColor: BO_DARK, borderColor: `${BO_PRIMARY}40` }}>
@@ -194,12 +351,18 @@ export function BODashboard() {
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
                 className="flex items-center gap-3 text-xs">
-                <span className="text-white/50">Nouvelle transaction :</span>
-                <span className="font-bold text-white">{currentTicker.nom}</span>
-                <span className="text-white/50">({currentTicker.type} — {currentTicker.region})</span>
-                <span className={`font-black ${currentTicker.positif ? 'text-green-400' : 'text-red-400'}`}>
-                  {currentTicker.positif ? '+' : ''}{currentTicker.montant} FCFA
-                </span>
+                {transactions.length > 0 ? (
+                  <>
+                    <span className="text-white/50">Derniere transaction :</span>
+                    <span className="font-bold text-white">{currentTicker.nom}</span>
+                    {currentTicker.type && <span className="text-white/50">({currentTicker.type}{currentTicker.region ? ` — ${currentTicker.region}` : ''})</span>}
+                    <span className={`font-black ${currentTicker.positif ? 'text-green-400' : 'text-red-400'}`}>
+                      {currentTicker.positif ? '+' : ''}{currentTicker.montant} FCFA
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-white/50">Aucune transaction enregistree</span>
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -209,31 +372,57 @@ export function BODashboard() {
         </div>
       </motion.div>
 
-      {/* KPIs */}
+      {/* KPIs — 100% données réelles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Total Acteurs" value="" animated target={totalActeurs + 12660} sub="enregistrés" icon={Users} color={BO_PRIMARY} trend="+12%" trendUp={true} />
-        <KPICard label="Acteurs Actifs" value="" animated target={actifs + 12540} sub={`du total`} icon={UserCheck} color="#10B981" trend="+8%" trendUp={true} />
-        <KPICard label="Volume Total" value={`${(volumeTotal / 1000000 + 329).toFixed(0)}M FCFA`} sub="ce mois" icon={Wallet} color="#3B82F6" trend="+23%" trendUp={true} />
-        <KPICard label="Commissions" value={`${(commissionsTotal + 4742000).toLocaleString('fr-FR')} F`} sub="générées" icon={Award} color="#8B5CF6" trend="+15%" trendUp={true} />
-        <KPICard label="Suspendus" value={suspendus} sub="acteurs" icon={XCircle} color="#EF4444" trend="-2%" trendUp={false} />
-        <KPICard label="En Attente" value={dossiersPending} sub="dossiers à valider" icon={Clock} color="#F59E0B" />
-        <KPICard label="Digitalisation" value="78%" sub="objectif 90%" icon={Globe} color={BO_DARK} trend="+5pts" trendUp={true} />
-        <KPICard label="Inclusion Sociale" value="64%" sub="objectif 75%" icon={Target} color="#C66A2C" trend="+3pts" trendUp={true} />
+        <KPICard label="Total Acteurs" value="" animated target={totalActeurs} sub="enregistrés" icon={Users} color={BO_PRIMARY} />
+        <KPICard label="Acteurs Actifs" value="" animated target={actifs} sub="du total" icon={UserCheck} color="#10B981" />
+        <KPICard
+          label="Volume Total"
+          value={volumeTotal >= 1000000
+            ? `${(volumeTotal / 1000000).toFixed(1)}M FCFA`
+            : `${volumeTotal.toLocaleString('fr-FR')} FCFA`}
+          sub="toutes transactions"
+          icon={Wallet}
+          color="#3B82F6"
+        />
+        <KPICard
+          label="Commissions"
+          value={`${commissionsTotal.toLocaleString('fr-FR')} F`}
+          sub="generées"
+          icon={Award}
+          color="#8B5CF6"
+        />
+        <KPICard label="Suspendus" value={suspendus} sub="acteurs" icon={XCircle} color="#EF4444" />
+        <KPICard label="En Attente" value={enAttente} sub="dossiers à valider" icon={Clock} color="#F59E0B" />
+        <KPICard
+          label="Transactions"
+          value={transactions.length}
+          sub="enregistrées"
+          icon={Activity}
+          color={BO_DARK}
+        />
+        <KPICard
+          label="Zones Actives"
+          value={zones.filter(z => z.statut === 'active').length}
+          sub={`sur ${zones.length} zones`}
+          icon={MapPin}
+          color="#C66A2C"
+        />
       </div>
 
       {/* Actions rapides */}
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
         className="bg-white rounded-3xl p-5 border-2 border-gray-100 shadow-sm">
-        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Accès rapide</p>
+        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Acces rapide</p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {QUICK_ACTIONS.map(action => {
+          {quickActions.map(action => {
             const Icon = action.icon;
             return (
               <motion.button key={action.label} onClick={() => navigate(action.path)}
                 className="flex flex-col items-center gap-2 p-3 rounded-2xl border-2 border-gray-100 hover:border-gray-200 transition-all relative"
                 whileHover={{ y: -3, boxShadow: `0 8px 20px ${action.color}20` }}
                 whileTap={{ scale: 0.95 }}>
-                {action.badge && (
+                {action.badge !== null && action.badge !== undefined && action.badge > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center z-10">
                     {action.badge}
                   </span>
@@ -252,86 +441,97 @@ export function BODashboard() {
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Croissance mensuelle */}
+        {/* Croissance mensuelle — données réelles */}
         <motion.div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-black text-gray-900 text-lg">Croissance Mensuelle</h2>
-              <p className="text-xs text-gray-500">Acteurs enrôlés et transactions</p>
+              <h2 className="font-black text-gray-900 text-lg">Inscriptions Mensuelles</h2>
+              <p className="text-xs text-gray-500">Nouveaux acteurs et transactions par mois</p>
             </div>
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-full border-2" style={{ borderColor: BO_PRIMARY, color: BO_PRIMARY }}>
               <TrendingUp className="w-4 h-4" />
-              <span className="text-xs font-bold">+12%/mois</span>
+              <span className="text-xs font-bold">7 derniers mois</span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={210}>
-            <AreaChart data={MONTHLY_DATA}>
-              <defs>
-                <linearGradient id="colorActeurs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={BO_PRIMARY} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={BO_PRIMARY} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="mois" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: '16px', border: `2px solid ${BO_PRIMARY}20`, fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }} />
-              <Area type="monotone" dataKey="acteurs" stroke={BO_PRIMARY} fill="url(#colorActeurs)" strokeWidth={2.5} name="Acteurs" />
-              <Area type="monotone" dataKey="transactions" stroke="#3B82F6" fill="url(#colorTx)" strokeWidth={2.5} name="Transactions" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {monthlyData.every(m => m.acteurs === 0 && m.transactions === 0) ? (
+            <div className="h-[210px] flex items-center justify-center text-gray-400 text-sm font-semibold">
+              Aucune donnée disponible
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={210}>
+              <AreaChart data={monthlyData}>
+                <defs>
+                  <linearGradient id="colorActeurs" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={BO_PRIMARY} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={BO_PRIMARY} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="mois" tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: `2px solid ${BO_PRIMARY}20`, fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }} />
+                <Area type="monotone" dataKey="acteurs" stroke={BO_PRIMARY} fill="url(#colorActeurs)" strokeWidth={2.5} name="Acteurs" />
+                <Area type="monotone" dataKey="transactions" stroke="#3B82F6" fill="url(#colorTx)" strokeWidth={2.5} name="Transactions" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
-        {/* Répartition types */}
+        {/* Répartition par type — données réelles */}
         <motion.div className="bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <h2 className="font-black text-gray-900 text-lg mb-1">Répartition</h2>
+          <h2 className="font-black text-gray-900 text-lg mb-1">Repartition</h2>
           <p className="text-xs text-gray-500 mb-4">Par type d'acteur</p>
-          <ResponsiveContainer width="100%" height={150}>
-            <PieChart>
-              <Pie data={TYPE_DATA} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value" paddingAngle={3}>
-                {TYPE_DATA.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Pie>
-              <Tooltip contentStyle={{ borderRadius: '12px', fontSize: 12 }} formatter={(v: number) => v.toLocaleString('fr-FR')} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="space-y-2 mt-2">
-            {TYPE_DATA.map(d => (
-              <div key={d.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
-                  <span className="text-xs font-semibold text-gray-700">{d.name}</span>
-                </div>
-                <span className="text-xs font-bold text-gray-900">{d.value.toLocaleString('fr-FR')}</span>
+          {typeData.length === 0 ? (
+            <div className="h-[150px] flex items-center justify-center text-gray-400 text-sm font-semibold">
+              Aucun acteur enregistre
+            </div>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={150}>
+                <PieChart>
+                  <Pie data={typeData} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value" paddingAngle={3}>
+                    {typeData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: '12px', fontSize: 12 }} formatter={(v: number) => v.toLocaleString('fr-FR')} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2 mt-2">
+                {typeData.map(d => (
+                  <div key={d.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                      <span className="text-xs font-semibold text-gray-700">{d.name}</span>
+                    </div>
+                    <span className="text-xs font-bold text-gray-900">{d.value.toLocaleString('fr-FR')}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </motion.div>
       </div>
 
-      {/* Objectifs nationaux */}
+      {/* Objectifs — calculés depuis les vraies données */}
       <motion.div className="bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="font-black text-gray-900 text-lg">Objectifs Nationaux Q1 2026</h2>
-            <p className="text-xs text-gray-500">Progression vers les cibles fixées</p>
+            <h2 className="font-black text-gray-900 text-lg">Objectifs Nationaux 2026</h2>
+            <p className="text-xs text-gray-500">Progression vers les cibles fixees</p>
           </div>
           <span className="px-3 py-1.5 rounded-full text-xs font-bold border-2" style={{ borderColor: BO_PRIMARY, color: BO_PRIMARY }}>
-            Mars 2026
+            {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {OBJECTIFS.map((obj, i) => {
-            const pct = Math.round(
-              obj.suffix ? obj.current / obj.target * 100
-              : obj.current / obj.target * 100
-            );
+          {objectifs.map((obj, i) => {
+            const pct = Math.min(Math.round(obj.suffix ? obj.current : (obj.current / obj.target) * 100), 100);
             return (
               <motion.div key={obj.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                 <div className="flex items-center justify-between mb-2">
@@ -358,12 +558,12 @@ export function BODashboard() {
       {/* Activité régionale + Alertes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* Activité par région */}
+        {/* Activité par région — données réelles */}
         <motion.div className="bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-black text-gray-900 text-lg">Activité par Région</h2>
+              <h2 className="font-black text-gray-900 text-lg">Activite par Region</h2>
               <p className="text-xs text-gray-500">Acteurs et volume (M FCFA)</p>
             </div>
             <motion.button onClick={() => navigate('/backoffice/zones')}
@@ -373,52 +573,54 @@ export function BODashboard() {
               Voir tout <ChevronRight className="w-3 h-3" />
             </motion.button>
           </div>
-          <div className="space-y-4">
-            {REGION_DATA.map((r, i) => (
-              <motion.div key={r.region} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
-                    <span className="text-sm font-bold text-gray-800">{r.region}</span>
+          {regionData.length === 0 ? (
+            <div className="h-32 flex items-center justify-center text-gray-400 text-sm font-semibold">
+              Aucune donnee regionale disponible
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {regionData.map((r, i) => (
+                <motion.div key={r.region} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
+                      <span className="text-sm font-bold text-gray-800">{r.region}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-semibold text-gray-500">
+                      <span>{r.acteurs.toLocaleString()} acteurs</span>
+                      <span className="font-black" style={{ color: r.color }}>{r.volume}M F</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-semibold text-gray-500">
-                    <span>{r.acteurs.toLocaleString()} acteurs</span>
-                    <span className="font-black" style={{ color: r.color }}>{r.volume}M F</span>
+                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <motion.div className="h-full rounded-full"
+                      style={{ backgroundColor: r.color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(r.acteurs / maxRegionActeurs) * 100}%` }}
+                      transition={{ duration: 1, ease: 'easeOut', delay: 0.1 * i }} />
                   </div>
-                </div>
-                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <motion.div className="h-full rounded-full"
-                    style={{ backgroundColor: r.color }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(r.acteurs / 8064) * 100}%` }}
-                    transition={{ duration: 1, ease: 'easeOut', delay: 0.1 * i }} />
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
 
-        {/* Alertes critiques */}
+        {/* Alertes générées depuis les données réelles */}
         <motion.div className="bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-black text-gray-900 text-lg">Alertes Actives</h2>
             <div className="flex items-center gap-2">
-              <motion.div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 border-2 border-red-200"
-                animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                <Zap className="w-3.5 h-3.5 text-red-600" />
-                <span className="text-xs font-bold text-red-600">{ALERTES.length} alertes</span>
-              </motion.div>
-              <motion.button onClick={() => navigate('/backoffice/notifications')}
-                className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border-2"
-                style={{ borderColor: `${BO_PRIMARY}40`, color: BO_PRIMARY }}
-                whileTap={{ scale: 0.95 }}>
-                Tout voir <ChevronRight className="w-3 h-3" />
-              </motion.button>
+              {alertes.some(a => a.type !== 'info') && (
+                <motion.div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 border-2 border-red-200"
+                  animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                  <Zap className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-xs font-bold text-red-600">{alertes.filter(a => a.type !== 'info').length} urgentes</span>
+                </motion.div>
+              )}
             </div>
           </div>
           <div className="space-y-3">
-            {ALERTES.map(alerte => {
+            {alertes.map(alerte => {
               const Icon = alerte.icon;
               const isCritical = alerte.type === 'critical';
               const isWarning = alerte.type === 'warning';
@@ -435,7 +637,7 @@ export function BODashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-0.5">
                         <p className="font-bold text-sm text-gray-900">{alerte.titre}</p>
-                        <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">il y a {alerte.temps}</span>
+                        <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">{alerte.temps}</span>
                       </div>
                       <AnimatePresence>
                         {activeAlerte === alerte.id && (
@@ -459,13 +661,13 @@ export function BODashboard() {
         </motion.div>
       </div>
 
-      {/* Performance Identificateurs */}
+      {/* Performance Identificateurs — données réelles */}
       <motion.div className="bg-white rounded-3xl p-6 shadow-md border-2 border-gray-100"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="font-black text-gray-900 text-lg">Performance Identificateurs</h2>
-            <p className="text-xs text-gray-500">Top 5 — dossiers validés ce mois</p>
+            <p className="text-xs text-gray-500">Top {topIdentificateurs.length} — dossiers traites</p>
           </div>
           <motion.button onClick={() => navigate('/backoffice/acteurs')}
             className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border-2"
@@ -474,41 +676,49 @@ export function BODashboard() {
             Voir tous <ChevronRight className="w-3 h-3" />
           </motion.button>
         </div>
-        <div className="space-y-3">
-          {[
-            { nom: 'GNAGNE Brice-Olivier', zone: 'Grand Abidjan Nord', dossiers: 47, objectif: 50, commission: 4700, taux: 94 },
-            { nom: 'TOURE Aminata', zone: 'Grand Abidjan Sud', dossiers: 38, objectif: 40, commission: 3800, taux: 95 },
-            { nom: 'KONE Drissa', zone: 'Bouaké Centre', dossiers: 31, objectif: 35, commission: 3100, taux: 89 },
-            { nom: 'SORO Abib', zone: 'Korhogo Nord', dossiers: 28, objectif: 30, commission: 2800, taux: 93 },
-            { nom: 'DIALLO Awa', zone: 'San Pédro Littoral', dossiers: 22, objectif: 30, commission: 2200, taux: 73 },
-          ].map((ident, i) => (
-            <motion.div key={ident.nom} className="flex items-center gap-4 p-3 rounded-2xl bg-gray-50 border-2 border-gray-100"
-              initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-              whileHover={{ y: -2 }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 text-white"
-                style={{ backgroundColor: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#C66A2C' : BO_DARK }}>
-                {i + 1}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-bold text-sm text-gray-900 truncate">{ident.nom}</p>
-                  <span className="text-xs font-black ml-2 flex-shrink-0" style={{ color: BO_PRIMARY }}>{ident.dossiers}/{ident.objectif}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <motion.div className="h-full rounded-full"
-                      style={{ backgroundColor: ident.taux >= 90 ? '#10B981' : ident.taux >= 70 ? BO_PRIMARY : '#EF4444' }}
-                      initial={{ width: 0 }} animate={{ width: `${ident.taux}%` }}
-                      transition={{ duration: 1, ease: 'easeOut', delay: i * 0.08 }} />
+        {topIdentificateurs.length === 0 ? (
+          <div className="py-10 flex flex-col items-center justify-center text-gray-400">
+            <Users className="w-10 h-10 mb-2 opacity-30" />
+            <p className="text-sm font-semibold">Aucun identificateur enregistre</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {topIdentificateurs.map((ident, i) => {
+              const maxDossiers = topIdentificateurs[0]?.dossiers || 1;
+              return (
+                <motion.div key={ident.nom} className="flex items-center gap-4 p-3 rounded-2xl bg-gray-50 border-2 border-gray-100"
+                  initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                  whileHover={{ y: -2 }}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 text-white"
+                    style={{ backgroundColor: i === 0 ? '#F59E0B' : i === 1 ? '#9CA3AF' : i === 2 ? '#C66A2C' : BO_DARK }}>
+                    {i + 1}
                   </div>
-                  <span className="text-[10px] text-gray-400 flex-shrink-0">{ident.taux}%</span>
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{ident.zone} • Commission: {ident.commission.toLocaleString('fr-FR')} F</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-bold text-sm text-gray-900 truncate">{ident.nom}</p>
+                      <span className="text-xs font-black flex-shrink-0 ml-2" style={{ color: BO_PRIMARY }}>
+                        {ident.commission.toLocaleString('fr-FR')} F
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <span className="text-[10px] text-gray-500 truncate">{ident.zone}</span>
+                      <span className="text-[10px] font-bold text-gray-700 flex-shrink-0 ml-auto">{ident.dossiers} dossiers</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div className="h-full rounded-full" style={{ backgroundColor: BO_PRIMARY }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${maxDossiers > 0 ? (ident.dossiers / maxDossiers) * 100 : 0}%` }}
+                        transition={{ duration: 1, delay: i * 0.08 }} />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </motion.div>
+
     </div>
   );
 }
