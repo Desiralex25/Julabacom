@@ -5,7 +5,7 @@
 
 import { Context } from "npm:hono";
 import * as kv from "./kv_store.tsx";
-import { sharedSupabase as supabase } from "./auth-helper.ts";
+import { sharedSupabase as supabase, validateUserJWT } from "./auth-helper.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -131,35 +131,24 @@ async function checkAuthBO(c: Context, requiredRole?: BORoleType[]): Promise<{ a
 
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   if (accessToken === supabaseAnonKey) {
-    return { authorized: false, error: 'Token anonyme non autorisé pour le Back-Office' };
+    return { authorized: false, error: 'Token anonyme non autorise pour le Back-Office' };
   }
 
-  const { data: authUser, error: authError } = await supabase.auth.getUser(accessToken);
+  // Validation JWT via client anon (évite "Invalid JWT" avec service role key)
+  const { user: userProfile, error: validationError } = await validateUserJWT(accessToken);
 
-  if (authError || !authUser?.user) {
-    const errMsg = authError?.message || 'Token invalide';
-    console.log('[checkAuthBO] Auth error:', errMsg);
-    return { authorized: false, error: errMsg };
-  }
-
-  const { data: userProfile, error: profileError } = await supabase
-    .from('users_julaba')
-    .select('*')
-    .eq('auth_user_id', authUser.user.id)
-    .single();
-
-  if (profileError || !userProfile) {
-    console.log('[checkAuthBO] Profile error:', profileError?.message, 'for user:', authUser.user.id);
-    return { authorized: false, error: 'Profil introuvable' };
+  if (!userProfile) {
+    console.log('[checkAuthBO] Echec validation JWT:', validationError);
+    return { authorized: false, error: validationError || 'Token invalide' };
   }
 
   const boRoles: BORoleType[] = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
   if (!boRoles.includes(userProfile.role)) {
-    return { authorized: false, error: 'Accès refusé - rôle insuffisant' };
+    return { authorized: false, error: 'Acces refuse - role insuffisant' };
   }
 
   if (requiredRole && !requiredRole.includes(userProfile.role)) {
-    return { authorized: false, error: `Permissions insuffisantes. Rôle requis: ${requiredRole.join(' ou ')}. Votre rôle: ${userProfile.role}` };
+    return { authorized: false, error: `Permissions insuffisantes. Role requis: ${requiredRole.join(' ou ')}. Votre role: ${userProfile.role}` };
   }
 
   return { authorized: true, user: userProfile };
