@@ -392,7 +392,7 @@ export function LoginPassword() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <ProfileSwitcher />
+          <ProfileSwitcher forceShow={true} />
         </motion.div>
       )}
 

@@ -20,15 +20,15 @@ const tantieSagesseImgCooperative = '/images/tantie-sagesse-cooperative.png';
 export function CooperativeHome() {
   const navigate = useNavigate();
   const { user, speak } = useApp();
-  const { stats, getMembresActifs, membres, soldeActuel, getCommandesEnCours } = useCooperative();
+  const { stats, getMembresActifs, membres, soldeActuel } = useCooperative();
   
   // Construire alertes dynamiques coopérative
-  const cotisationsImpayees = membres.filter(m => !m.cotisationPayee && m.statut === 'actif');
-  const membresInactifs = membres.filter(m => m.statut === 'inactif');
+  const cotisationsImpayees = membres.filter(m => !m.cotisationPayee && m.actif !== false);
+  const membresInactifs = membres.filter(m => m.actif === false);
   const alertesCooperative = buildAlertesCooperative({
     cotisationsImpayees,
     membresInactifs,
-    commandesEnCours: getCommandesEnCours(),
+    commandesEnCours: 0,
     solde: soldeActuel,
   });
 

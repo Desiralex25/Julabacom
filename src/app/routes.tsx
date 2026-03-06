@@ -21,6 +21,7 @@ import CreateSuperAdmin from './pages/CreateSuperAdmin';
 import DiagnosticDB from './pages/DiagnosticDB';
 import AdminRecovery from './pages/AdminRecovery';
 import { DevModeHome } from './pages/DevModeHome';
+import SetupMarchand from './pages/SetupMarchand';
 
 // ── MARCHAND ─────────────────────────────────────────────────────────────────
 import { MarchandHome } from './components/marchand/MarchandHome';
@@ -138,6 +139,7 @@ export const router = createBrowserRouter([
       { path: '/create-super-admin', element: <CreateSuperAdmin /> },
       { path: '/diagnostic-db', element: <DiagnosticDB /> },
       { path: '/admin-recovery', element: <AdminRecovery /> },
+      { path: '/setup-marchand', element: <SetupMarchand /> },
 
       // ── MARCHAND ────────────────────────────────────────────────────────────
       {

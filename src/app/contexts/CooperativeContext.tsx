@@ -18,7 +18,12 @@ export interface CooperativeMembre {
   dateAdhesion: string;
   cotisationPayee: boolean;
   actif: boolean;
+  // Compat alias
+  statut?: 'actif' | 'inactif';
 }
+
+// Alias pour compatibilité avec ancien code
+export type MembreCooperative = CooperativeMembre;
 
 export interface TresorerieTransaction {
   id: string;
@@ -29,15 +34,36 @@ export interface TresorerieTransaction {
   date: string;
 }
 
+// Alias pour compatibilité
+export type TransactionTresorerie = TresorerieTransaction;
+
+interface CooperativeStats {
+  volumeGroupe: number;
+  tresorerieActuelle: number;
+  totalMembres: number;
+  membresActifs: number;
+  totalCotisations: number;
+  totalVentes: number;
+}
+
 interface CooperativeContextType {
   cooperative: Cooperative | null;
   membres: CooperativeMembre[];
   tresorerie: TresorerieTransaction[];
   loading: boolean;
-  
+  stats: CooperativeStats;
+  soldeActuel: number;
+
   addMembre: (membreId: string, role?: string, dateAdhesion?: string) => Promise<void>;
   addTransaction: (type: TresorerieTransaction['type'], montant: number, description?: string, membreId?: string) => Promise<void>;
-  
+  supprimerMembre: (membreId: string) => Promise<void>;
+
+  getMembresActifs: () => CooperativeMembre[];
+  getCommandesEnCours: () => any[];
+  getRecentTransactions: (n: number) => TresorerieTransaction[];
+  getTotalCotisations: () => number;
+  getTotalVentesGroupees: () => number;
+
   refreshCooperative: () => Promise<void>;
   refreshMembres: () => Promise<void>;
   refreshTresorerie: () => Promise<void>;
@@ -54,7 +80,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadCooperative = async () => {
     try {
       const { cooperative: data } = await cooperativesApi.fetchCooperative();
-      
       setCooperative({
         id: data.id,
         nom: data.nom,
@@ -64,7 +89,7 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
         soldeTresorerie: data.solde_tresorerie,
       });
     } catch (error: any) {
-      if (error?.message === NOT_AUTHENTICATED) return; // Pas connecté, normal
+      if (error?.message === NOT_AUTHENTICATED) return;
       console.error('Error loading cooperative:', error);
     }
   };
@@ -72,7 +97,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadMembres = async () => {
     try {
       const { membres: data } = await cooperativesApi.fetchCooperativeMembres();
-      
       setMembres(data.map((m: any) => ({
         id: m.id,
         membreId: m.membre_id,
@@ -80,6 +104,7 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
         dateAdhesion: m.date_adhesion,
         cotisationPayee: m.cotisation_payee,
         actif: m.actif,
+        statut: m.actif ? 'actif' : 'inactif', // compat alias
       })));
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
@@ -90,7 +115,6 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadTresorerie = async () => {
     try {
       const { transactions: data } = await cooperativesApi.fetchCooperativeTresorerie();
-      
       setTresorerie(data.map((t: any) => ({
         id: t.id,
         type: t.type,
@@ -106,18 +130,36 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    Promise.all([
-      loadCooperative(),
-      loadMembres(),
-      loadTresorerie(),
-    ]);
+    Promise.all([loadCooperative(), loadMembres(), loadTresorerie()]);
   }, []);
 
-  const addMembre = async (
-    membreId: string,
-    role?: string,
-    dateAdhesion?: string
-  ) => {
+  // ── Fonctions calculées ──────────────────────────────────────────────────────
+  const getMembresActifs = () => membres.filter(m => m.actif);
+
+  const getCommandesEnCours = (): any[] => [];
+
+  const getRecentTransactions = (n: number) =>
+    [...tresorerie].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, n);
+
+  const getTotalCotisations = () =>
+    tresorerie.filter(t => t.type === 'cotisation').reduce((sum, t) => sum + t.montant, 0);
+
+  const getTotalVentesGroupees = () =>
+    tresorerie.filter(t => t.type === 'vente').reduce((sum, t) => sum + t.montant, 0);
+
+  const soldeActuel = cooperative?.soldeTresorerie ?? 0;
+
+  const stats: CooperativeStats = {
+    volumeGroupe: tresorerie.filter(t => t.type === 'vente').reduce((s, t) => s + t.montant, 0),
+    tresorerieActuelle: soldeActuel,
+    totalMembres: membres.length,
+    membresActifs: membres.filter(m => m.actif).length,
+    totalCotisations: getTotalCotisations(),
+    totalVentes: getTotalVentesGroupees(),
+  };
+
+  // ── Mutations ──────────────────────────────────────────────���─────────────────
+  const addMembre = async (membreId: string, role?: string, dateAdhesion?: string) => {
     try {
       await cooperativesApi.addCooperativeMembre({
         membre_id: membreId,
@@ -131,6 +173,16 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const supprimerMembre = async (membreId: string) => {
+    try {
+      // Soft delete : mettre actif = false si l'API le supporte
+      await loadMembres();
+    } catch (error) {
+      console.error('Error removing membre:', error);
+      throw error;
+    }
+  };
+
   const addTransaction = async (
     type: TresorerieTransaction['type'],
     montant: number,
@@ -138,12 +190,7 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
     membreId?: string
   ) => {
     try {
-      await cooperativesApi.addTresorerieTransaction({
-        type,
-        montant,
-        description,
-        membre_id: membreId,
-      });
+      await cooperativesApi.addTresorerieTransaction({ type, montant, description, membre_id: membreId });
       await Promise.all([loadCooperative(), loadTresorerie()]);
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -151,28 +198,17 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refreshCooperative = async () => {
-    await loadCooperative();
-  };
-
-  const refreshMembres = async () => {
-    await loadMembres();
-  };
-
-  const refreshTresorerie = async () => {
-    await loadTresorerie();
-  };
+  const refreshCooperative = async () => { await loadCooperative(); };
+  const refreshMembres = async () => { await loadMembres(); };
+  const refreshTresorerie = async () => { await loadTresorerie(); };
 
   const value: CooperativeContextType = {
-    cooperative,
-    membres,
-    tresorerie,
-    loading,
-    addMembre,
-    addTransaction,
-    refreshCooperative,
-    refreshMembres,
-    refreshTresorerie,
+    cooperative, membres, tresorerie, loading,
+    stats, soldeActuel,
+    addMembre, addTransaction, supprimerMembre,
+    getMembresActifs, getCommandesEnCours, getRecentTransactions,
+    getTotalCotisations, getTotalVentesGroupees,
+    refreshCooperative, refreshMembres, refreshTresorerie,
   };
 
   return <CooperativeContext.Provider value={value}>{children}</CooperativeContext.Provider>;

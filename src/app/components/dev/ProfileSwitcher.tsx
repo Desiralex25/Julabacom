@@ -22,7 +22,7 @@ const PROFILE_STYLES: Record<string, { borderColor: string; bgColor: string; ava
   'identificateur': { borderColor: '#8B5CF6', bgColor: '#FFF7ED', avatarColor: '#EF4444', roleColor: '#EC4899', roleLabel: 'Identificateur' },
 };
 
-export function ProfileSwitcher() {
+export function ProfileSwitcher({ forceShow = false }: { forceShow?: boolean }) {
   const navigate = useNavigate();
   const { setUser: setAppUser } = useApp();
   const { setUser: setUserProfile } = useUser();
@@ -69,7 +69,7 @@ export function ProfileSwitcher() {
     window.location.hostname.includes('figma.site') ||
     window.location.hostname.includes('makeproxy');
 
-  if (!isDevEnvironment) return null;
+  if (!isDevEnvironment && !forceShow) return null;
 
   return (
     <>
