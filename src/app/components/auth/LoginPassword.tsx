@@ -441,6 +441,10 @@ export function LoginPassword() {
                       const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setPhone(value);
                       setError('');
+                      // Code secret DEV : activation automatique dès que le numéro est complet
+                      if (value === '0501604040') {
+                        setShowDevButton(true);
+                      }
                     }}
                     placeholder="07 01 02 03 04"
                     className="flex-1 h-full px-3 text-lg outline-none border-none bg-transparent"
