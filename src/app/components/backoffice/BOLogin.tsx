@@ -143,7 +143,7 @@ export function BOLogin() {
   const [recLoading,  setRecLoading]  = useState(false);
   const [recResult,   setRecResult]   = useState<any>(null);
 
-  // ── CONNEXION ────────────────────────────────────────────────────────────────
+  // ── CONNEXION — SDK Supabase direct (session native, jamais de token invalide) ─
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -161,24 +161,72 @@ export function BOLogin() {
     }
     setIsLoading(true);
     try {
-      const res  = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: baseHeaders,
-        body: JSON.stringify({ phone: cleanPhone, password }),
+      // ── Étape 1 : signInWithPassword directement via SDK Supabase ─────────
+      // La session est gérée nativement par le SDK → auto-refresh garanti
+      const authEmail = `${cleanPhone}@julaba.local`;
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password,
       });
-      const data = await res.json();
-      if (!res.ok) {
+
+      if (authError || !authData.session) {
         loginAttempts[cleanPhone] = { count: (loginAttempts[cleanPhone]?.count || 0) + 1, ts: now };
-        setError(data.error || 'Identifiants incorrects.');
+        setError(authError?.message?.includes('Invalid') || authError?.message?.includes('invalid')
+          ? 'Identifiants incorrects. Verifiez votre numero et mot de passe.'
+          : (authError?.message || 'Identifiants incorrects.'));
         return;
       }
+
+      // ── Étape 2 : Récupérer le profil depuis users_julaba ─────────────────
+      let profile: any = null;
+      const { data: p1 } = await supabase
+        .from('users_julaba')
+        .select('*')
+        .eq('auth_user_id', authData.user.id)
+        .single();
+
+      if (p1) {
+        profile = p1;
+      } else {
+        // Fallback par téléphone (auth_user_id désynchronisé)
+        const { data: p2 } = await supabase
+          .from('users_julaba')
+          .select('*')
+          .eq('phone', cleanPhone)
+          .single();
+        if (p2) {
+          await supabase.from('users_julaba').update({ auth_user_id: authData.user.id }).eq('id', p2.id);
+          profile = p2;
+        }
+      }
+
+      if (!profile) {
+        setError('Profil introuvable. Contactez le support Julaba.');
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // ── Étape 3 : Vérifier le rôle BO ─────────────────────────────────────
       const boRoles = ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'];
-      if (!boRoles.includes(data.user?.role)) {
+      if (!boRoles.includes(profile.role)) {
         setError('Acces refuse. Ce portail est reserve aux administrateurs Back-Office.');
+        await supabase.auth.signOut();
         return;
       }
-      const boUser = normalizeToBoUser(data.user);
-      await persistSession(data.accessToken, data.refreshToken, boUser, setAppUser, setBOUser);
+
+      // ── Étape 4 : Persister dans les contextes (session SDK déjà active) ──
+      const boUser = normalizeToBoUser(profile);
+      // Sauvegarder tokens dans localStorage pour getValidToken() de backoffice-api
+      localStorage.setItem('julaba_access_token', authData.session.access_token);
+      localStorage.setItem('julaba_refresh_token', authData.session.refresh_token);
+      localStorage.setItem('julaba_user', JSON.stringify(boUser));
+      localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
+      setAppUser(boUser);
+      setBOUser(boUser);
+
+      // Mettre à jour last_login_at (best effort, non-bloquant)
+      supabase.from('users_julaba').update({ last_login_at: new Date().toISOString() }).eq('id', profile.id);
+
       delete loginAttempts[cleanPhone];
       setSuccess(true);
       setTimeout(() => navigate('/backoffice/dashboard'), 1200);

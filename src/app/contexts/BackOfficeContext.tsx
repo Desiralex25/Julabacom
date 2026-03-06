@@ -263,7 +263,6 @@ export { BackOfficeContext };
 
 export function BackOfficeProvider({ children }: { children: ReactNode }) {
   // ✅ PERSISTANCE BO : Restaurer depuis Supabase session au démarrage
-  // Le boUser est stocké en localStorage uniquement comme cache UI — le token Supabase fait foi
   const [boUser, setBOUser] = useState<BOUser | null>(() => {
     const stored = localStorage.getItem('julaba_bo_user');
     if (!stored) return null;
@@ -275,11 +274,9 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Ecouter les changements d'etat auth Supabase
-  // SIGNED_OUT = session invalide → on nettoie boUser
-  // SIGNED_IN / TOKEN_REFRESHED = on garde boUser intact
+  // ── Écouter les changements d'état auth Supabase ─────────────────────────
   React.useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setBOUser(null);
         localStorage.removeItem('julaba_bo_user');
@@ -287,11 +284,39 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('julaba_refresh_token');
         localStorage.removeItem('julaba_user');
       }
-      // Pour SIGNED_IN et TOKEN_REFRESHED on ne touche pas boUser (il est géré par BOLogin)
+      // Synchroniser le token en localStorage lors d'un refresh automatique
+      if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session) {
+        localStorage.setItem('julaba_access_token', session.access_token);
+        if (session.refresh_token) localStorage.setItem('julaba_refresh_token', session.refresh_token);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
-  
+
+  // ── Vérifier la session Supabase au démarrage pour valider boUser ─────────
+  React.useEffect(() => {
+    if (!boUser) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        // Tenter un refresh
+        supabase.auth.refreshSession().then(({ data: refreshed }) => {
+          if (!refreshed.session) {
+            // Session vraiment expirée → déconnecter proprement
+            setBOUser(null);
+            localStorage.removeItem('julaba_bo_user');
+            localStorage.removeItem('julaba_access_token');
+            localStorage.removeItem('julaba_refresh_token');
+            console.warn('[BO] Session expirée, reconnexion requise');
+          } else {
+            localStorage.setItem('julaba_access_token', refreshed.session.access_token);
+            if (refreshed.session.refresh_token) localStorage.setItem('julaba_refresh_token', refreshed.session.refresh_token);
+            console.log('[BO] Session restaurée via refresh');
+          }
+        });
+      }
+    });
+  }, []);
+
   // ✅ Sauvegarder boUser dans localStorage quand il change
   React.useEffect(() => {
     if (boUser) {

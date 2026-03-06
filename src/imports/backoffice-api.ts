@@ -10,139 +10,43 @@ const SUPABASE_URL = `https://${projectId}.supabase.co`;
 const API_URL = `${SUPABASE_URL}/functions/v1/make-server-488793d3/backoffice`;
 
 /**
- * Vérifier si un JWT est expiré sans l'envoyer au serveur
- */
-function isJWTExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    // exp est en secondes Unix — on ajoute 60s de marge de sécurité
-    return payload.exp < (Date.now() / 1000) + 60;
-  } catch {
-    return true; // Si on ne peut pas décoder → considérer expiré/corrompu
-  }
-}
-
-/**
- * Récupérer un token valide garanti non-expiré
- * Stratégie renforcée : vérifie l'expiration AVANT d'envoyer au serveur
+ * Récupérer un token valide depuis la session SDK Supabase
+ * La session est créée par signInWithPassword() dans BOLogin → gestion native du refresh
  */
 async function getValidToken(): Promise<string> {
-  // ── Étape 1 : Session Supabase SDK (source de vérité absolue) ────────────
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      if (!isJWTExpired(session.access_token)) {
-        return session.access_token;
-      }
-      // Token proche d'expiration → refresh proactif
-      console.log('[BO API] Token expirant, refresh proactif...');
-      const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
-      if (!refreshErr && refreshed.session?.access_token) {
-        localStorage.setItem('julaba_access_token', refreshed.session.access_token);
-        if (refreshed.session.refresh_token) {
-          localStorage.setItem('julaba_refresh_token', refreshed.session.refresh_token);
-        }
-        console.log('[BO API] Token rafraichi avec succes');
-        return refreshed.session.access_token;
-      }
-    }
-  } catch (e) {
-    console.warn('[BO API] getValidToken: erreur getSession SDK', e);
+  // ── Source de vérité : session Supabase SDK ───────────────────────────────
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session?.access_token) {
+    // Synchroniser localStorage pour compatibilité
+    localStorage.setItem('julaba_access_token', session.access_token);
+    if (session.refresh_token) localStorage.setItem('julaba_refresh_token', session.refresh_token);
+    return session.access_token;
   }
 
-  // ── Étape 2 : Restaurer depuis refresh_token localStorage ────────────────
-  const localToken =
-    localStorage.getItem('julaba_access_token') ||
-    sessionStorage.getItem('julaba_access_token');
-  const localRefresh =
-    localStorage.getItem('julaba_refresh_token') ||
-    sessionStorage.getItem('julaba_refresh_token');
-
-  if (localRefresh) {
-    try {
-      const { data, error } = await supabase.auth.setSession({
-        access_token: localToken || localRefresh,
-        refresh_token: localRefresh,
-      });
-      if (!error && data.session?.access_token) {
-        localStorage.setItem('julaba_access_token', data.session.access_token);
-        if (data.session.refresh_token) {
-          localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
-        }
-        console.log('[BO API] Session restauree depuis refresh_token localStorage');
-        return data.session.access_token;
-      }
-      // Refresh token invalide → nettoyer
-      console.warn('[BO API] Refresh token invalide:', error?.message);
-      localStorage.removeItem('julaba_access_token');
-      localStorage.removeItem('julaba_refresh_token');
-      sessionStorage.removeItem('julaba_access_token');
-      sessionStorage.removeItem('julaba_refresh_token');
-    } catch (e) {
-      console.warn('[BO API] Impossible de restaurer la session:', e);
-    }
+  // ── Tentative de refresh si session expirée ───────────────────────────────
+  const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+  if (!refreshErr && refreshed.session?.access_token) {
+    localStorage.setItem('julaba_access_token', refreshed.session.access_token);
+    if (refreshed.session.refresh_token) localStorage.setItem('julaba_refresh_token', refreshed.session.refresh_token);
+    console.log('[BO API] Session rafraichie avec succes');
+    return refreshed.session.access_token;
   }
 
-  // ── Étape 3 : Token brut uniquement si non expiré ────────────────────────
-  if (localToken && !isJWTExpired(localToken)) {
-    console.warn('[BO API] Utilisation token brut localStorage (valide)');
-    return localToken;
-  }
-
-  if (localToken) {
-    localStorage.removeItem('julaba_access_token');
-    sessionStorage.removeItem('julaba_access_token');
-  }
-
+  // ── Aucune session disponible ─────────────────────────────────────────────
+  console.warn('[BO API] Aucune session active — reconnexion requise');
   throw new Error('AUCUNE_SESSION_BO');
 }
 
 /**
- * Forcer un refresh du token BO
- */
-async function forceRefreshBO(): Promise<string | null> {
-  // Essai 1 : refresh via SDK
-  const { data, error } = await supabase.auth.refreshSession();
-  if (!error && data.session?.access_token) {
-    localStorage.setItem('julaba_access_token', data.session.access_token);
-    if (data.session.refresh_token) {
-      localStorage.setItem('julaba_refresh_token', data.session.refresh_token);
-    }
-    return data.session.access_token;
-  }
-
-  // Essai 2 : setSession avec refresh_token localStorage
-  const refreshToken = localStorage.getItem('julaba_refresh_token') || sessionStorage.getItem('julaba_refresh_token');
-  const accessToken  = localStorage.getItem('julaba_access_token')  || sessionStorage.getItem('julaba_access_token');
-  if (refreshToken) {
-    try {
-      const { data: d2, error: e2 } = await supabase.auth.setSession({
-        access_token: accessToken || refreshToken,
-        refresh_token: refreshToken,
-      });
-      if (!e2 && d2.session?.access_token) {
-        localStorage.setItem('julaba_access_token', d2.session.access_token);
-        if (d2.session.refresh_token) {
-          localStorage.setItem('julaba_refresh_token', d2.session.refresh_token);
-        }
-        return d2.session.access_token;
-      }
-    } catch { /* ignore */ }
-  }
-
-  console.warn('[BO API] forceRefreshBO: echec total du refresh');
-  return null;
-}
-
-/**
- * Effectuer une requête API avec gestion automatique du refresh token
+ * Effectuer une requête API avec gestion automatique des erreurs
  */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   let token: string;
   try {
     token = await getValidToken();
   } catch (e: any) {
-    console.error('[BO API] Impossible d\'obtenir un token BO:', e?.message);
+    console.error('[BO API] Pas de session BO valide:', e?.message);
     window.dispatchEvent(new CustomEvent('julaba:session-expired'));
     throw new Error('SESSION_EXPIRED');
   }
@@ -159,15 +63,15 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
   let response = await doFetch(token);
 
-  // Si 401 (token JWT invalide/expiré), forcer un refresh
+  // 401 → tenter un refresh puis retry
   if (response.status === 401) {
-    console.warn(`[BO API] 401 sur ${endpoint} — tentative de refresh JWT...`);
-    const newToken = await forceRefreshBO();
-    if (newToken) {
-      response = await doFetch(newToken);
+    console.warn(`[BO API] 401 sur ${endpoint} — refresh et retry...`);
+    const { data: refreshed } = await supabase.auth.refreshSession();
+    if (refreshed.session?.access_token) {
+      localStorage.setItem('julaba_access_token', refreshed.session.access_token);
+      response = await doFetch(refreshed.session.access_token);
     } else {
-      localStorage.removeItem('julaba_access_token');
-      localStorage.removeItem('julaba_refresh_token');
+      await supabase.auth.signOut();
       localStorage.removeItem('julaba_bo_user');
       window.dispatchEvent(new CustomEvent('julaba:session-expired'));
       throw new Error('SESSION_EXPIRED');
@@ -175,13 +79,11 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   }
 
   if (!response.ok) {
-    let errorMessage = 'Erreur API';
+    let errorMessage = `Erreur HTTP ${response.status}`;
     try {
       const errorBody = await response.json();
-      errorMessage = errorBody.error || errorBody.message || `Erreur HTTP ${response.status}`;
-    } catch {
-      errorMessage = `Erreur HTTP ${response.status}`;
-    }
+      errorMessage = errorBody.error || errorBody.message || errorMessage;
+    } catch { /* ignore */ }
     console.error(`[BO API] Erreur ${response.status} sur ${endpoint}:`, errorMessage);
     throw new Error(errorMessage);
   }
@@ -191,7 +93,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACTEURS
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────��──────────────────
 
 export async function fetchActeurs() {
   return apiRequest<{ acteurs: any[] }>('/acteurs');
