@@ -29,7 +29,11 @@ const app = new Hono();
 // Initialisation du client Supabase avec service role (côté serveur)
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+// Client admin : operations DB + auth.admin.*
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Client anon : signInWithPassword (service role ne peut PAS faire de login utilisateur)
+const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
 
 // Enable logger
 app.use('*', logger(console.log));
@@ -254,7 +258,7 @@ app.post("/make-server-488793d3/auth/login", async (c) => {
     // Connexion avec email format (phone@julaba.local)
     const authEmail = `${phone}@julaba.local`;
     
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabaseAnon.auth.signInWithPassword({
       email: authEmail,
       password: password
     });
@@ -671,7 +675,7 @@ app.post("/make-server-488793d3/auth/test-login", async (c) => {
     }
 
     // Test 3 : tentative de login réelle
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+    const { data: loginData, error: loginError } = await supabaseAnon.auth.signInWithPassword({
       email: authEmail,
       password,
     });
@@ -719,119 +723,93 @@ app.post("/make-server-488793d3/auth/test-login", async (c) => {
  * secretKey doit valoir "JULABA_RECOVERY_2026" pour activer la récupération
  */
 app.post("/make-server-488793d3/auth/recover-super-admin", async (c) => {
+  const steps: string[] = [];
   try {
     const body = await c.req.json();
     const { phone, password, firstName, lastName, secretKey } = body;
 
-    // Clé de sécurité obligatoire
-    if (secretKey !== 'JULABA_RECOVERY_2026') {
-      return c.json({ error: 'Clé de récupération invalide' }, 403);
-    }
-    if (!phone || !password || !firstName || !lastName) {
-      return c.json({ error: 'Tous les champs sont requis' }, 400);
-    }
-    if (password.length < 6) {
-      return c.json({ error: 'Mot de passe minimum 6 caractères' }, 400);
-    }
+    if (secretKey !== 'JULABA_RECOVERY_2026') return c.json({ error: 'Cle invalide' }, 403);
+    if (!phone || !password) return c.json({ error: 'phone et password requis' }, 400);
+    if (password.length < 6) return c.json({ error: 'Mot de passe min 6 caracteres' }, 400);
 
-    const authEmail = `${phone}@julaba.local`;
-    const steps: string[] = [];
+    const cleanPhone = (phone as string).replace(/\s/g, '');
+    const authEmail = `${cleanPhone}@julaba.local`;
+    const fn = firstName || 'Admin';
+    const ln = lastName || 'Julaba';
 
-    // Étape 1 : chercher l'ancien profil SA
-    const { data: oldProfiles } = await supabase
-      .from('users_julaba')
-      .select('id, auth_user_id, phone')
-      .eq('role', 'super_admin');
-
-    // Étape 2 : nettoyer les anciens comptes Auth liés aux SA
-    for (const p of (oldProfiles || [])) {
-      if (p.auth_user_id) {
-        await supabase.auth.admin.deleteUser(p.auth_user_id);
-        steps.push(`Ancien compte Auth supprimé: ${p.auth_user_id}`);
+    // 1. Supprimer TOUS les Auth lies aux SA existants
+    const { data: allSA } = await supabase.from('users_julaba').select('id, auth_user_id').eq('role', 'super_admin');
+    steps.push(`SA dans DB: ${allSA?.length || 0}`);
+    for (const sa of (allSA || [])) {
+      if (sa.auth_user_id) {
+        const { error: de } = await supabase.auth.admin.deleteUser(sa.auth_user_id);
+        steps.push(de ? `Del auth FAIL ${sa.auth_user_id}: ${de.message}` : `Del auth OK: ${sa.auth_user_id}`);
       }
     }
+    await new Promise(r => setTimeout(r, 500));
 
-    // Étape 3 : supprimer les anciens profils SA dans users_julaba
-    if ((oldProfiles || []).length > 0) {
-      await supabase
-        .from('users_julaba')
-        .delete()
-        .eq('role', 'super_admin');
-      steps.push(`${oldProfiles!.length} anciens profil(s) SA supprimé(s)`);
+    // 2. Supprimer profils SA + ce phone dans users_julaba
+    const { error: delSAErr } = await supabase.from('users_julaba').delete().eq('role', 'super_admin');
+    steps.push(delSAErr ? `Del SA profiles FAIL: ${delSAErr.message}` : 'Del SA profiles OK');
+    await supabase.from('users_julaba').delete().eq('phone', cleanPhone);
+    steps.push(`Del phone ${cleanPhone} OK`);
+    await new Promise(r => setTimeout(r, 300));
+
+    // 3. Nettoyer email Auth residuel via listUsers
+    const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const existingByEmail = listData?.users?.find((u: any) => u.email === authEmail);
+    if (existingByEmail) {
+      await supabase.auth.admin.deleteUser(existingByEmail.id);
+      steps.push(`Email residuel supprime: ${existingByEmail.id}`);
+      await new Promise(r => setTimeout(r, 400));
     }
 
-    // Étape 4 : vérifier si le téléphone est utilisé par un autre rôle
-    const { data: conflictUser } = await supabase
-      .from('users_julaba')
-      .select('id, role')
-      .eq('phone', phone)
-      .single();
-
-    if (conflictUser) {
-      // Supprimer aussi ce conflit
-      if ((conflictUser as any).auth_user_id) {
-        await supabase.auth.admin.deleteUser((conflictUser as any).auth_user_id);
-      }
-      await supabase.from('users_julaba').delete().eq('phone', phone);
-      steps.push(`Conflit téléphone supprimé (rôle: ${conflictUser.role})`);
-    }
-
-    // Étape 5 : créer le nouveau compte Supabase Auth
+    // 4. Creer nouveau Auth
     const { data: newAuth, error: authErr } = await supabase.auth.admin.createUser({
-      email: authEmail,
-      password,
-      email_confirm: true,
-      user_metadata: { phone, first_name: firstName, last_name: lastName, role: 'super_admin' }
+      email: authEmail, password, email_confirm: true,
+      user_metadata: { phone: cleanPhone, first_name: fn, last_name: ln, role: 'super_admin' }
     });
+    if (authErr || !newAuth?.user) return c.json({ error: `Auth creation: ${authErr?.message || 'null'}`, steps }, 500);
+    const authId = newAuth.user.id;
+    steps.push(`Auth cree: ${authId}`);
 
-    if (authErr || !newAuth?.user) {
-      return c.json({ error: 'Erreur création compte Auth', details: authErr?.message }, 500);
+    // 5. Inserer profil (complet puis minimal si echec)
+    let finalProfile: any = null;
+    const fullInsert = { auth_user_id: authId, phone: cleanPhone, first_name: fn, last_name: ln, role: 'super_admin', validated: true, region: 'National', commune: 'Abidjan', activity: 'Administration', institution_name: 'JULABA', score: 100, verified_phone: true };
+    const { data: p1, error: e1 } = await supabase.from('users_julaba').insert(fullInsert).select().single();
+    if (e1) {
+      steps.push(`Insert full FAIL: ${e1.message}`);
+      const minInsert = { auth_user_id: authId, phone: cleanPhone, first_name: fn, last_name: ln, role: 'super_admin', validated: true };
+      const { data: p2, error: e2 } = await supabase.from('users_julaba').insert(minInsert).select().single();
+      if (e2 || !p2) {
+        await supabase.auth.admin.deleteUser(authId);
+        return c.json({ error: `Insert profil: ${e2?.message || e1.message}`, steps }, 500);
+      }
+      finalProfile = p2;
+      steps.push(`Insert minimal OK: ${p2.id}`);
+    } else {
+      finalProfile = p1;
+      steps.push(`Insert complet OK: ${p1?.id}`);
     }
-    steps.push(`Nouveau compte Auth créé: ${newAuth.user.id}`);
 
-    // Étape 6 : créer le profil dans users_julaba
-    const { data: newProfile, error: profileErr } = await supabase
-      .from('users_julaba')
-      .insert({
-        auth_user_id: newAuth.user.id,
-        phone,
-        first_name: firstName,
-        last_name: lastName,
-        role: 'super_admin',
-        region: 'National',
-        commune: 'Abidjan',
-        activity: 'Administration',
-        institution_name: 'JULABA Back-Office',
-        score: 100,
-        validated: true,
-        verified_phone: true
-      })
-      .select()
-      .single();
-
-    if (profileErr || !newProfile) {
-      await supabase.auth.admin.deleteUser(newAuth.user.id);
-      return c.json({ error: 'Erreur création profil', details: profileErr?.message }, 500);
-    }
-    steps.push(`Nouveau profil créé: ${newProfile.id}`);
+    // 6. Test connexion immediat
+    await new Promise(r => setTimeout(r, 400));
+    const { data: login, error: loginErr } = await supabaseAnon.auth.signInWithPassword({ email: authEmail, password });
+    steps.push(loginErr ? `Login FAIL: ${loginErr.message}` : 'Login OK');
 
     return c.json({
       success: true,
-      message: 'Super Admin récupéré avec succès',
+      message: 'Super Admin recree avec succes',
+      phone: cleanPhone,
       steps,
-      credentials: { phone, email: authEmail },
-      user: {
-        id: newProfile.id,
-        phone: newProfile.phone,
-        firstName: newProfile.first_name,
-        lastName: newProfile.last_name,
-        role: newProfile.role
-      }
+      accessToken: login?.session?.access_token || null,
+      refreshToken: login?.session?.refresh_token || null,
+      user: { id: finalProfile?.id, phone: cleanPhone, firstName: fn, lastName: ln, role: 'super_admin' }
     });
 
   } catch (error) {
     console.log('recover-super-admin error:', error);
-    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Inconnue' }, 500);
+    return c.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error), steps }, 500);
   }
 });
 
@@ -948,7 +926,7 @@ app.post("/make-server-488793d3/auth/emergency-reset", async (c) => {
 
     // 6. Test connexion immédiat
     await new Promise(r => setTimeout(r, 300));
-    const { data: testLogin, error: testErr } = await supabase.auth.signInWithPassword({ email: authEmail, password: newPassword });
+    const { data: testLogin, error: testErr } = await supabaseAnon.auth.signInWithPassword({ email: authEmail, password: newPassword });
     steps.push(testErr ? `Test login echoue: ${testErr.message}` : 'Test login: SUCCES');
 
     return c.json({
@@ -1307,7 +1285,7 @@ app.post("/make-server-488793d3/auth/verify-otp", async (c) => {
     const authEmail = `${phone}@julaba.local`;
     
     // Tenter de se connecter avec le compte Supabase
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabaseAnon.auth.signInWithPassword({
       email: authEmail,
       password: phone // Mot de passe = numéro de téléphone par défaut
     });
@@ -1406,7 +1384,7 @@ app.post("/make-server-488793d3/auth/verify-otp", async (c) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════
+// ═════════════════════════��═════════════════════════════════════════
 // TANTIE SAGESSE - ELEVENLABS TEXT-TO-SPEECH
 // ═══════════════════════════════════════════════════════════════════
 

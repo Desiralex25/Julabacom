@@ -237,14 +237,30 @@ export function BOLogin() {
         }),
       });
       const data = await res.json();
+      console.log('[recover-super-admin] response:', JSON.stringify(data));
       setRecResult(data);
       if (data.success) {
+        // Connexion automatique si token disponible
+        if (data.accessToken && data.user) {
+          localStorage.setItem('julaba_access_token', data.accessToken);
+          if (data.refreshToken) localStorage.setItem('julaba_refresh_token', data.refreshToken);
+          localStorage.setItem('julaba_user', JSON.stringify(data.user));
+          setAppUser(data.user);
+          setBOUser(data.user);
+          setShowPanel(false);
+          setStep('idle');
+          setSuccess(true);
+          setTimeout(() => navigate('/backoffice/dashboard'), 1200);
+          return;
+        }
+        // Sinon pre-remplir
         setPhone(recPhone.replace(/\s/g, ''));
         setPassword(recPassword);
         setShowPanel(false);
         setStep('idle');
       }
-    } catch {
+    } catch (err) {
+      console.error('[recover-super-admin] catch:', err);
       setRecResult({ error: 'Erreur reseau.' });
     } finally {
       setRecLoading(false);
@@ -442,7 +458,7 @@ export function BOLogin() {
             </form>
           </div>
 
-          {/* ── Panneau outils de secours ───────────────────────────���────── */}
+          {/* ── Panneau outils de secours ───────────────────────────────── */}
           <AnimatePresence>
             {showPanel && (
               <motion.div initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
@@ -504,7 +520,7 @@ export function BOLogin() {
                     </div>
                   )}
 
-                  {/* ── RESET MOT DE PASSE ───────────���───────────────────── */}
+                  {/* ── RESET MOT DE PASSE ──────────────────────────────── */}
                   {step === 'reset' && (
                     <div className="space-y-4">
                       <button onClick={() => setStep('idle')} className="text-white/40 hover:text-white/70 text-xs flex items-center gap-1">
@@ -685,7 +701,20 @@ export function BOLogin() {
 
                         {recResult && (
                           <div className={`rounded-xl p-3 text-xs ${recResult.success ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/15 border border-red-500/30 text-red-300'}`}>
-                            {recResult.success ? 'Compte recree avec succes. Vous pouvez maintenant vous connecter.' : recResult.error}
+                            {recResult.success ? 'Compte recree avec succes. Vous pouvez maintenant vous connecter.' : (
+                              <div className="space-y-1">
+                                <p className="font-bold">{recResult.error || 'Erreur inconnue.'}</p>
+                                {recResult.details && <p className="opacity-70 font-mono">{recResult.details}</p>}
+                                {recResult.steps && recResult.steps.length > 0 && (
+                                  <div className="mt-2 space-y-0.5 pt-2 border-t border-red-500/20">
+                                    <p className="text-red-400/60 font-bold mb-1">Journal:</p>
+                                    {recResult.steps.map((s: string, i: number) => (
+                                      <p key={i} className="font-mono opacity-60">{s}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
