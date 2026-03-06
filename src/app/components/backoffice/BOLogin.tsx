@@ -5,7 +5,7 @@ import {
   Eye, EyeOff, Lock, Phone, Shield, AlertCircle,
   ChevronRight, Activity, Users, BarChart3, Settings,
   ArrowRight, CheckCircle2, Loader2, Search, RefreshCw,
-  XCircle, Info, Wrench
+  XCircle, Wrench, KeyRound, CheckCheck
 } from 'lucide-react';
 import { useBackOffice } from '../../contexts/BackOfficeContext';
 import { useApp } from '../../contexts/AppContext';
@@ -31,6 +31,9 @@ const STATS = [
 
 const loginAttempts: Record<string, { count: number; ts: number }> = {};
 
+// ── Etape du panneau de secours
+type Step = 'idle' | 'diag' | 'reset' | 'recreate';
+
 export function BOLogin() {
   const navigate = useNavigate();
   const { setBOUser } = useBackOffice();
@@ -45,27 +48,36 @@ export function BOLogin() {
   const [currentStat, setCurrentStat] = useState(0);
   const [time, setTime] = useState(new Date());
 
+  // Panneau secours
+  const [showPanel, setShowPanel] = useState(false);
+  const [step, setStep] = useState<Step>('idle');
+
   // Diagnostic
-  const [showDiag, setShowDiag] = useState(false);
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResult, setDiagResult] = useState<any>(null);
   const [diagError, setDiagError] = useState('');
 
-  // Recovery
-  const [showRecovery, setShowRecovery] = useState(false);
-  const [recoveryPhone, setRecoveryPhone] = useState('');
-  const [recoveryPassword, setRecoveryPassword] = useState('');
-  const [recoveryFirstName, setRecoveryFirstName] = useState('');
-  const [recoveryLastName, setRecoveryLastName] = useState('');
-  const [recoveryKey, setRecoveryKey] = useState('');
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
-  const [recoveryResult, setRecoveryResult] = useState<any>(null);
+  // Reset mot de passe
+  const [resetPhone, setResetPhone] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetShowPwd, setResetShowPwd] = useState(false);
+  const [resetKey, setResetKey] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<any>(null);
+
+  // Recreation complete
+  const [recPhone, setRecPhone] = useState('');
+  const [recPassword, setRecPassword] = useState('');
+  const [recFirstName, setRecFirstName] = useState('');
+  const [recLastName, setRecLastName] = useState('');
+  const [recKey, setRecKey] = useState('');
+  const [recLoading, setRecLoading] = useState(false);
+  const [recResult, setRecResult] = useState<any>(null);
 
   useEffect(() => {
     const t = setInterval(() => setCurrentStat(s => (s + 1) % STATS.length), 3000);
     return () => clearInterval(t);
   }, []);
-
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
@@ -76,6 +88,7 @@ export function BOLogin() {
   const formatDate = (d: Date) =>
     d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+  // ── Connexion
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -85,10 +98,10 @@ export function BOLogin() {
       return;
     }
     const now = Date.now();
-    const attempts = loginAttempts[cleanPhone];
-    if (attempts && attempts.count >= 5 && now - attempts.ts < 15 * 60 * 1000) {
-      const remaining = Math.ceil((15 * 60 * 1000 - (now - attempts.ts)) / 60000);
-      setError(`Trop de tentatives. Reessayez dans ${remaining} minute(s).`);
+    const att = loginAttempts[cleanPhone];
+    if (att && att.count >= 5 && now - att.ts < 15 * 60 * 1000) {
+      const rem = Math.ceil((15 * 60 * 1000 - (now - att.ts)) / 60000);
+      setError(`Trop de tentatives. Reessayez dans ${rem} minute(s).`);
       return;
     }
     setIsLoading(true);
@@ -117,107 +130,122 @@ export function BOLogin() {
       delete loginAttempts[cleanPhone];
       setSuccess(true);
       setTimeout(() => navigate('/backoffice/dashboard'), 1200);
-    } catch (err) {
-      console.error('BO Login error:', err);
-      setError('Erreur reseau. Verifiez votre connexion et reessayez.');
+    } catch {
+      setError('Erreur reseau. Verifiez votre connexion.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const runDiagnostic = async () => {
-    const cleanPhone = phone.replace(/\s/g, '') || recoveryPhone.replace(/\s/g, '');
-    if (!cleanPhone) {
-      setDiagError('Entrez votre numero de telephone ci-dessus avant de lancer le diagnostic.');
-      return;
-    }
+  // ── Diagnostic
+  const runDiag = async () => {
     setDiagLoading(true);
     setDiagResult(null);
     setDiagError('');
     try {
-      // 1. Super admin status
-      const statusRes = await fetch(`${API_URL}/auth/super-admin-status`);
-      const statusData = await statusRes.json();
-      // 2. Test login si mot de passe fourni
-      let testData = null;
-      const pwd = password || recoveryPassword;
-      if (pwd) {
-        const testRes = await fetch(`${API_URL}/auth/test-login`, {
+      const [statusRes, testRes] = await Promise.all([
+        fetch(`${API_URL}/auth/super-admin-status`),
+        fetch(`${API_URL}/auth/test-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleanPhone, password: pwd }),
-        });
-        testData = await testRes.json();
-      }
+          body: JSON.stringify({ phone: phone.replace(/\s/g,'') || '0709220009', password: password || '___' }),
+        }),
+      ]);
+      const [statusData, testData] = await Promise.all([statusRes.json(), testRes.json()]);
       setDiagResult({ status: statusData, test: testData });
-    } catch (err) {
+    } catch {
       setDiagError('Erreur reseau lors du diagnostic.');
     } finally {
       setDiagLoading(false);
     }
   };
 
-  const runRecovery = async () => {
-    if (!recoveryPhone || !recoveryPassword || !recoveryFirstName || !recoveryLastName || !recoveryKey) {
-      setRecoveryResult({ error: 'Tous les champs sont requis pour la recuperation.' });
+  // ── Reset mot de passe
+  const runReset = async () => {
+    if (!resetPhone || !resetNewPassword || !resetKey) {
+      setResetResult({ error: 'Tous les champs sont obligatoires.' });
       return;
     }
-    setRecoveryLoading(true);
-    setRecoveryResult(null);
+    if (resetNewPassword.length < 6) {
+      setResetResult({ error: 'Le mot de passe doit avoir au moins 6 caracteres.' });
+      return;
+    }
+    setResetLoading(true);
+    setResetResult(null);
+    try {
+      const res = await fetch(`${API_URL}/auth/reset-super-admin-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: resetPhone.replace(/\s/g, ''),
+          newPassword: resetNewPassword,
+          secretKey: resetKey,
+        }),
+      });
+      const data = await res.json();
+      setResetResult(data);
+      if (data.success) {
+        // Pre-remplir le formulaire principal
+        setPhone(resetPhone.replace(/\s/g, ''));
+        setPassword(resetNewPassword);
+        setShowPanel(false);
+        setStep('idle');
+      }
+    } catch {
+      setResetResult({ error: 'Erreur reseau.' });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  // ── Recreation complete
+  const runRecreate = async () => {
+    if (!recPhone || !recPassword || !recFirstName || !recLastName || !recKey) {
+      setRecResult({ error: 'Tous les champs sont requis.' });
+      return;
+    }
+    setRecLoading(true);
+    setRecResult(null);
     try {
       const res = await fetch(`${API_URL}/auth/recover-super-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: recoveryPhone.replace(/\s/g, ''),
-          password: recoveryPassword,
-          firstName: recoveryFirstName,
-          lastName: recoveryLastName,
-          secretKey: recoveryKey,
+          phone: recPhone.replace(/\s/g, ''),
+          password: recPassword,
+          firstName: recFirstName,
+          lastName: recLastName,
+          secretKey: recKey,
         }),
       });
       const data = await res.json();
-      setRecoveryResult(data);
+      setRecResult(data);
       if (data.success) {
-        // Pré-remplir les champs de connexion
-        setPhone(recoveryPhone.replace(/\s/g, ''));
-        setPassword(recoveryPassword);
-        setShowRecovery(false);
-        setShowDiag(false);
+        setPhone(recPhone.replace(/\s/g, ''));
+        setPassword(recPassword);
+        setShowPanel(false);
+        setStep('idle');
       }
-    } catch (err) {
-      setRecoveryResult({ error: 'Erreur reseau lors de la recuperation.' });
+    } catch {
+      setRecResult({ error: 'Erreur reseau.' });
     } finally {
-      setRecoveryLoading(false);
+      setRecLoading(false);
     }
   };
 
   const StatIcon = STATS[currentStat].icon;
 
-  const DiagItem = ({ label, value, ok }: { label: string; value: string; ok?: boolean | null }) => (
-    <div className="flex items-start gap-2 py-1.5 border-b border-white/5 last:border-0">
-      {ok === true && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />}
-      {ok === false && <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />}
-      {ok === null || ok === undefined && <Info className="w-3.5 h-3.5 text-white/30 flex-shrink-0 mt-0.5" />}
-      <div className="flex-1 min-w-0">
-        <span className="text-white/40 text-xs">{label} : </span>
-        <span className="text-white/80 text-xs font-mono break-all">{value}</span>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex bg-[#0B1120] overflow-hidden relative">
-      {/* Fond grille */}
+      {/* Grille de fond */}
       <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px),linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)`,
         backgroundSize: '60px 60px',
       }} />
-      {/* Orbes */}
       <div className="absolute top-[-200px] left-[-200px] w-[600px] h-[600px] rounded-full bg-violet-700/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-150px] right-[200px] w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-150px] right-[100px] w-[500px] h-[500px] rounded-full bg-blue-600/15 blur-[100px] pointer-events-none" />
 
-      {/* ═══ PANNEAU GAUCHE ════════════════════════════════════════════════ */}
+      {/* ══ PANNEAU GAUCHE ══════════════════════════════════════════════════════ */}
       <div className="hidden lg:flex flex-col justify-between w-[55%] p-12 relative z-10">
         <div className="flex items-center gap-4">
           <img src={logoJulabaBlanc} alt="Julaba" className="h-10 brightness-0 invert" />
@@ -227,23 +255,23 @@ export function BOLogin() {
             <p className="text-white/80 text-sm font-semibold">Administration nationale</p>
           </div>
         </div>
+
         <div className="space-y-10">
-          <div className="space-y-4">
-            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
-              <p className="text-violet-400 text-sm font-medium uppercase tracking-widest mb-2">Plateforme nationale</p>
-              <h1 className="text-5xl font-black text-white leading-tight">
-                Inclusion<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">economique</span><br />
-                des vivriers
-              </h1>
-            </motion.div>
-            <p className="text-white/50 text-lg leading-relaxed max-w-md">
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
+            <p className="text-violet-400 text-sm font-medium uppercase tracking-widest mb-3">Plateforme nationale</p>
+            <h1 className="text-5xl font-black text-white leading-tight">
+              Inclusion<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">economique</span><br />
+              des vivriers
+            </h1>
+            <p className="text-white/50 text-lg leading-relaxed max-w-md mt-4">
               Pilotez l'ensemble de l'ecosysteme Julaba depuis ce centre de commande national.
             </p>
-          </div>
+          </motion.div>
+
           <AnimatePresence mode="wait">
-            <motion.div key={currentStat} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}
-              className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+            <motion.div key={currentStat} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-2xl p-6">
               <div className="w-14 h-14 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
                 <StatIcon className="w-7 h-7 text-violet-400" />
               </div>
@@ -253,25 +281,24 @@ export function BOLogin() {
               </div>
             </motion.div>
           </AnimatePresence>
-          <div className="space-y-3">
-            <p className="text-white/30 text-xs uppercase tracking-widest font-medium">Roles d'administration</p>
-            <div className="grid grid-cols-2 gap-3">
-              {BO_ROLES.map((role, i) => {
-                const Icon = role.icon;
-                return (
-                  <motion.div key={role.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
-                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: role.color + '25', border: `1px solid ${role.color}50` }}>
-                      <Icon className="w-4 h-4" style={{ color: role.color }} />
-                    </div>
-                    <span className="text-white/70 text-sm font-medium">{role.label}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {BO_ROLES.map((role, i) => {
+              const Icon = role.icon;
+              return (
+                <motion.div key={role.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }}
+                  className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: role.color + '25', border: `1px solid ${role.color}50` }}>
+                    <Icon className="w-4 h-4" style={{ color: role.color }} />
+                  </div>
+                  <span className="text-white/70 text-sm font-medium">{role.label}</span>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
+
         <div className="flex items-center justify-between">
           <p className="text-white/20 text-xs">Julaba Back-Office v2.0 — Cote d'Ivoire</p>
           <div className="text-right">
@@ -281,18 +308,18 @@ export function BOLogin() {
         </div>
       </div>
 
-      {/* ═══ PANNEAU DROIT (FORMULAIRE) ════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10 overflow-y-auto">
-        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.6 }}
+      {/* ══ PANNEAU DROIT ═══════════════════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative z-10 overflow-y-auto py-12">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
           className="w-full max-w-md space-y-4">
 
           {/* Logo mobile */}
-          <div className="lg:hidden flex justify-center mb-8">
+          <div className="lg:hidden flex justify-center mb-6">
             <img src={logoJulabaBlanc} alt="Julaba" className="h-10 brightness-0 invert" />
           </div>
 
-          {/* ── Carte connexion ── */}
-          <div className="bg-[#111827] border border-white/10 rounded-3xl p-8 shadow-2xl shadow-black/40 relative overflow-hidden">
+          {/* ── Carte connexion ─────────────────────────────────────────── */}
+          <div className="bg-[#111827] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-violet-400 to-cyan-400 rounded-t-3xl" />
 
             <div className="flex justify-center mb-6">
@@ -302,17 +329,17 @@ export function BOLogin() {
               </motion.div>
             </div>
 
-            <div className="text-center mb-8">
+            <div className="text-center mb-7">
               <h2 className="text-2xl font-black text-white">Administration</h2>
               <p className="text-white/40 text-sm mt-1">Acces reserve aux agents Back-Office</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-4">
               {/* Telephone */}
               <div className="space-y-2">
-                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Numero de telephone</label>
-                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-violet-500/50 focus-within:bg-violet-500/5 transition-all">
-                  <div className="flex items-center gap-2 px-4 py-4 border-r border-white/10 bg-white/5">
+                <label className="text-white/50 text-xs font-semibold uppercase tracking-wider">Numero de telephone</label>
+                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-violet-500/60 transition-all">
+                  <div className="flex items-center gap-2 px-4 py-4 border-r border-white/10 bg-white/5 flex-shrink-0">
                     <Phone className="w-4 h-4 text-violet-400" />
                     <span className="text-white/60 text-sm font-mono">+225</span>
                   </div>
@@ -322,15 +349,15 @@ export function BOLogin() {
                     className="flex-1 bg-transparent px-4 py-4 text-white placeholder-white/20 text-sm font-mono focus:outline-none"
                     autoComplete="tel" disabled={isLoading || success}
                   />
-                  {phone.replace(/\s/g, '').length >= 8 && <CheckCircle2 className="w-4 h-4 text-emerald-400 mr-4" />}
+                  {phone.replace(/\s/g, '').length >= 8 && <CheckCircle2 className="w-4 h-4 text-emerald-400 mr-4 flex-shrink-0" />}
                 </div>
               </div>
 
               {/* Mot de passe */}
               <div className="space-y-2">
-                <label className="text-white/60 text-xs font-medium uppercase tracking-wider">Mot de passe</label>
-                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-violet-500/50 focus-within:bg-violet-500/5 transition-all">
-                  <div className="flex items-center px-4 py-4 border-r border-white/10 bg-white/5">
+                <label className="text-white/50 text-xs font-semibold uppercase tracking-wider">Mot de passe</label>
+                <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-violet-500/60 transition-all">
+                  <div className="flex items-center px-4 py-4 border-r border-white/10 bg-white/5 flex-shrink-0">
                     <Lock className="w-4 h-4 text-violet-400" />
                   </div>
                   <input
@@ -340,7 +367,7 @@ export function BOLogin() {
                     autoComplete="current-password" disabled={isLoading || success}
                   />
                   <button type="button" onClick={() => setShowPassword(v => !v)}
-                    className="px-4 py-4 text-white/30 hover:text-white/70 transition-colors" tabIndex={-1}>
+                    className="px-4 py-4 text-white/30 hover:text-white/70 transition-colors flex-shrink-0" tabIndex={-1}>
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -349,45 +376,45 @@ export function BOLogin() {
               {/* Erreur */}
               <AnimatePresence>
                 {error && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     className="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
                     <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
+                    <div>
                       <p className="text-red-300 text-sm">{error}</p>
-                      <button type="button" onClick={() => { setShowDiag(true); setError(''); }}
-                        className="text-violet-400 text-xs mt-1 hover:text-violet-300 flex items-center gap-1 transition-colors">
-                        <Search className="w-3 h-3" />
-                        Lancer le diagnostic
+                      <button type="button" onClick={() => { setShowPanel(true); setStep('reset'); setResetPhone(phone.replace(/\s/g,'')); setError(''); }}
+                        className="text-violet-400 hover:text-violet-300 text-xs mt-1.5 flex items-center gap-1 transition-colors">
+                        <KeyRound className="w-3 h-3" />
+                        Reinitialiser mon mot de passe
                       </button>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Bouton connexion */}
+              {/* Bouton */}
               <motion.button type="submit" disabled={isLoading || success}
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-2xl font-bold text-white text-base relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                className="w-full py-4 rounded-2xl font-bold text-white text-base relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
-                  background: success ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                  background: success ? 'linear-gradient(135deg,#10B981,#059669)' : 'linear-gradient(135deg,#7C3AED,#6D28D9)',
                   boxShadow: success ? '0 0 30px rgba(16,185,129,0.4)' : '0 0 30px rgba(124,58,237,0.4)',
                 }}>
                 <span className="relative z-10 flex items-center justify-center gap-3">
-                  {success ? (<><CheckCircle2 className="w-5 h-5" />Connexion reussie</>) :
+                  {success ? (<><CheckCheck className="w-5 h-5" />Connexion reussie</>) :
                     isLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />Authentification...</>) :
                     (<>Acceder au Back-Office<ArrowRight className="w-5 h-5" /></>)}
                 </span>
                 {!isLoading && !success && (
                   <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                    animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }} />
+                    animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.5 }} />
                 )}
               </motion.button>
 
-              <div className="flex items-center justify-between pt-2">
-                <button type="button" onClick={() => setShowDiag(v => !v)}
+              <div className="flex items-center justify-between pt-1">
+                <button type="button" onClick={() => { setShowPanel(v => !v); setStep('idle'); }}
                   className="text-white/30 hover:text-violet-400 text-xs flex items-center gap-1 transition-colors">
                   <Wrench className="w-3 h-3" />
-                  Diagnostic et recuperation
+                  Outils de secours
                 </button>
                 <button type="button" onClick={() => navigate('/')}
                   className="text-white/30 hover:text-white/60 text-xs flex items-center gap-1 transition-colors">
@@ -397,129 +424,269 @@ export function BOLogin() {
             </form>
           </div>
 
-          {/* ── Panneau Diagnostic ── */}
+          {/* ── Panneau outils de secours ────────────────────────────────── */}
           <AnimatePresence>
-            {showDiag && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                className="bg-[#111827] border border-violet-500/30 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-violet-400" />
-                    <h3 className="text-white font-bold text-sm">Diagnostic de connexion</h3>
-                  </div>
-                  <button onClick={() => setShowDiag(false)} className="text-white/30 hover:text-white/60">
-                    <XCircle className="w-4 h-4" />
-                  </button>
-                </div>
+            {showPanel && (
+              <motion.div initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, y: 10, height: 0 }} className="overflow-hidden">
+                <div className="bg-[#111827] border border-violet-500/30 rounded-3xl p-6 space-y-4">
 
-                <p className="text-white/40 text-xs">
-                  Entrez votre numero et mot de passe dans le formulaire ci-dessus, puis lancez le diagnostic pour voir exactement ce qui bloque.
-                </p>
-
-                <button onClick={runDiagnostic} disabled={diagLoading}
-                  className="w-full py-3 rounded-2xl bg-violet-600/20 border border-violet-500/40 text-violet-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-violet-600/30 transition-all disabled:opacity-50">
-                  {diagLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Analyse en cours...</> : <><Search className="w-4 h-4" />Analyser mon compte</>}
-                </button>
-
-                {diagError && <p className="text-red-400 text-xs">{diagError}</p>}
-
-                {diagResult && (
-                  <div className="space-y-3">
-                    {/* Status super admin */}
-                    <div className="bg-white/5 rounded-2xl p-4 space-y-1">
-                      <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-2">Etat du compte Super Admin</p>
-                      <DiagItem label="Nombre de SA dans la base" value={String(diagResult.status?.count ?? '?')} ok={diagResult.status?.count > 0} />
-                      <DiagItem label="Diagnostic" value={diagResult.status?.diagnosis ?? '?'} />
-                      {(diagResult.status?.profiles || []).map((p: any, i: number) => (
-                        <div key={i} className="mt-2 bg-white/5 rounded-xl p-3 space-y-1">
-                          <DiagItem label="Phone" value={p.phone} />
-                          <DiagItem label="auth_user_id" value={p.auth_user_id || 'MANQUANT'} ok={!!p.auth_user_id} />
-                          <DiagItem label="Compte Auth existe" value={p.authExists ? 'OUI' : 'NON'} ok={p.authExists} />
-                          <DiagItem label="Email Auth" value={p.authEmail || 'inconnu'} />
-                          <DiagItem label="Valide" value={p.validated ? 'OUI' : 'NON'} ok={p.validated} />
-                        </div>
-                      ))}
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-4 h-4 text-violet-400" />
+                      <h3 className="text-white font-bold text-sm">Outils de secours Admin</h3>
                     </div>
-
-                    {/* Test login */}
-                    {diagResult.test?.diagnosis && (
-                      <div className="bg-white/5 rounded-2xl p-4 space-y-1">
-                        <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-2">Test de connexion</p>
-                        <DiagItem label="Profil dans la base" value={diagResult.test.diagnosis.profileExists ? 'OUI' : 'NON'} ok={diagResult.test.diagnosis.profileExists} />
-                        <DiagItem label="Compte Auth existe" value={diagResult.test.diagnosis.authUserExists ? 'OUI' : 'NON'} ok={diagResult.test.diagnosis.authUserExists} />
-                        <DiagItem label="Login reussi" value={diagResult.test.diagnosis.loginSuccess ? 'OUI' : 'NON'} ok={diagResult.test.diagnosis.loginSuccess} />
-                        {diagResult.test.diagnosis.loginError && (
-                          <DiagItem label="Erreur login" value={diagResult.test.diagnosis.loginError} ok={false} />
-                        )}
-                        <div className="mt-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
-                          <p className="text-amber-300 text-xs">{diagResult.test.diagnosis.explanation}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Bouton recuperation si necessaire */}
-                    {(
-                      !diagResult.status?.count ||
-                      diagResult.status?.count === 0 ||
-                      diagResult.status?.error ||
-                      diagResult.test?.diagnosis?.loginSuccess === false
-                    ) && (
-                      <button onClick={() => setShowRecovery(v => !v)}
-                        className="w-full py-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-amber-500/30 transition-all">
-                        <RefreshCw className="w-4 h-4" />
-                        Recreer le compte Super Admin
-                      </button>
-                    )}
+                    <button onClick={() => { setShowPanel(false); setStep('idle'); }} className="text-white/30 hover:text-white/70">
+                      <XCircle className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
 
-                {/* Formulaire de recuperation */}
-                <AnimatePresence>
-                  {showRecovery && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                      className="space-y-3 overflow-hidden">
-                      <div className="border-t border-white/10 pt-4">
-                        <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <RefreshCw className="w-3 h-3 text-amber-400" />
-                          Recuperation forcee du Super Admin
+                  {/* Choix de l'outil */}
+                  {step === 'idle' && (
+                    <div className="space-y-3">
+                      {/* Option 1 : Reset mot de passe */}
+                      <button onClick={() => { setStep('reset'); setResetPhone(phone.replace(/\s/g,'')); }}
+                        className="w-full flex items-center gap-4 bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4 text-left hover:bg-violet-500/20 transition-all group">
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-500/30">
+                          <KeyRound className="w-5 h-5 text-violet-400" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-bold">Reinitialiser le mot de passe</p>
+                          <p className="text-white/40 text-xs mt-0.5">Le compte existe mais le mot de passe ne fonctionne pas</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/30 ml-auto flex-shrink-0" />
+                      </button>
+
+                      {/* Option 2 : Diagnostic */}
+                      <button onClick={() => { setStep('diag'); runDiag(); }}
+                        className="w-full flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 text-left hover:bg-white/10 transition-all group">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                          <Search className="w-5 h-5 text-white/60" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-bold">Diagnostic complet</p>
+                          <p className="text-white/40 text-xs mt-0.5">Analyser l'etat du compte dans la base de donnees</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/30 ml-auto flex-shrink-0" />
+                      </button>
+
+                      {/* Option 3 : Recreation complete */}
+                      <button onClick={() => setStep('recreate')}
+                        className="w-full flex items-center gap-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-left hover:bg-amber-500/20 transition-all group">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                          <RefreshCw className="w-5 h-5 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-bold">Recreer le compte complet</p>
+                          <p className="text-white/40 text-xs mt-0.5">Supprime et recrée entièrement le Super Admin</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/30 ml-auto flex-shrink-0" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── RESET MOT DE PASSE ───────────────────────────────── */}
+                  {step === 'reset' && (
+                    <div className="space-y-4">
+                      <button onClick={() => setStep('idle')} className="text-white/40 hover:text-white/70 text-xs flex items-center gap-1">
+                        <ChevronRight className="w-3 h-3 rotate-180" /> Retour
+                      </button>
+
+                      <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <KeyRound className="w-4 h-4 text-violet-400" />
+                          <p className="text-white font-bold text-sm">Reinitialisation du mot de passe</p>
+                        </div>
+                        <p className="text-white/40 text-xs">
+                          Cette action change uniquement le mot de passe. Le compte et toutes les donnees sont preserves.
                         </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-white/40 text-xs mb-1.5 block font-medium">Numero de telephone du Super Admin</label>
+                          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-violet-500/50">
+                            <span className="text-white/40 text-sm font-mono px-3 py-3 border-r border-white/10">+225</span>
+                            <input type="tel" value={resetPhone} onChange={e => setResetPhone(e.target.value)}
+                              placeholder="0709220009"
+                              className="flex-1 bg-transparent px-3 py-3 text-white text-sm font-mono placeholder-white/20 focus:outline-none" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-white/40 text-xs mb-1.5 block font-medium">Nouveau mot de passe</label>
+                          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden focus-within:border-violet-500/50">
+                            <input type={resetShowPwd ? 'text' : 'password'} value={resetNewPassword} onChange={e => setResetNewPassword(e.target.value)}
+                              placeholder="Minimum 6 caracteres"
+                              className="flex-1 bg-transparent px-3 py-3 text-white text-sm placeholder-white/20 focus:outline-none" />
+                            <button type="button" onClick={() => setResetShowPwd(v => !v)} className="px-3 text-white/30 hover:text-white/60">
+                              {resetShowPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-white/40 text-xs mb-1.5 block font-medium">Cle de securite</label>
+                          <input type="text" value={resetKey} onChange={e => setResetKey(e.target.value)}
+                            placeholder="JULABA_RECOVERY_2026"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-sm font-mono placeholder-white/20 focus:outline-none focus:border-violet-500/50" />
+                        </div>
+
+                        {resetResult && (
+                          <div className={`rounded-xl p-3 text-xs font-medium ${resetResult.success
+                            ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'
+                            : 'bg-red-500/15 border border-red-500/30 text-red-300'}`}>
+                            {resetResult.success
+                              ? `Mot de passe reinitialise avec succes pour ${resetResult.phone || resetPhone}. Vous pouvez maintenant vous connecter.`
+                              : resetResult.error || 'Erreur inconnue.'}
+                          </div>
+                        )}
+
+                        <motion.button onClick={runReset} disabled={resetLoading}
+                          whileTap={{ scale: 0.97 }}
+                          className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                          style={{ background: 'linear-gradient(135deg,#7C3AED,#6D28D9)', boxShadow: '0 0 20px rgba(124,58,237,0.3)' }}>
+                          {resetLoading
+                            ? <><Loader2 className="w-4 h-4 animate-spin" />Reinitialisation en cours...</>
+                            : <><KeyRound className="w-4 h-4" />Reinitialiser le mot de passe</>}
+                        </motion.button>
+
+                        {resetResult?.success && (
+                          <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            onClick={() => { setShowPanel(false); setStep('idle'); }}
+                            className="w-full py-3.5 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2"
+                            style={{ background: 'linear-gradient(135deg,#10B981,#059669)', boxShadow: '0 0 20px rgba(16,185,129,0.3)' }}>
+                            <CheckCircle2 className="w-4 h-4" />
+                            Se connecter maintenant
+                          </motion.button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── DIAGNOSTIC ──────────────────────────────────────── */}
+                  {step === 'diag' && (
+                    <div className="space-y-4">
+                      <button onClick={() => setStep('idle')} className="text-white/40 hover:text-white/70 text-xs flex items-center gap-1">
+                        <ChevronRight className="w-3 h-3 rotate-180" /> Retour
+                      </button>
+
+                      {diagLoading && (
+                        <div className="flex items-center justify-center gap-2 py-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                          <p className="text-white/40 text-sm">Analyse en cours...</p>
+                        </div>
+                      )}
+                      {diagError && <p className="text-red-400 text-sm">{diagError}</p>}
+                      {diagResult && (
+                        <div className="space-y-3">
+                          <div className="bg-white/5 rounded-2xl p-4 space-y-2">
+                            <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Super Admin</p>
+                            <div className="flex items-center gap-2">
+                              {diagResult.status?.count > 0
+                                ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                : <XCircle className="w-4 h-4 text-red-400" />}
+                              <span className="text-white text-sm">{diagResult.status?.diagnosis || '?'}</span>
+                            </div>
+                            {(diagResult.status?.profiles || []).map((p: any, i: number) => (
+                              <div key={i} className="bg-white/5 rounded-xl p-3 text-xs space-y-1 mt-2">
+                                <p className="text-white font-mono">{p.phone}</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  <span className={`px-2 py-0.5 rounded-full ${p.auth_user_id ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
+                                    auth_user_id {p.auth_user_id ? 'lie' : 'manquant'}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full ${p.authExists ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
+                                    Auth {p.authExists ? 'existe' : 'absent'}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full ${p.validated ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
+                                    {p.validated ? 'valide' : 'non valide'}
+                                  </span>
+                                </div>
+                                {p.authEmail && <p className="text-white/40">Email: {p.authEmail}</p>}
+                              </div>
+                            ))}
+                          </div>
+                          {diagResult.test?.diagnosis && (
+                            <div className="bg-white/5 rounded-2xl p-4 space-y-2">
+                              <p className="text-white/50 text-xs font-bold uppercase tracking-wider">Test connexion</p>
+                              <div className={`flex items-center gap-2 rounded-xl p-3 ${diagResult.test.diagnosis.loginSuccess ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                                {diagResult.test.diagnosis.loginSuccess
+                                  ? <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                                  : <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />}
+                                <p className="text-white/80 text-xs">{diagResult.test.diagnosis.explanation}</p>
+                              </div>
+                              {diagResult.test.diagnosis.loginError && (
+                                <p className="text-red-300 text-xs font-mono bg-red-500/10 rounded-lg px-3 py-2">
+                                  {diagResult.test.diagnosis.loginError}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          <button onClick={() => setStep('reset')}
+                            className="w-full py-3 rounded-2xl bg-violet-600/20 border border-violet-500/40 text-violet-300 text-sm font-medium flex items-center justify-center gap-2 hover:bg-violet-600/30 transition-all">
+                            <KeyRound className="w-4 h-4" />
+                            Reinitialiser le mot de passe
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── RECREATION COMPLETE ──────────────────────────────── */}
+                  {step === 'recreate' && (
+                    <div className="space-y-4">
+                      <button onClick={() => setStep('idle')} className="text-white/40 hover:text-white/70 text-xs flex items-center gap-1">
+                        <ChevronRight className="w-3 h-3 rotate-180" /> Retour
+                      </button>
+
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <RefreshCw className="w-4 h-4 text-amber-400" />
+                          <p className="text-white font-bold text-sm">Recreation complete</p>
+                        </div>
+                        <p className="text-amber-300/70 text-xs">
+                          Supprime l'ancien compte et en cree un nouveau. Utiliser seulement si le compte est totalement inaccessible.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
                         {[
-                          { label: 'Nouveau telephone', val: recoveryPhone, set: setRecoveryPhone, placeholder: '0709220009', type: 'tel' },
-                          { label: 'Nouveau mot de passe', val: recoveryPassword, set: setRecoveryPassword, placeholder: 'Minimum 6 caracteres', type: 'password' },
-                          { label: 'Prenom', val: recoveryFirstName, set: setRecoveryFirstName, placeholder: 'Prenom', type: 'text' },
-                          { label: 'Nom', val: recoveryLastName, set: setRecoveryLastName, placeholder: 'Nom de famille', type: 'text' },
-                          { label: 'Cle de recuperation', val: recoveryKey, set: setRecoveryKey, placeholder: 'JULABA_RECOVERY_2026', type: 'text' },
-                        ].map((field, i) => (
-                          <div key={i} className="mb-2">
-                            <label className="text-white/40 text-xs mb-1 block">{field.label}</label>
-                            <input type={field.type} value={field.val} onChange={e => field.set(e.target.value)}
-                              placeholder={field.placeholder}
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/50" />
+                          { label: 'Telephone', val: recPhone, set: setRecPhone, placeholder: '0709220009', type: 'tel' },
+                          { label: 'Nouveau mot de passe', val: recPassword, set: setRecPassword, placeholder: 'Min. 6 caracteres', type: 'password' },
+                          { label: 'Prenom', val: recFirstName, set: setRecFirstName, placeholder: 'Prenom', type: 'text' },
+                          { label: 'Nom', val: recLastName, set: setRecLastName, placeholder: 'Nom de famille', type: 'text' },
+                          { label: 'Cle de securite', val: recKey, set: setRecKey, placeholder: 'JULABA_RECOVERY_2026', type: 'text' },
+                        ].map((f, i) => (
+                          <div key={i}>
+                            <label className="text-white/40 text-xs mb-1.5 block font-medium">{f.label}</label>
+                            <input type={f.type} value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-sm placeholder-white/20 focus:outline-none focus:border-amber-500/50" />
                           </div>
                         ))}
-                        <button onClick={runRecovery} disabled={recoveryLoading}
-                          className="w-full py-3 rounded-2xl bg-amber-500 text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-all disabled:opacity-50 mt-3">
-                          {recoveryLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Recuperation...</> : <><RefreshCw className="w-4 h-4" />Lancer la recuperation</>}
-                        </button>
-                        {recoveryResult && (
-                          <div className={`mt-3 rounded-xl p-3 text-xs ${recoveryResult.success ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/20 border border-red-500/30 text-red-300'}`}>
-                            {recoveryResult.success
-                              ? `Compte recree avec succes. Vous pouvez maintenant vous connecter avec le nouveau mot de passe.`
-                              : recoveryResult.error || 'Erreur inconnue.'}
+
+                        {recResult && (
+                          <div className={`rounded-xl p-3 text-xs ${recResult.success ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300' : 'bg-red-500/15 border border-red-500/30 text-red-300'}`}>
+                            {recResult.success ? 'Compte recree avec succes. Vous pouvez maintenant vous connecter.' : recResult.error}
                           </div>
                         )}
+
+                        <button onClick={runRecreate} disabled={recLoading}
+                          className="w-full py-3.5 rounded-2xl font-bold text-black text-sm flex items-center justify-center gap-2 disabled:opacity-50 bg-amber-400 hover:bg-amber-300 transition-all">
+                          {recLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Recreation...</> : <><RefreshCw className="w-4 h-4" />Recreer le compte</>}
+                        </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Badge securite */}
+          {/* Badge */}
           <div className="flex items-center justify-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <p className="text-white/25 text-xs">Connexion chiffree HTTPS — Julaba Back-Office Central</p>
+            <p className="text-white/20 text-xs">Connexion chiffree HTTPS — Julaba Back-Office</p>
           </div>
         </motion.div>
       </div>
