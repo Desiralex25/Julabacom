@@ -117,6 +117,7 @@ import { BOProfil } from './components/backoffice/BOProfil';
 import { BORapports } from './components/backoffice/BORapports';
 import { BONotifications } from './components/backoffice/BONotifications';
 import { BOSupport } from './components/backoffice/BOSupport';
+import { BOLogin } from './components/backoffice/BOLogin';
 
 export const router = createBrowserRouter([
   {
@@ -259,7 +260,7 @@ export const router = createBrowserRouter([
       },
 
       // ── BACK-OFFICE CENTRAL ─────────────────────────────────────────────────
-      { path: '/backoffice/login', element: <LoginPassword /> },
+      { path: '/backoffice/login', element: <BOLogin /> },
       {
         path: '/backoffice',
         element: <BORoot />,
