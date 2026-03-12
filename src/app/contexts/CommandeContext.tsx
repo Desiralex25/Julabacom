@@ -42,23 +42,29 @@ export function CommandeProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const { commandes: data } = await commandesApi.fetchCommandes();
       
-      const commandeList: Commande[] = data.map((c: any) => ({
-        id: c.id,
-        acheteurId: c.acheteur_id,
-        vendeurId: c.vendeur_id,
-        type: c.type,
-        produit: c.produit,
-        quantite: c.quantite,
-        prixUnitaire: c.prix_unitaire,
-        total: c.total,
-        statut: c.statut,
-        dateCommande: c.created_at,
-        dateLivraison: c.date_livraison,
-      }));
+      if (data && Array.isArray(data)) {
+        const commandeList: Commande[] = data.map((c: any) => ({
+          id: c.id,
+          acheteurId: c.acheteur_id,
+          vendeurId: c.vendeur_id,
+          type: c.type,
+          produit: c.produit,
+          quantite: c.quantite,
+          prixUnitaire: c.prix_unitaire,
+          total: c.total,
+          statut: c.statut,
+          dateCommande: c.created_at,
+          dateLivraison: c.date_livraison,
+        }));
 
-      setCommandes(commandeList);
+        setCommandes(commandeList);
+      } else {
+        setCommandes([]);
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading commandes:', error);
     } finally {
       setLoading(false);

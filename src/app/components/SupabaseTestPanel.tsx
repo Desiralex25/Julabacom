@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Database, CheckCircle2, XCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
-import { callServer } from '../../utils/supabase-helpers';
+import { callServer } from '/utils/supabase-helpers';
 
 export function SupabaseTestPanel() {
   const [testing, setTesting] = useState(false);

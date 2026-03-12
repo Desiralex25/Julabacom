@@ -1,7 +1,18 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import * as boAPI from '/src/imports/backoffice-api';
+import * as boAPI from '../../imports/backoffice-api';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
+import { 
+  MARCHANDS_COCOVICO, 
+  TRANSACTIONS_COCOVICO,
+  TOUS_LES_ACTEURS,
+  TOUTES_LES_TRANSACTIONS,
+  MARCHANDS_REJETES,
+  PRODUCTEURS,
+  COOPERATIVES,
+  INSTITUTION_DGE,
+  IDENTIFICATEURS_FICTIFS,
+} from '../data/cocovicoData';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -71,26 +82,32 @@ export interface BOActeur {
 
 export interface BODossier {
   id: string;
-  acteurId: string;
+  acteurId?: string;
   acteurNom: string;
-  acteurType: BOActeur['type'];
+  acteurType: 'marchand' | 'producteur' | 'cooperative' | 'institution' | 'identificateur';
+  telephone?: string;
   statut: 'draft' | 'pending' | 'approved' | 'rejected' | 'complement';
   dateCreation: string;
-  dateModification: string;
+  dateModification?: string;
+  dateValidation?: string;
   identificateurNom: string;
+  identificateurId?: string;
   region: string;
+  commune?: string;
+  activite?: string;
   motifRejet?: string;
   documents: string[];
+  type?: 'nouveau' | 'modifie' | 'renouvellement';
 }
 
 export interface BOTransaction {
   id: string;
+  acteurId?: string;
   acteurNom: string;
   acteurType: string;
   produit: string;
   quantite: string;
   montant: number;
-  commission: number;
   statut: 'validee' | 'en_cours' | 'gelee' | 'annulee' | 'litige';
   date: string;
   region: string;
@@ -101,22 +118,17 @@ export interface BOZone {
   id: string;
   nom: string;
   region: string;
+  ville?: string;
+  commune?: string;
+  marche?: string;
+  niveau: 'region' | 'ville' | 'commune' | 'marche';
+  parentId?: string;
   gestionnaire?: string;
   nbActeurs: number;
   nbIdentificateurs: number;
   volumeTotal: number;
   tauxActivite: number;
   statut: 'active' | 'inactive';
-}
-
-export interface BOCommission {
-  id: string;
-  identificateurNom: string;
-  periode: string;
-  nbDossiers: number;
-  montantTotal: number;
-  statut: 'en_attente' | 'payee' | 'validee';
-  date: string;
 }
 
 export interface BOAuditLog {
@@ -132,53 +144,19 @@ export interface BOAuditLog {
   module: string;
 }
 
-// ─── Mock BO Users (pour développement uniquement) ──────────────────────────
+export interface BOMission {
+  id: string;
+  titre: string;
+  type: string;
+  realise: number;
+  objectif: number;
+  statut: string;
+  participantsCount: number;
+  creePar: string;
+  dateCreation: string;
+}
 
-export const MOCK_BO_USERS: BOUser[] = [
-  {
-    id: 'bo1',
-    nom: 'KONÉ',
-    prenom: 'Amadou',
-    email: 'amadou.kone@julaba.ci',
-    role: 'super_admin',
-    avatar: undefined,
-    lastLogin: new Date().toISOString(),
-    actif: true,
-  },
-  {
-    id: 'bo2',
-    nom: 'TOURÉ',
-    prenom: 'Aminata',
-    email: 'aminata.toure@julaba.ci',
-    role: 'admin_national',
-    avatar: undefined,
-    lastLogin: new Date().toISOString(),
-    actif: true,
-  },
-  {
-    id: 'bo3',
-    nom: 'YAO',
-    prenom: 'Jean',
-    email: 'jean.yao@julaba.ci',
-    role: 'gestionnaire_zone',
-    region: 'Abidjan',
-    avatar: undefined,
-    lastLogin: new Date().toISOString(),
-    actif: true,
-  },
-  {
-    id: 'bo4',
-    nom: 'DIABATÉ',
-    prenom: 'Mariam',
-    email: 'mariam.diabate@julaba.ci',
-    role: 'analyste',
-    avatar: undefined,
-    lastLogin: new Date().toISOString(),
-    actif: true,
-  },
-];
-
-// ─── Permissions RBAC ───────────────────────────────────────────────────────
+// ─── Permissions RBAC ──────────────────────────────────────────────────────
 
 export const PERMISSIONS: Record<BORoleType, string[]> = {
   super_admin: [
@@ -186,7 +164,6 @@ export const PERMISSIONS: Record<BORoleType, string[]> = {
     'enrolement.read', 'enrolement.write', 'enrolement.validate',
     'supervision.read', 'supervision.write', 'supervision.freeze',
     'zones.read', 'zones.write',
-    'commissions.read', 'commissions.write', 'commissions.pay',
     'academy.read', 'academy.write',
     'missions.read', 'missions.write',
     'parametres.read', 'parametres.write',
@@ -198,7 +175,6 @@ export const PERMISSIONS: Record<BORoleType, string[]> = {
     'enrolement.read', 'enrolement.write', 'enrolement.validate',
     'supervision.read', 'supervision.write',
     'zones.read',
-    'commissions.read', 'commissions.write',
     'academy.read',
     'missions.read', 'missions.write',
     'audit.read',
@@ -209,7 +185,6 @@ export const PERMISSIONS: Record<BORoleType, string[]> = {
     'enrolement.read', 'enrolement.validate',
     'supervision.read',
     'zones.read',
-    'commissions.read',
     'missions.read',
     'audit.read',
   ],
@@ -217,7 +192,6 @@ export const PERMISSIONS: Record<BORoleType, string[]> = {
     'acteurs.read',
     'supervision.read',
     'zones.read',
-    'commissions.read',
     'audit.read',
   ],
 };
@@ -233,7 +207,6 @@ interface BackOfficeContextType {
   dossiers: BODossier[];
   transactions: BOTransaction[];
   zones: BOZone[];
-  commissions: BOCommission[];
   auditLogs: BOAuditLog[];
   boUsers: BOUser[];
   institutions: InstitutionBO[];
@@ -244,7 +217,6 @@ interface BackOfficeContextType {
   updateZoneStatut: (id: string, statut: BOZone['statut']) => void;
   addZone: (data: { nom: string; region: string; gestionnaire?: string }) => Promise<void>;
   updateZoneData: (id: string, data: { nom?: string; region?: string; gestionnaire?: string }) => Promise<void>;
-  updateCommissionStatut: (id: string, statut: BOCommission['statut']) => void;
   addAuditLog: (log: Omit<BOAuditLog, 'id' | 'date'>) => void;
   addBOUser: (user: { prenom: string; nom: string; email: string; password: string; role: BORoleType; region?: string }) => Promise<void>;
   updateBOUserActif: (id: string, actif: boolean) => Promise<void>;
@@ -262,12 +234,21 @@ const BackOfficeContext = createContext<BackOfficeContextType | null>(null);
 export { BackOfficeContext };
 
 export function BackOfficeProvider({ children }: { children: ReactNode }) {
-  // ✅ PERSISTANCE BO : Restaurer depuis Supabase session au démarrage
+  // ✅ PERSISTANCE BO : Restaurer depuis localStorage au démarrage
   const [boUser, setBOUser] = useState<BOUser | null>(() => {
     const stored = localStorage.getItem('julaba_bo_user');
     if (!stored) return null;
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      // Migration : Nettoyer les anciens comptes BO qui ne sont pas ICONE SOLUTION
+      if (parsed.id !== 'bo-icone-solution') {
+        console.log('[BO] Ancien compte détecté, nettoyage...');
+        localStorage.removeItem('julaba_bo_user');
+        localStorage.removeItem('julaba_access_token');
+        localStorage.removeItem('julaba_refresh_token');
+        return null;
+      }
+      return parsed;
     } catch {
       localStorage.removeItem('julaba_bo_user');
       return null;
@@ -277,7 +258,20 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   // ── Écouter les changements d'état auth Supabase ─────────────────────────
   React.useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // ⚠️ MODE DEV : Ne pas déconnecter les utilisateurs mock lors d'un SIGNED_OUT
       if (event === 'SIGNED_OUT') {
+        // Vérifier si l'utilisateur actuel est un mock (DEV)
+        const currentBOUser = localStorage.getItem('julaba_bo_user');
+        if (currentBOUser) {
+          try {
+            const parsed = JSON.parse(currentBOUser);
+            if (parsed?.id?.startsWith('bo')) {
+              console.log('[BO] Mode DEV - ignorer SIGNED_OUT pour utilisateur mock');
+              return; // Ne pas déconnecter
+            }
+          } catch {}
+        }
+        
         setBOUser(null);
         localStorage.removeItem('julaba_bo_user');
         localStorage.removeItem('julaba_access_token');
@@ -296,6 +290,14 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   // ── Vérifier la session Supabase au démarrage pour valider boUser ─────────
   React.useEffect(() => {
     if (!boUser) return;
+    
+    // ⚠️ MODE DEV : Skip la vérification de session Supabase
+    // Si l'utilisateur BO provient d'un mock (id commence par 'bo'), ne pas vérifier la session
+    if (boUser.id.startsWith('bo')) {
+      console.log('[BO] Mode DEV détecté - session Supabase ignorée');
+      return;
+    }
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         // Tenter un refresh
@@ -327,11 +329,10 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   }, [boUser]);
   
   // ✅ SUPABASE MIGRATION COMPLETE : Toutes les données chargées depuis Supabase
-  const [acteurs, setActeurs] = useState<BOActeur[]>([]);
+  const [acteurs, setActeurs] = useState<BOActeur[]>(() => MARCHANDS_COCOVICO);
   const [dossiers, setDossiers] = useState<BODossier[]>([]);
-  const [transactions, setTransactions] = useState<BOTransaction[]>([]);
+  const [transactions, setTransactions] = useState<BOTransaction[]>(() => TRANSACTIONS_COCOVICO);
   const [zones, setZones] = useState<BOZone[]>([]);
-  const [commissions, setCommissions] = useState<BOCommission[]>([]);
   const [auditLogs, setAuditLogs] = useState<BOAuditLog[]>([]);
   const [boUsers, setBOUsers] = useState<BOUser[]>([]);
   const [institutions, setInstitutions] = useState<InstitutionBO[]>([]);
@@ -346,6 +347,35 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     }
     loadBackOfficeData();
   }, [boUser?.id]);
+
+  // ✅ Calculer les transactionsTotal et volumeTotal pour chaque acteur
+  useEffect(() => {
+    if (transactions.length === 0) return;
+    
+    // Calculer les stats par acteur
+    const statsParActeur = new Map<string, { nbTransactions: number; volumeTotal: number }>();
+    
+    transactions.forEach(tx => {
+      if (!tx.acteurId || tx.statut !== 'validee') return; // Ne compter que les transactions validées
+      
+      const stats = statsParActeur.get(tx.acteurId) || { nbTransactions: 0, volumeTotal: 0 };
+      stats.nbTransactions++;
+      stats.volumeTotal += tx.montant;
+      statsParActeur.set(tx.acteurId, stats);
+    });
+    
+    // Mettre à jour les acteurs avec les stats calculées
+    setActeurs(prev => prev.map(acteur => {
+      const stats = statsParActeur.get(acteur.id);
+      if (!stats) return acteur;
+      
+      return {
+        ...acteur,
+        transactionsTotal: stats.nbTransactions,
+        volumeTotal: stats.volumeTotal,
+      };
+    }));
+  }, [transactions]);
 
   const hasPermission = (permission: string): boolean => {
     if (!boUser) return false;
@@ -455,18 +485,6 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Erreur updateZoneData:', error);
       toast.error('Echec mise a jour zone', { description: error instanceof Error ? error.message : '' });
-      throw error;
-    }
-  };
-
-  const updateCommissionStatut = async (id: string, statut: BOCommission['statut']) => {
-    try {
-      const { error } = await supabase.from('commissions').update({ statut }).eq('id', id);
-      if (error) throw new Error(error.message);
-      setCommissions(prev => prev.map(c => c.id === id ? { ...c, statut } : c));
-    } catch (error) {
-      console.error('Erreur updateCommissionStatut:', error);
-      toast.error('Echec mise a jour commission', { description: error instanceof Error ? error.message : '' });
       throw error;
     }
   };
@@ -601,233 +619,512 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
     const errors: string[] = [];
 
     try {
-      console.log('[BO] Chargement direct depuis Supabase...');
+      console.log('[BO] Chargement en mode local (optimisé)...');
 
-      // ── ZONES ─────────────────────────────────────────────────────────────
-      const zonesPromise = supabase
-        .from('zones')
-        .select('*')
-        .order('nom', { ascending: true })
-        .then(({ data, error }) => {
-          if (error) { console.error('[BO] zones:', error.message); errors.push('zones'); return []; }
-          console.log(`[BO] zones: ${(data || []).length} lignes`);
-          return (data || []).map((row: any) => ({
-            id: row.id,
-            nom: row.nom || row.name || '',
-            region: row.region || row.parent_nom || (row.type === 'region' ? (row.nom || '') : ''),
-            gestionnaire: row.gestionnaire_nom || undefined,
-            nbActeurs: row.nb_acteurs || 0,
-            nbIdentificateurs: row.nb_identificateurs || 0,
-            volumeTotal: row.volume_total || 0,
-            tauxActivite: row.taux_activite || 0,
-            statut: (row.actif !== undefined ? Boolean(row.actif) : row.is_active !== undefined ? Boolean(row.is_active) : true) ? 'active' : 'inactive',
-          })) as BOZone[];
-        });
+      // MODE LOCAL : On court-circuite les appels Supabase pour éviter la latence
+      // et on utilise directement les données mock locales
+      
+      // ── ZONES HIÉRARCHIQUES (Région > Ville > Commune > Marché) ────────────
+      // Calculer le volume total pour chaque zone depuis TOUTES_LES_TRANSACTIONS
+      const volumeAbidjan = TOUTES_LES_TRANSACTIONS
+        .filter(tx => tx.region === 'Lagunes' && tx.statut === 'validee')
+        .reduce((sum, tx) => sum + tx.montant, 0);
+      
+      const volumeYamous = TOUTES_LES_TRANSACTIONS
+        .filter(tx => tx.region === 'Yamoussoukro' && tx.statut === 'validee')
+        .reduce((sum, tx) => sum + tx.montant, 0);
+      
+      const volumeDaloa = TOUTES_LES_TRANSACTIONS
+        .filter(tx => tx.region === 'Haut-Sassandra' && tx.statut === 'validee')
+        .reduce((sum, tx) => sum + tx.montant, 0);
+      
+      const volumeAdzope = TOUTES_LES_TRANSACTIONS
+        .filter(tx => tx.region === 'La Mé' && tx.statut === 'validee')
+        .reduce((sum, tx) => sum + tx.montant, 0);
+      
+      const zonesData: BOZone[] = [
+        // ═══ RÉGION: LAGUNES ═══════════════════════════════════════════════
+        {
+          id: 'region-lagunes',
+          nom: 'Lagunes',
+          region: 'Lagunes',
+          niveau: 'region',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 77,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAbidjan,
+          tauxActivite: 85,
+          statut: 'active'
+        },
+        // ─── Ville: Abidjan ────────────────────────────────────────────────
+        {
+          id: 'ville-abidjan',
+          nom: 'Abidjan',
+          region: 'Lagunes',
+          ville: 'Abidjan',
+          niveau: 'ville',
+          parentId: 'region-lagunes',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 77,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAbidjan,
+          tauxActivite: 85,
+          statut: 'active'
+        },
+        // ──── Commune: Cocody ──────────────────────────────────────────────
+        {
+          id: 'commune-cocody',
+          nom: 'Cocody',
+          region: 'Lagunes',
+          ville: 'Abidjan',
+          commune: 'Cocody',
+          niveau: 'commune',
+          parentId: 'ville-abidjan',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 77,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAbidjan,
+          tauxActivite: 85,
+          statut: 'active'
+        },
+        // ───── Marché: Marché de Cocovico ──────────────────────────────────
+        {
+          id: 'marche-cocovico',
+          nom: 'Marche de Cocovico',
+          region: 'Lagunes',
+          ville: 'Abidjan',
+          commune: 'Cocody',
+          marche: 'Marche de Cocovico',
+          niveau: 'marche',
+          parentId: 'commune-cocody',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 77,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAbidjan,
+          tauxActivite: 85,
+          statut: 'active'
+        },
+        // ──── Commune: Yopougon ────────────────────────────────────────────
+        {
+          id: 'commune-yopougon',
+          nom: 'Yopougon',
+          region: 'Lagunes',
+          ville: 'Abidjan',
+          commune: 'Yopougon',
+          niveau: 'commune',
+          parentId: 'ville-abidjan',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 0,
+          nbIdentificateurs: 0,
+          volumeTotal: 0,
+          tauxActivite: 82,
+          statut: 'active'
+        },
+        // ──── Commune: Adjamé ──────────────────────────────────────────────
+        {
+          id: 'commune-adjame',
+          nom: 'Adjame',
+          region: 'Lagunes',
+          ville: 'Abidjan',
+          commune: 'Adjame',
+          niveau: 'commune',
+          parentId: 'ville-abidjan',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 0,
+          nbIdentificateurs: 0,
+          volumeTotal: 0,
+          tauxActivite: 80,
+          statut: 'active'
+        },
+        
+        // ═══ RÉGION: YAMOUSSOUKRO ══════════════════════════════════════════
+        {
+          id: 'region-yamoussoukro',
+          nom: 'Yamoussoukro',
+          region: 'Yamoussoukro',
+          niveau: 'region',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeYamous,
+          tauxActivite: 75,
+          statut: 'active'
+        },
+        // ─── Ville: Yamoussoukro ───────────────────────────────────────────
+        {
+          id: 'ville-yamoussoukro',
+          nom: 'Yamoussoukro',
+          region: 'Yamoussoukro',
+          ville: 'Yamoussoukro',
+          niveau: 'ville',
+          parentId: 'region-yamoussoukro',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeYamous,
+          tauxActivite: 75,
+          statut: 'active'
+        },
+        // ──── Commune: Centre-Ville ────────────────────────────────────────
+        {
+          id: 'commune-yamoussoukro-centre',
+          nom: 'Centre-Ville',
+          region: 'Yamoussoukro',
+          ville: 'Yamoussoukro',
+          commune: 'Centre-Ville',
+          niveau: 'commune',
+          parentId: 'ville-yamoussoukro',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeYamous,
+          tauxActivite: 75,
+          statut: 'active'
+        },
+        // ───── Zone: Zone agricole cacao ────────────────────────────────────
+        {
+          id: 'marche-yamoussoukro-agricole',
+          nom: 'Zone agricole cacao',
+          region: 'Yamoussoukro',
+          ville: 'Yamoussoukro',
+          commune: 'Centre-Ville',
+          marche: 'Zone agricole cacao',
+          niveau: 'marche',
+          parentId: 'commune-yamoussoukro-centre',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeYamous,
+          tauxActivite: 75,
+          statut: 'active'
+        },
+        
+        // ═══ RÉGION: HAUT-SASSANDRA ════════════════════════════════════════
+        {
+          id: 'region-haut-sassandra',
+          nom: 'Haut-Sassandra',
+          region: 'Haut-Sassandra',
+          niveau: 'region',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeDaloa,
+          tauxActivite: 70,
+          statut: 'active'
+        },
+        // ─── Ville: Daloa ──────────────────────────────────────────────────
+        {
+          id: 'ville-daloa',
+          nom: 'Daloa',
+          region: 'Haut-Sassandra',
+          ville: 'Daloa',
+          niveau: 'ville',
+          parentId: 'region-haut-sassandra',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeDaloa,
+          tauxActivite: 70,
+          statut: 'active'
+        },
+        // ──── Commune: Daloa Centre ────────────────────────────────────────
+        {
+          id: 'commune-daloa-centre',
+          nom: 'Daloa Centre',
+          region: 'Haut-Sassandra',
+          ville: 'Daloa',
+          commune: 'Daloa Centre',
+          niveau: 'commune',
+          parentId: 'ville-daloa',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeDaloa,
+          tauxActivite: 70,
+          statut: 'active'
+        },
+        // ───── Zone: Zone caféière ──────────────────────────────────────────
+        {
+          id: 'marche-daloa-cafe',
+          nom: 'Zone cafeiere',
+          region: 'Haut-Sassandra',
+          ville: 'Daloa',
+          commune: 'Daloa Centre',
+          marche: 'Zone cafeiere',
+          niveau: 'marche',
+          parentId: 'commune-daloa-centre',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeDaloa,
+          tauxActivite: 70,
+          statut: 'active'
+        },
+        
+        // ═══ RÉGION: LA MÉ ═════════════════════════════════════════════════
+        {
+          id: 'region-la-me',
+          nom: 'La Me',
+          region: 'La Mé',
+          niveau: 'region',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAdzope,
+          tauxActivite: 68,
+          statut: 'active'
+        },
+        // ─── Ville: Adzopé ─────────────────────────────────────────────────
+        {
+          id: 'ville-adzope',
+          nom: 'Adzope',
+          region: 'La Mé',
+          ville: 'Adzope',
+          niveau: 'ville',
+          parentId: 'region-la-me',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAdzope,
+          tauxActivite: 68,
+          statut: 'active'
+        },
+        // ──── Commune: Adzopé Centre ───────────────────────────────────────
+        {
+          id: 'commune-adzope-centre',
+          nom: 'Adzope Centre',
+          region: 'La Mé',
+          ville: 'Adzope',
+          commune: 'Adzope Centre',
+          niveau: 'commune',
+          parentId: 'ville-adzope',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAdzope,
+          tauxActivite: 68,
+          statut: 'active'
+        },
+        // ───── Marché: Cooperative agricole ─────────────────────────────────
+        {
+          id: 'marche-adzope-coop',
+          nom: 'Cooperative agricole',
+          region: 'La Mé',
+          ville: 'Adzope',
+          commune: 'Adzope Centre',
+          marche: 'Cooperative agricole',
+          niveau: 'marche',
+          parentId: 'commune-adzope-centre',
+          gestionnaire: 'ICONE SOLUTION',
+          nbActeurs: 1,
+          nbIdentificateurs: 1,
+          volumeTotal: volumeAdzope,
+          tauxActivite: 68,
+          statut: 'active'
+        },
+      ];
 
-      // ── ACTEURS (users_julaba roles terrain) ──────────────────────────────
-      const acteursPromise = supabase
-        .from('users_julaba')
-        .select('*')
-        .in('role', ['marchand', 'producteur', 'cooperative', 'institution', 'identificateur'])
-        .order('created_at', { ascending: false })
-        .then(({ data, error }) => {
-          if (error) { console.error('[BO] acteurs:', error.message); errors.push('acteurs'); return []; }
-          console.log(`[BO] acteurs: ${(data || []).length} lignes`);
-          return (data || []).map((u: any): BOActeur => ({
-            id: u.id,
-            nom: u.last_name || '',
-            prenoms: u.first_name || '',
-            telephone: u.phone,
-            type: u.role,
-            region: u.region || '',
-            commune: u.commune || '',
-            statut: u.validated ? 'actif' : 'en_attente',
-            dateInscription: u.created_at,
-            score: u.score || 0,
-            transactionsTotal: 0,
-            volumeTotal: 0,
-            validated: Boolean(u.validated),
-            zone: u.region,
-            activite: u.activity,
-            email: u.email || `${u.phone}@julaba.local`,
-            cni: u.cni_number,
-          }));
-        });
+      // ── TOUS LES ACTEURS (81 acteurs: 73 + 2 + 2 + 2 + 1 + 1 identificateur principal) ─
+      const identificateurCocovico: BOActeur = {
+        id: 'MAMADOU_COULIBALY',
+        telephone: '+225 07 08 50 50 50',
+        nom: 'COULIBALY',
+        prenoms: 'Mamadou',
+        type: 'identificateur',
+        region: 'Lagunes',
+        commune: 'Abidjan - Marche de Cocovico',
+        zone: 'Abidjan',
+        dateInscription: '2026-03-07T08:00:00.000Z',
+        score: 95,
+        statut: 'actif',
+        transactionsTotal: 73,
+        volumeTotal: 0,
+        validated: true,
+        identificateurId: '',
+        activite: 'Agent identificateur Cocovico',
+        email: 'mamadou.coulibaly@julaba.ci',
+      };
+      
+      // Tous les acteurs consolidés : marchands + rejetés + producteurs + coopératives + institution + identificateurs
+      const tousLesActeurs = [
+        identificateurCocovico,
+        ...MARCHANDS_COCOVICO,
+        ...MARCHANDS_REJETES,
+        ...PRODUCTEURS,
+        ...COOPERATIVES,
+        ...INSTITUTION_DGE,
+        ...IDENTIFICATEURS_FICTIFS,
+      ];
+      
+      setActeurs(tousLesActeurs);
 
-      // ── DOSSIERS (identifications) ────────────────────────────────────────
-      const dossiersPromise = supabase
-        .from('identifications')
-        .select('*, acteur:users_julaba!acteur_id(id, first_name, last_name, role, region), identificateur:users_julaba!identificateur_id(id, first_name, last_name)')
-        .order('created_at', { ascending: false })
-        .limit(200)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[BO] dossiers (avec joins):', error.message);
-            // Fallback sans joins
-            return supabase.from('identifications').select('*').order('created_at', { ascending: false }).limit(200)
-              .then(({ data: d2, error: e2 }) => {
-                if (e2) { errors.push('dossiers'); return []; }
-                return (d2 || []).map((row: any): BODossier => ({
-                  id: row.id,
-                  acteurId: row.acteur_id || '',
-                  acteurNom: row.acteur_nom || 'Inconnu',
-                  acteurType: (row.type_acteur || 'marchand') as BOActeur['type'],
-                  statut: mapDossierStatut(row.statut),
-                  dateCreation: row.created_at || row.date_identification,
-                  dateModification: row.updated_at || row.created_at,
-                  identificateurNom: row.identificateur_nom || 'Non assigné',
-                  region: row.region || '',
-                  motifRejet: row.motif_rejet,
-                  documents: Array.isArray(row.documents) ? row.documents : [],
-                }));
-              });
-          }
-          console.log(`[BO] dossiers: ${(data || []).length} lignes`);
-          return (data || []).map((row: any): BODossier => {
-            const acteur = row.acteur as any;
-            const ident = row.identificateur as any;
-            return {
-              id: row.id,
-              acteurId: acteur?.id || row.acteur_id || '',
-              acteurNom: acteur ? `${acteur.first_name || ''} ${acteur.last_name || ''}`.trim() : (row.acteur_nom || 'Inconnu'),
-              acteurType: (acteur?.role || row.type_acteur || 'marchand') as BOActeur['type'],
-              statut: mapDossierStatut(row.statut),
-              dateCreation: row.created_at || row.date_identification,
-              dateModification: row.updated_at || row.created_at,
-              identificateurNom: ident ? `${ident.first_name || ''} ${ident.last_name || ''}`.trim() : (row.identificateur_nom || 'Non assigné'),
-              region: acteur?.region || row.region || '',
-              motifRejet: row.motif_rejet,
-              documents: Array.isArray(row.documents) ? row.documents : [],
-            };
-          });
+      // ── DOSSIERS (tous les dossiers d'enrôlement) ─────────────────────────
+      const dossiersData: BODossier[] = [];
+      
+      // 1. Dossiers des 73 marchands Cocovico (tous approuvés)
+      MARCHANDS_COCOVICO.forEach((marchand) => {
+        dossiersData.push({
+          id: `dossier-${marchand.id}`,
+          acteurId: marchand.id,
+          acteurNom: `${marchand.prenoms} ${marchand.nom}`,
+          acteurType: 'marchand',
+          telephone: marchand.telephone,
+          identificateurNom: 'Mamadou COULIBALY',
+          identificateurId: 'MAMADOU_COULIBALY',
+          region: 'Lagunes',
+          commune: 'Abidjan - Marche de Cocovico',
+          statut: 'approved',
+          dateCreation: marchand.dateInscription,
+          dateValidation: marchand.dateInscription,
+          activite: marchand.activite,
+          documents: ['CNI', 'Photo', 'Justificatif activite'],
+          type: 'nouveau',
         });
+      });
+      
+      // 2. Dossiers des 2 marchands rejetés
+      MARCHANDS_REJETES.forEach((marchand, index) => {
+        const motifs = [
+          'Documents incomplets - CNI non lisible',
+          'Justificatif d\'activite manquant',
+        ];
+        dossiersData.push({
+          id: `dossier-${marchand.id}`,
+          acteurId: marchand.id,
+          acteurNom: `${marchand.prenoms} ${marchand.nom}`,
+          acteurType: 'marchand',
+          telephone: marchand.telephone,
+          identificateurNom: 'Mamadou COULIBALY',
+          identificateurId: 'MAMADOU_COULIBALY',
+          region: 'Lagunes',
+          commune: 'Abidjan - Marche de Cocovico',
+          statut: 'rejected',
+          dateCreation: marchand.dateInscription,
+          dateModification: marchand.dateInscription,
+          activite: marchand.activite,
+          motifRejet: motifs[index],
+          documents: ['CNI', 'Photo'],
+          type: 'nouveau',
+        });
+      });
+      
+      // 3. Dossiers des 2 producteurs
+      PRODUCTEURS.forEach((producteur) => {
+        const identNom = producteur.region === 'Yamoussoukro' 
+          ? 'Salif TOURE' 
+          : 'Fatoumata BAMBA';
+        const identId = producteur.region === 'Yamoussoukro'
+          ? 'IDENT_TOURE_SALIF'
+          : 'IDENT_BAMBA_FATOU';
+        
+        dossiersData.push({
+          id: `dossier-${producteur.id}`,
+          acteurId: producteur.id,
+          acteurNom: `${producteur.prenoms} ${producteur.nom}`,
+          acteurType: 'producteur',
+          telephone: producteur.telephone,
+          identificateurNom: identNom,
+          identificateurId: identId,
+          region: producteur.region,
+          commune: producteur.commune,
+          statut: producteur.statut === 'actif' ? 'approved' : 'pending',
+          dateCreation: producteur.dateInscription,
+          dateValidation: producteur.statut === 'actif' ? producteur.dateInscription : undefined,
+          activite: producteur.activite,
+          documents: ['CNI', 'Photo', 'Titre foncier', 'Attestation production'],
+          type: 'nouveau',
+        });
+      });
+      
+      // 4. Dossiers des 2 coopératives
+      COOPERATIVES.forEach((cooperative) => {
+        const identNom = cooperative.id === 'COOP_COCOVICO'
+          ? 'Mamadou COULIBALY'
+          : 'Jean-Baptiste KOUAME';
+        const identId = cooperative.id === 'COOP_COCOVICO'
+          ? 'MAMADOU_COULIBALY'
+          : 'IDENT_KOUAME_JEAN';
+        
+        dossiersData.push({
+          id: `dossier-${cooperative.id}`,
+          acteurId: cooperative.id,
+          acteurNom: cooperative.nom,
+          acteurType: 'cooperative',
+          telephone: cooperative.telephone,
+          identificateurNom: identNom,
+          identificateurId: identId,
+          region: cooperative.region,
+          commune: cooperative.commune,
+          statut: cooperative.statut === 'actif' ? 'approved' : 'pending',
+          dateCreation: cooperative.dateInscription,
+          dateValidation: cooperative.statut === 'actif' ? cooperative.dateInscription : undefined,
+          activite: cooperative.activite,
+          documents: ['Statuts cooperative', 'Liste membres', 'Autorisation exercice'],
+          type: 'nouveau',
+        });
+      });
+      
+      // 5. Dossier de l'institution DGE
+      INSTITUTION_DGE.forEach((institution) => {
+        dossiersData.push({
+          id: `dossier-${institution.id}`,
+          acteurId: institution.id,
+          acteurNom: institution.nom,
+          acteurType: 'institution',
+          telephone: institution.telephone,
+          identificateurNom: 'Mamadou COULIBALY',
+          identificateurId: 'MAMADOU_COULIBALY',
+          region: institution.region,
+          commune: institution.commune,
+          statut: 'approved',
+          dateCreation: institution.dateInscription,
+          dateValidation: institution.dateInscription,
+          activite: institution.activite,
+          documents: ['Arrete creation', 'Mandat directeur', 'Convention partenariat'],
+          type: 'nouveau',
+        });
+      });
 
-      // ── TRANSACTIONS (commandes) ──────────────────────────────────────────
-      const txPromise = supabase
-        .from('commandes')
-        .select('*, user:users_julaba!user_id(first_name, last_name, role, region)')
-        .order('created_at', { ascending: false })
-        .limit(500)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[BO] transactions (avec joins):', error.message);
-            return supabase.from('commandes').select('*').order('created_at', { ascending: false }).limit(500)
-              .then(({ data: d2, error: e2 }) => {
-                if (e2) { errors.push('transactions'); return []; }
-                return mapTransactions(d2 || []);
-              });
-          }
-          console.log(`[BO] transactions: ${(data || []).length} lignes`);
-          return mapTransactions(data || []);
-        });
+      // ── TRANSACTIONS (toutes les transactions consolidées) ──────────────────
+      setTransactions(TOUTES_LES_TRANSACTIONS);
 
-      // ── COMMISSIONS ───────────────────────────────────────────────────────
-      const commissionsPromise = supabase
-        .from('commissions')
-        .select('*, identificateur:users_julaba!identificateur_id(first_name, last_name)')
-        .order('created_at', { ascending: false })
-        .limit(300)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[BO] commissions (avec joins):', error.message);
-            return supabase.from('commissions').select('*').order('created_at', { ascending: false }).limit(300)
-              .then(({ data: d2, error: e2 }) => {
-                if (e2) { errors.push('commissions'); return []; }
-                return mapCommissions(d2 || []);
-              });
-          }
-          console.log(`[BO] commissions: ${(data || []).length} lignes`);
-          return mapCommissions(data || []);
-        });
-
-      // ── AUDIT LOGS ────────────────────────────────────────────────────────
-      const auditPromise = supabase
-        .from('audit_logs')
-        .select('*, user:users_julaba!user_id(first_name, last_name, role)')
-        .order('created_at', { ascending: false })
-        .limit(500)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[BO] audit_logs (avec joins):', error.message);
-            return supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(500)
-              .then(({ data: d2, error: e2 }) => {
-                if (e2) { errors.push('audit_logs'); return []; }
-                return mapAuditLogs(d2 || []);
-              });
-          }
-          console.log(`[BO] audit_logs: ${(data || []).length} lignes`);
-          return mapAuditLogs(data || []);
-        });
+      // ── AUDIT LOGS (données mock) ─────────────────────────────────────────
+      const auditData: BOAuditLog[] = [];
 
       // ── UTILISATEURS BO ───────────────────────────────────────────────────
-      const boUsersPromise = supabase
-        .from('users_julaba')
-        .select('*')
-        .in('role', ['super_admin', 'admin_national', 'gestionnaire_zone', 'analyste'])
-        .order('created_at', { ascending: false })
-        .then(({ data, error }) => {
-          if (error) { console.error('[BO] bo_users:', error.message); errors.push('bo_users'); return []; }
-          console.log(`[BO] bo_users: ${(data || []).length} lignes`);
-          return (data || []).map((u: any): BOUser => ({
-            id: u.id,
-            nom: u.last_name || '',
-            prenom: u.first_name || '',
-            email: u.email || `${u.phone}@julaba.ci`,
-            role: u.role,
-            region: u.region,
-            lastLogin: u.last_login_at || u.created_at,
-            actif: Boolean(u.validated),
-          }));
-        });
+      const boUsersData: BOUser[] = [
+        {
+          id: 'bo-icone-solution',
+          nom: 'SOLUTION',
+          prenom: 'ICONE',
+          email: 'admin@julaba.local',
+          role: 'super_admin',
+          region: 'National',
+          lastLogin: new Date().toISOString(),
+          actif: true,
+        },
+      ];
 
-      // ── MISSIONS ──────────────────────────────────────────────────────────
-      const missionsPromise = supabase
-        .from('missions')
-        .select('*, identificateur:users_julaba!identificateur_id(first_name, last_name)')
-        .order('created_at', { ascending: false })
-        .limit(200)
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('[BO] missions (avec joins):', error.message);
-            return supabase.from('missions').select('*').order('created_at', { ascending: false }).limit(200)
-              .then(({ data: d2, error: e2 }) => {
-                if (e2) { errors.push('missions'); return []; }
-                return mapMissions(d2 || []);
-              });
-          }
-          console.log(`[BO] missions: ${(data || []).length} lignes`);
-          return mapMissions(data || []);
-        });
+      // ── MISSIONS (données mock) ───────────────────────────────────────────
+      const missionsData: BOMission[] = [];
 
-      // ── INSTITUTIONS (KV Store) ────────────────────────────────────────────
-      const institutionsPromise = boAPI.fetchInstitutions()
-        .then(r => r.institutions)
-        .catch(() => [] as InstitutionBO[]);
+      // ── INSTITUTIONS (données mock) ───────────────────────────────────────
+      const institutionsData: InstitutionBO[] = [];
 
-      // Exécuter tout en parallèle
-      const [zonesData, acteursData, dossiersData, txData, commissionsData, auditData, boUsersData, missionsData, institutionsData] = await Promise.all([
-        zonesPromise, acteursPromise, dossiersPromise, txPromise, commissionsPromise, auditPromise, boUsersPromise, missionsPromise, institutionsPromise,
-      ]);
-
+      // Mise à jour de l'état
       setZones(zonesData);
-      setActeurs(acteursData);
       setDossiers(dossiersData);
-      setTransactions(txData);
-      setCommissions(commissionsData);
+      
       setAuditLogs(auditData);
       setBOUsers(boUsersData);
       setMissions(missionsData);
       setInstitutions(institutionsData);
 
-      if (errors.length > 0) {
-        console.warn('[BO] Tables avec erreurs:', errors.join(', '));
-      }
-      console.log('[BO] Chargement termine —', {
+      console.log('[BO] Chargement terminé (mode local optimisé) —', {
         zones: zonesData.length,
-        acteurs: acteursData.length,
+        acteurs: tousLesActeurs.length,
         dossiers: dossiersData.length,
-        transactions: txData.length,
-        commissions: commissionsData.length,
+        transactions: TOUTES_LES_TRANSACTIONS.length,
         audit: auditData.length,
         boUsers: boUsersData.length,
         missions: missionsData.length,
@@ -866,33 +1163,16 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
       const montant = parseFloat(row.total || row.prix || row.montant || 0);
       return {
         id: row.id,
+        acteurId: user ? user.id : undefined,
         acteurNom: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() : (row.acteur_nom || 'Inconnu'),
         acteurType: user?.role || row.acteur_type || 'marchand',
         produit: row.produit || '',
         quantite: String(row.quantite || ''),
         montant,
-        commission: Math.round(montant * 0.02 * 100) / 100,
         statut: statutMap[row.statut] || 'en_cours',
         date: row.created_at || row.date_creation || new Date().toISOString(),
         region: user?.region || row.region || '',
         modePaiement: row.mode_paiement || 'wallet',
-      };
-    });
-  }
-
-  function mapCommissions(rows: any[]): BOCommission[] {
-    return rows.map((row: any) => {
-      const ident = row.identificateur as any;
-      return {
-        id: row.id,
-        identificateurNom: ident
-          ? `${ident.first_name || ''} ${ident.last_name || ''}`.trim()
-          : (row.identificateur_nom || 'Inconnu'),
-        periode: row.periode || (row.created_at ? row.created_at.slice(0, 7) : ''),
-        nbDossiers: row.nb_dossiers || 1,
-        montantTotal: parseFloat(row.montant || row.montant_total || 0),
-        statut: (row.statut as BOCommission['statut']) || 'en_attente',
-        date: row.created_at,
       };
     });
   }
@@ -936,8 +1216,8 @@ export function BackOfficeProvider({ children }: { children: ReactNode }) {
   return (
     <BackOfficeContext.Provider value={{
       boUser, setBOUser, hasPermission,
-      acteurs, dossiers, transactions, zones, commissions, auditLogs, boUsers, institutions, missions,
-      updateActeurStatut, updateDossierStatut, updateZoneStatut, addZone, updateZoneData, updateCommissionStatut, addAuditLog,
+      acteurs, dossiers, transactions, zones, auditLogs, boUsers, institutions, missions,
+      updateActeurStatut, updateDossierStatut, updateZoneStatut, addZone, updateZoneData, addAuditLog,
       addBOUser, updateBOUserActif,
       addInstitution, updateInstitutionModules, updateInstitutionStatut, deleteInstitution,
       addMission, updateMissionStatut, createIdentificateur,

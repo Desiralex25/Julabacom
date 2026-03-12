@@ -80,16 +80,20 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadCooperative = async () => {
     try {
       const { cooperative: data } = await cooperativesApi.fetchCooperative();
-      setCooperative({
-        id: data.id,
-        nom: data.nom,
-        presidentId: data.president_id,
-        treorierId: data.tresorier_id,
-        secretaireId: data.secretaire_id,
-        soldeTresorerie: data.solde_tresorerie,
-      });
+      if (data) {
+        setCooperative({
+          id: data.id,
+          nom: data.nom,
+          presidentId: data.president_id,
+          treorierId: data.tresorier_id,
+          secretaireId: data.secretaire_id,
+          soldeTresorerie: data.solde_tresorerie,
+        });
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading cooperative:', error);
     }
   };
@@ -97,17 +101,21 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadMembres = async () => {
     try {
       const { membres: data } = await cooperativesApi.fetchCooperativeMembres();
-      setMembres(data.map((m: any) => ({
-        id: m.id,
-        membreId: m.membre_id,
-        role: m.role,
-        dateAdhesion: m.date_adhesion,
-        cotisationPayee: m.cotisation_payee,
-        actif: m.actif,
-        statut: m.actif ? 'actif' : 'inactif', // compat alias
-      })));
+      if (data) {
+        setMembres(data.map((m: any) => ({
+          id: m.id,
+          membreId: m.membre_id,
+          role: m.role,
+          dateAdhesion: m.date_adhesion,
+          cotisationPayee: m.cotisation_payee,
+          actif: m.actif,
+          statut: m.actif ? 'actif' : 'inactif', // compat alias
+        })));
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading membres:', error);
     }
   };
@@ -115,16 +123,20 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
   const loadTresorerie = async () => {
     try {
       const { transactions: data } = await cooperativesApi.fetchCooperativeTresorerie();
-      setTresorerie(data.map((t: any) => ({
-        id: t.id,
-        type: t.type,
-        montant: t.montant,
-        membreId: t.membre_id,
-        description: t.description,
-        date: t.created_at,
-      })));
+      if (data) {
+        setTresorerie(data.map((t: any) => ({
+          id: t.id,
+          type: t.type,
+          montant: t.montant,
+          membreId: t.membre_id,
+          description: t.description,
+          date: t.created_at,
+        })));
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading tresorerie:', error);
     }
   };
@@ -158,7 +170,7 @@ export function CooperativeProvider({ children }: { children: ReactNode }) {
     totalVentes: getTotalVentesGroupees(),
   };
 
-  // ── Mutations ──────────────────────────────────────────────���─────────────────
+  // ── Mutations ───────────────────────────────────────────────────────────────
   const addMembre = async (membreId: string, role?: string, dateAdhesion?: string) => {
     try {
       await cooperativesApi.addCooperativeMembre({

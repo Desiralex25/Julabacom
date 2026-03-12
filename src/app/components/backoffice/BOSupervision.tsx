@@ -4,7 +4,9 @@ import {
   Search, Filter, Eye, Snowflake, X, AlertTriangle,
   CheckCircle2, Clock, XCircle, DollarSign, Download,
   MapPin, BarChart3, TrendingUp, Activity, Globe,
-  AlertCircle, Edit2, ChevronDown, ChevronUp,
+  AlertCircle, Edit2, ChevronDown, ChevronUp, ShoppingBag,
+  Play, Pause, RotateCcw, Zap, TrendingDown, Award,
+  Package,
 } from 'lucide-react';
 import { useBackOffice, BOTransaction } from '../../contexts/BackOfficeContext';
 import { toast } from 'sonner';
@@ -12,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
+import { VentesCocovico } from './VentesCocovico';
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -36,16 +39,16 @@ const REGION_COLORS: Record<string, string> = {
 
 // Données régionales enrichies pour la carte thermique
 const REGION_HEAT = [
-  { region: 'Abidjan',       transactions: 1847, volume: 223400000, commission: 2800000, acteurs: 8064, taux: 94, color: BO_PRIMARY },
-  { region: 'Bouaké',        transactions: 412,  volume: 45200000,  commission: 580000,  acteurs: 1876, taux: 78, color: '#3B82F6' },
-  { region: 'Korhogo',       transactions: 284,  volume: 38100000,  commission: 480000,  acteurs: 1204, taux: 71, color: '#10B981' },
-  { region: 'San Pédro',     transactions: 198,  volume: 28300000,  commission: 340000,  acteurs: 892,  taux: 65, color: '#8B5CF6' },
-  { region: 'Yamoussoukro',  transactions: 87,   volume: 18200000,  commission: 220000,  acteurs: 634,  taux: 52, color: '#F59E0B' },
-  { region: 'Man',           transactions: 54,   volume: 11400000,  commission: 140000,  acteurs: 398,  taux: 44, color: '#EF4444' },
-  { region: 'Daloa',         transactions: 38,   volume: 8700000,   commission: 105000,  acteurs: 276,  taux: 39, color: '#EC4899' },
+  { region: 'Abidjan',       transactions: 1847, volume: 223400000, acteurs: 8064, taux: 94, color: BO_PRIMARY },
+  { region: 'Bouaké',        transactions: 412,  volume: 45200000,  acteurs: 1876, taux: 78, color: '#3B82F6' },
+  { region: 'Korhogo',       transactions: 284,  volume: 38100000,  acteurs: 1204, taux: 71, color: '#10B981' },
+  { region: 'San Pédro',     transactions: 198,  volume: 28300000,  acteurs: 892,  taux: 65, color: '#8B5CF6' },
+  { region: 'Yamoussoukro',  transactions: 87,   volume: 18200000,  acteurs: 634,  taux: 52, color: '#F59E0B' },
+  { region: 'Man',           transactions: 54,   volume: 11400000,  acteurs: 398,  taux: 44, color: '#EF4444' },
+  { region: 'Daloa',         transactions: 38,   volume: 8700000,   acteurs: 276,  taux: 39, color: '#EC4899' },
 ];
 
-type ViewMode = 'liste' | 'regionale';
+type ViewMode = 'liste' | 'regionale' | 'cocovico';
 
 export function BOSupervision() {
   const { transactions, hasPermission, addAuditLog, boUser } = useBackOffice();
@@ -61,7 +64,7 @@ export function BOSupervision() {
   const [pendingAction, setPendingAction] = useState<{ action: string; txId: string } | null>(null);
   const [localTx, setLocalTx] = useState(transactions);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [regionMetric, setRegionMetric] = useState<'transactions' | 'volume' | 'commission'>('transactions');
+  const [regionMetric, setRegionMetric] = useState<'transactions' | 'volume'>('transactions');
 
   const regions = [...new Set(transactions.map(t => t.region))];
 
@@ -76,7 +79,6 @@ export function BOSupervision() {
   });
 
   const volumeTotal = filtered.reduce((s, t) => s + t.montant, 0);
-  const commissionTotal = filtered.reduce((s, t) => s + t.commission, 0);
 
   const executeAction = (action: string, txId: string) => {
     const tx = localTx.find(t => t.id === txId);
@@ -119,15 +121,12 @@ export function BOSupervision() {
   const METRIC_LABELS = {
     transactions: 'Transactions',
     volume: 'Volume (M FCFA)',
-    commission: 'Commissions',
   };
 
   const chartData = REGION_HEAT.map(r => ({
     region: r.region.length > 9 ? r.region.substring(0, 9) + '.' : r.region,
     fullRegion: r.region,
-    value: regionMetric === 'transactions' ? r.transactions
-         : regionMetric === 'volume' ? Math.round(r.volume / 1000000)
-         : Math.round(r.commission / 1000),
+    value: regionMetric === 'transactions' ? r.transactions : Math.round(r.volume / 1000000),
     color: r.color,
   }));
 
@@ -158,6 +157,12 @@ export function BOSupervision() {
               whileTap={{ scale: 0.95 }}>
               <Globe className="w-3.5 h-3.5" /> Carte
             </motion.button>
+            <motion.button onClick={() => setViewMode('cocovico')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+              style={{ backgroundColor: viewMode === 'cocovico' ? 'white' : 'transparent', color: viewMode === 'cocovico' ? BO_DARK : '#9ca3af', boxShadow: viewMode === 'cocovico' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none' }}
+              whileTap={{ scale: 0.95 }}>
+              <ShoppingBag className="w-3.5 h-3.5" /> Cocovico
+            </motion.button>
           </div>
           {['CSV', 'Excel', 'PDF'].map(fmt => (
             <motion.button key={fmt} onClick={() => handleExport(fmt)}
@@ -170,11 +175,10 @@ export function BOSupervision() {
       </motion.div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
         {[
           { label: 'Transactions', value: filtered.length, color: '#3B82F6' },
-          { label: 'Volume total', value: `${(volumeTotal / 1000000).toFixed(2)}M F`, color: BO_PRIMARY },
-          { label: 'Commissions', value: `${commissionTotal.toLocaleString()} F`, color: '#10B981' },
+          { label: 'Volume total', value: `${volumeTotal.toLocaleString('fr-FR')} FCFA`, color: BO_PRIMARY },
           { label: 'Litiges / Gelées', value: localTx.filter(t => t.statut === 'gelee' || t.statut === 'litige').length, color: '#EF4444' },
         ].map((kpi, i) => (
           <motion.div key={kpi.label} className="bg-white rounded-2xl p-4 shadow-sm border-2 border-gray-100"
@@ -223,7 +227,7 @@ export function BOSupervision() {
                           <p className="font-black text-gray-900 text-sm">{payload[0].payload.fullRegion}</p>
                           <p className="text-xs font-semibold mt-1" style={{ color: payload[0].payload.color }}>
                             {METRIC_LABELS[regionMetric]} : {(payload[0].value as number).toLocaleString()}
-                            {regionMetric === 'volume' ? ' M FCFA' : regionMetric === 'commission' ? ' k FCFA' : ''}
+                            {regionMetric === 'volume' ? ' M FCFA' : ''}
                           </p>
                           <p className="text-[10px] text-gray-400 mt-0.5">Cliquez pour le détail</p>
                         </div>
@@ -266,8 +270,7 @@ export function BOSupervision() {
                     {[
                       { label: 'Acteurs', value: selectedRegionData.acteurs.toLocaleString(), color: selectedRegionData.color },
                       { label: 'Transactions', value: selectedRegionData.transactions.toLocaleString(), color: '#3B82F6' },
-                      { label: 'Volume', value: `${(selectedRegionData.volume / 1000000).toFixed(1)}M F`, color: '#10B981' },
-                      { label: 'Commissions', value: `${(selectedRegionData.commission / 1000).toFixed(0)}k F`, color: '#8B5CF6' },
+                      { label: 'Volume', value: `${selectedRegionData.volume.toLocaleString()} FCFA`, color: '#10B981' },
                       { label: "Taux d'activité", value: `${selectedRegionData.taux}%`, color: selectedRegionData.taux >= 70 ? '#10B981' : selectedRegionData.taux >= 50 ? BO_PRIMARY : '#EF4444' },
                     ].map(stat => (
                       <div key={stat.label} className="bg-gray-50 rounded-2xl p-4 border-2 border-gray-100 text-center">
@@ -312,7 +315,7 @@ export function BOSupervision() {
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-500">Volume</span>
-                      <span className="font-bold" style={{ color: r.color }}>{(r.volume / 1000000).toFixed(1)}M F</span>
+                      <span className="font-bold" style={{ color: r.color }}>{r.volume.toLocaleString('fr-FR')} FCFA</span>
                     </div>
                     <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <motion.div className="h-full rounded-full"
@@ -424,7 +427,7 @@ export function BOSupervision() {
               <table className="w-full text-sm">
                 <thead style={{ backgroundColor: `${BO_DARK}08` }}>
                   <tr>
-                    {['Acteur', 'Produit', 'Montant', 'Commission', 'Statut', 'Région', 'Date', 'Actions'].map(h => (
+                    {['Acteur', 'Produit', 'Montant', 'Statut', 'Région', 'Date', 'Actions'].map(h => (
                       <th key={h} className="text-left py-4 px-4 text-xs font-black text-gray-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -449,7 +452,6 @@ export function BOSupervision() {
                           <p className="text-xs text-gray-400">{tx.quantite}</p>
                         </td>
                         <td className="py-3.5 px-4 font-black text-gray-900">{tx.montant.toLocaleString()} F</td>
-                        <td className="py-3.5 px-4 font-semibold" style={{ color: '#10B981' }}>{tx.commission.toLocaleString()} F</td>
                         <td className="py-3.5 px-4">
                           <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold ${conf?.bg} ${conf?.text}`}>
                             <Icon className="w-3 h-3" />
@@ -517,7 +519,6 @@ export function BOSupervision() {
                         </div>
                         <div className="text-right">
                           <p className="font-black text-gray-900">{tx.montant.toLocaleString()} F</p>
-                          <p className="text-xs" style={{ color: '#10B981' }}>+{tx.commission.toLocaleString()} F comm.</p>
                         </div>
                       </div>
                     </motion.div>
@@ -525,6 +526,14 @@ export function BOSupervision() {
                 })
               )}
             </div>
+          </motion.div>
+        )}
+
+        {/* ── VUE COCOVICO ──────────────────────────────────────── */}
+        {viewMode === 'cocovico' && (
+          <motion.div key="cocovico" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="space-y-5">
+            <VentesCocovico />
           </motion.div>
         )}
       </AnimatePresence>
@@ -553,7 +562,6 @@ export function BOSupervision() {
                   { label: 'Produit', value: selected.produit },
                   { label: 'Quantité', value: selected.quantite },
                   { label: 'Montant', value: `${selected.montant.toLocaleString()} FCFA` },
-                  { label: 'Commission', value: `${selected.commission.toLocaleString()} FCFA` },
                   { label: 'Paiement', value: selected.modePaiement },
                   { label: 'Région', value: selected.region },
                   { label: 'Date', value: new Date(selected.date).toLocaleString('fr-FR') },

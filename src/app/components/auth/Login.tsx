@@ -1,14 +1,13 @@
-// Page de connexion Jùlaba - Logo blanc officiel intégré
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
-import { motion, AnimatePresence } from 'motion/react';
-import { Mic, ArrowRight, CheckCircle } from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
+import { useNavigate, useLocation } from 'react-router';
 import { useUser } from '../../contexts/UserContext';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { useApp } from '../../contexts/AppContext';
 import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { sendOTP, verifyOTP } from '../../utils/api';
+import { CheckCircle, ArrowRight } from 'lucide-react';
+import { Button } from '../ui/button';
+import { motion, AnimatePresence } from 'motion/react';
 
 const logoJulabaBlanc = '/images/logo-julaba-blanc.svg';
 const logoOrange = '/images/logo-orange.svg';
@@ -17,6 +16,7 @@ const tantieSagesseImg = '/images/tantie-sagesse.svg';
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser: setAppUser } = useApp();
   const { setUser: setUserProfile } = useUser();
   const [phone, setPhone] = useState('');
@@ -402,7 +402,7 @@ export function Login() {
   return (
     <div className="min-h-screen bg-[#C46210] flex flex-col items-center p-4 relative overflow-hidden">
       {/* Dev Mode Toggle */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
 
       <div className="w-full max-w-md flex flex-col items-center flex-grow justify-center">
         {/* Logo */}
@@ -547,7 +547,7 @@ export function Login() {
               )}
 
               {/* Code OTP en mode développement */}
-              {devOtpCode && import.meta.env.DEV && (
+              {devOtpCode && IS_DEV && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}

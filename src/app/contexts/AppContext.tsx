@@ -171,7 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ═══════════════════════════════════════════════════════════════════
   // AUTHENTIFICATION & CHARGEMENT DONNÉES
-  // ══════════════════════════════���════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════════
 
   // Charger les données utilisateur depuis Supabase
   const loadUserData = async (userId: string, token: string) => {
@@ -274,16 +274,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Vérifier session au démarrage — source unique de vérité : SDK Supabase
+  // Vérifier session au démarrage — source unique de vérité : localStorage local
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Le SDK Supabase gère le refresh automatique depuis sa propre clé localStorage
-        const { data: { session } } = await supabase.auth.getSession();
+        // Vérifier d'abord localStorage pour une session locale (mode offline)
+        const localToken = localStorage.getItem('julaba_access_token') || sessionStorage.getItem('julaba_access_token');
+        const localUserId = localStorage.getItem('julaba_user_id') || sessionStorage.getItem('julaba_user_id');
+        const localUserData = localStorage.getItem('julaba_user_data');
 
-        if (session?.user && session.access_token) {
-          setAccessToken(session.access_token);
-          await loadUserData(session.user.id, session.access_token);
+        if (localToken && localUserId) {
+          setAccessToken(localToken);
+          
+          // Si on a les données utilisateur en cache, les charger immédiatement
+          if (localUserData) {
+            try {
+              const cachedUser = JSON.parse(localUserData);
+              setUser(cachedUser);
+            } catch (e) {
+              console.warn('Failed to parse cached user data:', e);
+            }
+          }
+
+          // Charger les données fraîches en arrière-plan
+          await loadUserData(localUserId, localToken);
           return;
         }
 

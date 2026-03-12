@@ -88,31 +88,31 @@ export function GestionStock() {
   // Convertir Product (CaisseContext) vers Stock (GestionStock) — fallback
   const productsToStocks = (): Stock[] => {
     if (!products || !Array.isArray(products)) return [];
-    return products.map(p => ({
+    return products.map((p: any) => ({
       id: p.id,
-      name: p.name,
+      name: p.name || 'Produit inconnu',
       image: p.image || '',
       quantity: p.stock || 0,
-      unit: p.unit,
+      unit: p.unit || 'unité',
       purchasePrice: 0,
-      salePrice: p.price,
+      salePrice: p.price || 0,
       threshold: 10,
-      category: p.category.toLowerCase(),
+      category: (p.category || 'autres').toLowerCase(),
     }));
   };
 
   // StockContext comme source principale
   const stocks: Stock[] = stockCtx.stock.length > 0
-    ? stockCtx.stock.map(s => ({
+    ? stockCtx.stock.map((s: any) => ({
         id: s.id,
-        name: s.name,
+        name: s.produit || s.name || 'Produit inconnu',
         image: s.image || '',
-        quantity: s.quantity,
-        unit: s.unit,
-        purchasePrice: s.purchasePrice,
-        salePrice: s.salePrice,
-        threshold: s.seuilAlerte,
-        category: s.category,
+        quantity: s.quantite ?? s.quantity ?? 0,
+        unit: s.unite || s.unit || 'unité',
+        purchasePrice: s.purchasePrice || 0,
+        salePrice: s.prixUnitaire ?? s.salePrice ?? 0,
+        threshold: s.seuilAlerte || 10,
+        category: (s.category || 'autres').toLowerCase(),
       }))
     : productsToStocks();
   const [searchQuery, setSearchQuery] = useState('');
@@ -189,7 +189,7 @@ export function GestionStock() {
 
     for (const [productKey, variants] of Object.entries(keywords)) {
       if (variants.some(variant => text.includes(variant))) {
-        return stocks.find(s => s.name.toLowerCase().includes(productKey)) || null;
+        return stocks.find(s => (s.name || '').toLowerCase().includes(productKey)) || null;
       }
     }
     return null;
@@ -390,8 +390,9 @@ export function GestionStock() {
   // Filtrage et tri
   const filteredStocks = stocks
     .filter(stock => {
-      const matchesCategory = selectedCategory === 'tous' || stock.category === selectedCategory;
-      const matchesSearch = stock.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const categorySafe = (stock.category || 'autres').toLowerCase();
+      const matchesCategory = selectedCategory === 'tous' || categorySafe === selectedCategory.toLowerCase();
+      const matchesSearch = (stock.name || '').toLowerCase().includes((searchQuery || '').toLowerCase());
       
       // Appliquer le filtre actif des KPIs
       let matchesActiveFilter = true;

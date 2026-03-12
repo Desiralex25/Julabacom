@@ -1,55 +1,18 @@
 /**
- * Client API Commissions - JÙLABA
+ * API Commissions (Mode Local)
  */
 
-import { projectId } from '/utils/supabase/info';
-import { apiRequest as _apiRequest } from './api-client';
-
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/api`;
-
-function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  return _apiRequest<T>(API_URL, endpoint, options);
+export async function fetchCommissions(userId?: string): Promise<any> {
+  console.log('Mode local - fetchCommissions non disponible');
+  return { commissions: [] };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface Commission {
-  id: string;
-  identificateur_id: string;
-  identification_id?: string;
-  montant: number;
-  statut: 'en_attente' | 'validee' | 'payee';
-  periode?: string;
-  date_paiement?: string;
-  created_at: string;
+export async function fetchCommissionsStats(): Promise<any> {
+  console.log('Mode local - fetchCommissionsStats non disponible');
+  return { stats: null };
 }
 
-export interface CommissionsStats {
-  total: number;
-  en_attente: number;
-  validees: number;
-  payees: number;
-  montant_total: number;
-  montant_paye: number;
-  montant_en_attente: number;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// API FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Récupérer toutes les commissions de l'identificateur
- */
-export async function fetchCommissions(): Promise<{ commissions: Commission[] }> {
-  return apiRequest<{ commissions: Commission[] }>('/commissions');
-}
-
-/**
- * Récupérer les statistiques des commissions
- */
-export async function fetchCommissionsStats(): Promise<{ stats: CommissionsStats }> {
-  return apiRequest<{ stats: CommissionsStats }>('/commissions/stats');
+export async function createCommission(commission: any): Promise<any> {
+  console.log('Mode local - createCommission non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }

@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
-import { useUser } from '../../contexts/UserContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { Sidebar } from '../layout/Sidebar';
 import { BottomBar } from '../layout/BottomBar';
-import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { NotifBellButton, NotificationsPanel } from '../shared/NotificationsPanel';
 import { ScrollToTop } from '../layout/ScrollToTop';
 
 const PRIMARY_COLOR = '#9F8170';
 
 export function IdentificateurLayout() {
-  const { user } = useUser();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const identificateurId = user?.id || 'identificateur-001';
+  const identificateurId = 'identificateur-001';
   
   // Masquer la Bottom bar sur les pages de formulaires (pour maximiser l'espace)
   const hideBottomBar = location.pathname.includes('/nouvelle-identification') || 
@@ -57,7 +56,7 @@ export function IdentificateurLayout() {
       {!hideBottomBar && <BottomBar role="identificateur" />}
 
       {/* Dev only */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
     </div>
   );
 }

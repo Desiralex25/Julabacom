@@ -1,0 +1,44 @@
+Génère un dataset mock réaliste pour démonstration de l'application JÙLABA.
+Objectif : simuler l'utilisation réelle de l'application par les marchands du marché de Cocovico à Abidjan afin de produire des données visibles dans les interfaces Marchand, Back-Office et Institution.
+Contexte : Toutes les données doivent être situées en Côte d'Ivoire.
+Ville : Abidjan Lieu : Marché de Cocovico Région : Lagunes
+Date d'inscription pour tous les marchands : 6 mars 2026
+Agent identificateur : Mamadou Coulibaly
+Nombre total de marchands à générer : 300
+Les données doivent sembler parfaitement réalistes pour une démonstration institutionnelle.
+1. Marchands
+Créer 300 marchands avec les champs suivants :
+Nom Prénoms Genre (féminin ou masculin) Fonction (produit vendu au marché) Email (présent pour environ 50% des marchands, toujours en gmail.com) Téléphone Ville : Abidjan Marché de Cocovico Région : Lagunes Date inscription : 6 mars 2026 Identifié par : Mamadou Coulibaly
+Les fonctions doivent correspondre à des activités réalistes du marché :
+Vendeuse de légumes Vendeuse de poisson Vendeuse de poulet Vendeuse de riz Vendeuse de banane plantain Vendeuse d'attiéké Vendeuse de piment Vendeur de viande Vendeur d'oignons Vendeur de tomate Vendeur de poisson fumé Vendeuse de fruits Vendeuse de manioc Vendeuse de gombo
+
+1. Intégrer les personnes réelles suivantes dans la liste des marchands
+Diomande Maodoussou 0769617964  Tra Lou Ange 0594975208 Diarassouba Maberet 0505438738 Ouang Youan Lou Tatiana 0152117526 Traore Issaho 0101492576 Nde Tra Victorine 07-07-51-99-69 Tra Lou Dorothée 07-08-67-38-42 Ké Lou Marceline 05-03-18-78-53 Zehoue Lou Salie 07-08-42-95-80 Irié Lou Noëlle  07-57-29-02-03 Zamblé Lou Ruth 05-86-39-73-14 Djedji Béatrice 01-03-07-14-71 Zerelou Michelle 05-81-79-28-09 Tho Lou Alia 05-85-22-97-12 Goh Nani Valentine 01-50-42-60-50 Coulibaly Anne  07-69-02-20-24 Kouamé Charlene 07-16-83 86-67 Zakba Vanessa 05-64-45-86-07 Kanate Minata 07-69-19-58-40 Zoro You Yolande 07-77-13-53-50 Sonda Cynthia 07-47-19-91-10 Vouet Tatiana 05-55-35-56-12 Kadiatou 05-05-59-62-75 Gole Lou Yolande 07-57-54-80 23 Bolou Madelaine 05-05-68 97-18 Konan Amoin 07-16-95 64-95 Zewlou Fatou  05-45-07-88 91 Zewlou Kadi 05-04-13-47  27 Irie Lou 07-07-91  79-52 Anet Konan 05-75-40-16 74 Irie 09 32 28 92 02
+Utiliser leurs numéros fournis lorsqu'ils existent.
+
+1. Générer des ventes réalistes
+Chaque marchand doit avoir entre 5 et 20 ventes.
+Créer les champs :
+Produit vendu Quantité Prix unitaire Montant total Date vente Mode paiement (Espèces / Mobile Money) Statut (confirmé)
+Les produits doivent correspondre aux fonctions du marchand.
+1. Générer une activité réaliste sur plusieurs jours
+Créer des ventes entre :
+7 mars 2026 et 30 mars 2026.
+Les ventes doivent produire :
+historique transactions statistiques marchands tableaux analytics classement des ventes.
+1. Générer les données pour les dashboards
+Les dashboards doivent pouvoir afficher :
+nombre total marchands volume total des ventes top vendeurs produits les plus vendus ventes par jour ventes par catégorie.
+1. Cohérence des données
+Les ventes doivent correspondre aux produits vendus par chaque marchand.
+Les montants doivent être cohérents avec les prix du marché en Côte d'Ivoire.
+Exemples de prix réalistes :
+banane plantain : 200 à 500 FCFA poisson : 1500 à 4000 FCFA poulet : 3500 à 6000 FCFA tomate : 300 à 800 FCFA oignon : 400 à 900 FCFA attiéké : 200 à 500 FCFA.
+1. Générer également les traces système
+Créer des logs simulés :
+inscription marchand création vente validation transaction.
+Ces traces doivent apparaître dans :
+Back-Office interface Institution historique activités.
+1. Résultat attendu
+Après génération :
+300 marchands visibles plus de 3000 ventes simulées analytics fonctionnels classements réalistes activité visible dans les dashboards.

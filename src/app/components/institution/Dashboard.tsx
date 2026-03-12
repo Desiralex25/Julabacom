@@ -1,10 +1,11 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, TrendingUp, Users, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { Card } from '../ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { ArrowLeft, Users, DollarSign, TrendingUp } from 'lucide-react';
+import { motion } from 'motion/react';
 
 const volumeData = [
   { month: 'Jan', volume: 45 },
@@ -219,7 +220,7 @@ export function Dashboard() {
       </div>
 
       {/* Dev Profile Switcher - Only in development */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
     </div>
   );
 }

@@ -15,9 +15,13 @@ import {
 import { UserRole } from '../academy/types';
 import { ImagePickerField } from '../shared/ImagePickerField';
 
+const BO_PRIMARY = '#E6A817';
+const BO_DARK = '#3B3C36';
+
 type ModuleType = 'video' | 'audio' | 'quiz' | 'texte';
 type NiveauType = 'debutant' | 'intermediaire' | 'avance';
 type ProfilType = 'marchand' | 'producteur' | 'cooperative' | 'identificateur' | 'tous';
+type ActiveTab = 'modules' | 'questions';
 
 interface AcademyModule {
   id: string;
@@ -36,6 +40,26 @@ interface AcademyModule {
 }
 
 const MOCK_MODULES: AcademyModule[] = [];
+
+// ── CONFIGURATION DES MODULES ACADEMY ─────────────────────────────────────────
+const TYPE_CONFIG: Record<ModuleType, { label: string; icon: any; color: string }> = {
+  video: { label: 'Video', icon: Video, color: '#EF4444' },
+  audio: { label: 'Audio', icon: Mic, color: '#8B5CF6' },
+  quiz: { label: 'Quiz', icon: HelpCircle, color: '#10B981' },
+  texte: { label: 'Texte', icon: FileText, color: '#3B82F6' },
+};
+
+const NIVEAU_CONFIG: Record<NiveauType, { label: string; color: string }> = {
+  debutant: { label: 'Debutant', color: '#10B981' },
+  intermediaire: { label: 'Intermediaire', color: '#F59E0B' },
+  avance: { label: 'Avance', color: '#EF4444' },
+};
+
+const STATUT_CONFIG: Record<'publie' | 'brouillon' | 'archive', { label: string; color: string; bg: string; text: string }> = {
+  publie: { label: 'Publie', color: '#10B981', bg: 'bg-green-100', text: 'text-green-700' },
+  brouillon: { label: 'Brouillon', color: '#F59E0B', bg: 'bg-orange-100', text: 'text-orange-700' },
+  archive: { label: 'Archive', color: '#6B7280', bg: 'bg-gray-100', text: 'text-gray-700' },
+};
 
 export function BOAcademy() {
   const { hasPermission, addAuditLog, boUser } = useBackOffice();

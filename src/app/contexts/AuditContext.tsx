@@ -40,23 +40,29 @@ export function AuditProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const { logs } = await auditApi.fetchAuditLogs();
       
-      const eventsList: AuditEvent[] = logs.map((log: any) => ({
-        id: log.id,
-        timestamp: log.created_at,
-        userId: log.user_id || '',
-        userRole: log.role as any,
-        userName: log.user_id || 'System',
-        action: log.action as AuditAction,
-        entityType: log.entity_type as AuditEntityType,
-        entityId: log.entity_id || '',
-        metadata: log.metadata || {},
-        geolocation: undefined,
-        deviceInfo: '',
-      }));
+      if (logs && Array.isArray(logs)) {
+        const eventsList: AuditEvent[] = logs.map((log: any) => ({
+          id: log.id,
+          timestamp: log.created_at,
+          userId: log.user_id || '',
+          userRole: log.role as any,
+          userName: log.user_id || 'System',
+          action: log.action as AuditAction,
+          entityType: log.entity_type as AuditEntityType,
+          entityId: log.entity_id || '',
+          metadata: log.metadata || {},
+          geolocation: undefined,
+          deviceInfo: '',
+        }));
 
-      setEvents(eventsList);
+        setEvents(eventsList);
+      } else {
+        setEvents([]);
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading audit logs:', error);
     } finally {
       setLoading(false);

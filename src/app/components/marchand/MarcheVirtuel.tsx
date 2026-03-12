@@ -331,14 +331,14 @@ export function MarcheVirtuel() {
       if (variants.some(variant => text.includes(variant))) {
         // Si on est dans l'historique, chercher dans tous les produits sans filtre
         if (activeTab === 'historique') {
-          return mockProducts.find(p => p.name.toLowerCase().includes(productKey)) || null;
+          return mockProducts.find(p => (p.name || '').toLowerCase().includes(productKey)) || null;
         }
         // Priorité : chercher dans la vue active
         const filteredByTab = mockProducts.filter(p => 
           activeTab === 'producteurs' ? p.sellerType === 'producteur' : p.sellerType === 'cooperative'
         );
-        return filteredByTab.find(p => p.name.toLowerCase().includes(productKey)) || 
-               mockProducts.find(p => p.name.toLowerCase().includes(productKey)) || 
+        return filteredByTab.find(p => (p.name || '').toLowerCase().includes(productKey)) || 
+               mockProducts.find(p => (p.name || '').toLowerCase().includes(productKey)) || 
                null;
       }
     }
@@ -471,8 +471,8 @@ export function MarcheVirtuel() {
 
   const filteredProducts = mockProducts.filter(product => {
     const matchesCategory = selectedCategory === 'tous' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.sellerName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (product.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+                         (product.sellerName || '').toLowerCase().includes((searchQuery || '').toLowerCase());
     if (activeTab === 'historique') return false;
     const matchesTab = activeTab === 'producteurs' ? product.sellerType === 'producteur' : product.sellerType === 'cooperative';
     return matchesCategory && matchesSearch && matchesTab;

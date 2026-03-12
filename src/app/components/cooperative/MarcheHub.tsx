@@ -474,7 +474,7 @@ export function MarcheHub() {
     let list = produitsMarche;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(p => p.produit.toLowerCase().includes(q) || p.vendeurNom.toLowerCase().includes(q) || p.categorie.toLowerCase().includes(q));
+      list = list.filter(p => (p.produit || '').toLowerCase().includes(q) || (p.vendeurNom || '').toLowerCase().includes(q) || (p.categorie || '').toLowerCase().includes(q));
     }
     if (filterCategorie) list = list.filter(p => p.categorie === filterCategorie);
     return list;
@@ -484,7 +484,7 @@ export function MarcheHub() {
     let list = commandesVersProducteurs;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(c => c.produit.toLowerCase().includes(q) || c.vendeurNom.toLowerCase().includes(q));
+      list = list.filter(c => (c.produit || '').toLowerCase().includes(q) || (c.vendeurNom || '').toLowerCase().includes(q));
     }
     return list;
   }, [commandesVersProducteurs, searchQuery]);
@@ -492,7 +492,7 @@ export function MarcheHub() {
   const produitsCoopFiltrés = useMemo(() => {
     if (!searchQuery) return produitsCoopLive;
     const q = searchQuery.toLowerCase();
-    return produitsCoopLive.filter(p => p.produit.toLowerCase().includes(q) || p.categorie.toLowerCase().includes(q));
+    return produitsCoopLive.filter(p => (p.produit || '').toLowerCase().includes(q) || (p.categorie || '').toLowerCase().includes(q));
   }, [produitsCoopLive, searchQuery]);
 
   const commandesMarchandsFiltrées = useMemo(() => {
@@ -506,7 +506,7 @@ export function MarcheHub() {
 
   const categories = useMemo(() => [...new Set(produitsMarche.map(p => p.categorie))], [produitsMarche]);
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
+  // ─── RENDER ───────────────────────────────────────────��───────────────────
   return (
     <>
       {/* ══ HEADER FIXE ══ */}

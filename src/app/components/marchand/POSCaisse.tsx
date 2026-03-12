@@ -31,15 +31,42 @@ import {
   TrendingDown,
   ArrowLeft,
 } from 'lucide-react';
-import { useCaisse, Product, CartItem as CaisseCartItem } from '../../contexts/CaisseContext';
+import { useCaisse } from '../../contexts/CaisseContext';
+import { useStock } from '../../contexts/StockContext';
 import { useApp } from '../../contexts/AppContext';
 import { useNavigate } from 'react-router';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { NotificationButton } from './NotificationButton';
 import { TantieSagesse } from '../voice/TantieSagesse';
+import * as ElevenLabs from '../../services/elevenlabs';
 
 // ========== TYPES ==========
-interface CartItem extends CaisseCartItem {}
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  unit: string;
+  category: string;
+  image?: string;
+  stock?: number;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+  unitPrice: number;
+}
+
+// ========== HELPER: Guess category from product name ==========
+function guessCategoryFromName(name: string): string {
+  const n = (name || '').toLowerCase();
+  if (['riz', 'mais', 'maïs', 'mil', 'sorgho', 'fonio', 'ble'].some((k) => n.includes(k))) return 'Cereales';
+  if (['tomate', 'oignon', 'gombo', 'aubergine', 'carotte', 'chou', 'haricot', 'salade', 'concombre', 'poivron'].some((k) => n.includes(k))) return 'Legumes';
+  if (['banane', 'mangue', 'papaye', 'ananas', 'orange', 'citron', 'avocat', 'noix', 'coco', 'fruit'].some((k) => n.includes(k))) return 'Fruits';
+  if (['piment', 'poivre', 'gingembre', 'curcuma', 'cannelle', 'epice', 'muscade'].some((k) => n.includes(k))) return 'Epices';
+  if (['igname', 'manioc', 'attieke', 'patate', 'taro', 'macabo', 'tubercule'].some((k) => n.includes(k))) return 'Tubercules';
+  return 'Cereales';
+}
 
 type PaymentMethod = 'card' | 'mobile_money' | 'cash' | 'qr_code';
 type MobileOperator = 'orange' | 'mtn' | 'moov' | 'wave';
@@ -96,20 +123,63 @@ const categories = [
 // ========== MAIN COMPONENT ==========
 export function POSCaisse() {
   const navigate = useNavigate();
-  const { 
-    products, 
-    cart,
-    addToCart: addToCartContext,
-    removeFromCart: removeFromCartContext,
-    updateCartItemQuantity,
-    clearCart: clearCartContext,
-    getTotalCart,
-    addTransaction, 
-    updateProduct,
-    addStockMovement,
-  } = useCaisse();
+  const { enregistrerVente } = useCaisse();
+  const { stocks, recordSale } = useStock();
   const { user } = useApp();
-  
+
+  // Derive products from stock context
+  const products: Product[] = (stocks || []).map((s) => ({
+    id: s.id,
+    name: s.produit,
+    price: s.prixUnitaire,
+    unit: s.unite || 'kg',
+    category: guessCategoryFromName(s.produit),
+    stock: s.quantite,
+  }));
+
+  // Local cart state
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const addToCartLocal = (product: Product, quantity: number = 1) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prev, { product, quantity, unitPrice: product.price }];
+    });
+  };
+
+  const removeFromCartLocal = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  };
+
+  const updateCartItemQuantityLocal = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCartLocal(productId);
+    } else {
+      setCart((prev) =>
+        prev.map((item) =>
+          item.product.id === productId ? { ...item, quantity } : item
+        )
+      );
+    }
+  };
+
+  const clearCartLocal = () => {
+    setCart([]);
+  };
+
+  const getTotalCart = () => {
+    const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    return { subtotal, totalItems };
+  };
+
   // ========== STATE ==========
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -135,8 +205,8 @@ export function POSCaisse() {
   const hasWelcomed = useRef(false);
 
   // ========== CALCULATIONS ==========
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = (products || []).filter((product: Product) => {
+    const matchesSearch = (product.name || '').toLowerCase().includes((searchQuery || '').toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -159,24 +229,19 @@ export function POSCaisse() {
   const totalItems = getTotalCart().totalItems;
 
   // ========== TANTIE SAGESSE FUNCTIONS ==========
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.1;
-      
-      setTantieMessage(text);
-      setTantieSpeaking(true);
-      
-      utterance.onend = () => {
-        setTimeout(() => {
-          setTantieSpeaking(false);
-        }, 2000);
-      };
-      
-      window.speechSynthesis.speak(utterance);
+  const speak = async (text: string) => {
+    setTantieMessage(text);
+    
+    const onStart = () => setTantieSpeaking(true);
+    const onEnd = () => {
+      setTimeout(() => {
+        setTantieSpeaking(false);
+      }, 2000);
+    };
+
+    const success = await ElevenLabs.speak(text, undefined, onStart, onEnd);
+    if (!success) {
+      ElevenLabs.speakWithWebSpeech(text, onStart, onEnd);
     }
   };
 
@@ -193,7 +258,7 @@ export function POSCaisse() {
     if (!hasWelcomed.current && user) {
       hasWelcomed.current = true;
       setTimeout(() => {
-        speak(`Bienvenue ${user.prenoms} à la Caisse Digitale. Tu souhaites que je t'aide à enregistrer tes ventes ou tu préfères le faire toi-même ?`);
+        speak(`Bienvenue ${user?.firstName || user?.prenoms || ''} a la Caisse Digitale. Tu souhaites que je t'aide a enregistrer tes ventes ou tu preferes le faire toi-meme ?`);
         setConversationState('idle');
       }, 1000);
     }
@@ -204,11 +269,11 @@ export function POSCaisse() {
     const normalized = text.toLowerCase().trim();
     
     // Recherche exacte d'abord
-    let product = products.find(p => p.name.toLowerCase() === normalized);
+    let product = products.find(p => (p.name || '').toLowerCase() === normalized);
     if (product) return product;
     
     // Recherche partielle
-    product = products.find(p => p.name.toLowerCase().includes(normalized));
+    product = products.find(p => (p.name || '').toLowerCase().includes(normalized));
     if (product) return product;
     
     // Recherche par mots-clés
@@ -227,7 +292,7 @@ export function POSCaisse() {
 
     for (const [productKey, variants] of Object.entries(keywords)) {
       if (variants.some(variant => normalized.includes(variant))) {
-        return products.find(p => p.name.toLowerCase().includes(productKey)) || null;
+        return products.find(p => (p.name || '').toLowerCase().includes(productKey)) || null;
       }
     }
     
@@ -459,23 +524,23 @@ export function POSCaisse() {
 
   // ========== HANDLERS ==========
   const addToCart = (product: Product, quantity: number = 1) => {
-    addToCartContext(product, quantity);
+    addToCartLocal(product, quantity);
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCartContext(productId);
+      removeFromCartLocal(productId);
     } else {
-      updateCartItemQuantity(productId, quantity);
+      updateCartItemQuantityLocal(productId, quantity);
     }
   };
 
   const removeFromCart = (productId: string) => {
-    removeFromCartContext(productId);
+    removeFromCartLocal(productId);
   };
 
   const clearCart = () => {
-    clearCartContext();
+    clearCartLocal();
     setDiscount(null);
     setSelectedCustomer(null);
   };
@@ -483,11 +548,30 @@ export function POSCaisse() {
   const handlePayment = async () => {
     setIsProcessing(true);
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const success = Math.random() > 0.1;
-    
-    if (success) {
+    try {
+      const produitsData = cart.map((item) => ({
+        produit: item.product.name,
+        quantite: item.quantity,
+        prixUnitaire: item.unitPrice,
+        total: item.unitPrice * item.quantity,
+      }));
+
+      await enregistrerVente(
+        total,
+        produitsData,
+        paymentMethod,
+        selectedCustomer ? `Client: ${selectedCustomer.name}` : undefined
+      );
+
+      // Update stock for each sold item
+      for (const item of cart) {
+        try {
+          await recordSale(item.product.name, item.quantity);
+        } catch (e) {
+          console.warn('Stock update failed for', item.product.name, e);
+        }
+      }
+
       const transaction = {
         id: `TXN-${Date.now()}`,
         type: 'vente' as const,
@@ -502,35 +586,19 @@ export function POSCaisse() {
         discount: discountAmount,
         customer: selectedCustomer,
       };
-      
-      addTransaction(transaction);
+
       setLastTransaction(transaction);
-      
-      cart.forEach((item) => {
-        const newStock = (item.product.stock || 0) - item.quantity;
-        updateProduct(item.product.id, { stock: newStock });
-        addStockMovement({
-          productId: item.product.id,
-          productName: item.product.name,
-          type: 'vente',
-          quantity: item.quantity,
-          unit: item.product.unit,
-          reason: 'Vente caisse',
-          previousStock: item.product.stock || 0,
-          newStock,
-        });
-      });
-      
       clearCart();
       setIsProcessing(false);
       setShowPaymentModal(false);
       setShowSuccessModal(true);
-      speak(`Paiement validé. Montant total ${total} francs CFA`);
-    } else {
+      speak(`Paiement valide. Montant total ${total} francs CFA`);
+    } catch (err) {
+      console.error('Payment error:', err);
       setIsProcessing(false);
       setShowPaymentModal(false);
       setShowErrorModal(true);
-      speak('Paiement refusé. Veuillez réessayer');
+      speak('Paiement refuse. Veuillez reessayer');
     }
   };
 
@@ -785,7 +853,7 @@ export function POSCaisse() {
               <div className="p-6 space-y-4 pb-8">
                 {cart.length === 0 ? (
                   <div className="text-center py-12">
-                    <span className="text-6xl mb-4 block">🛒</span>
+                    <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">Votre panier est vide</p>
                   </div>
                 ) : (

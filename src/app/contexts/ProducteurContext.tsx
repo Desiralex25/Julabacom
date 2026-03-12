@@ -26,14 +26,15 @@ export function ProducteurProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   const getStats = async (): Promise<ProducteurStats> => {
+    const defaultStats: ProducteurStats = {
+      recoltesTotales: 0,
+      recoltesVendues: 0,
+      revenusTotal: 0,
+      commandesEnCours: 0,
+    };
+    
     if (DEV_MODE) {
       devLog('ProducteurContext', 'Mode dev - skip API call');
-      const defaultStats: ProducteurStats = {
-        recoltesTotales: 0,
-        recoltesVendues: 0,
-        revenusTotal: 0,
-        commandesEnCours: 0,
-      };
       setStats(defaultStats);
       return defaultStats;
     }
@@ -45,8 +46,8 @@ export function ProducteurProvider({ children }: { children: ReactNode }) {
         commandesApi.fetchCommandes(),
       ]);
 
-      const recoltes = recoltesData.recoltes;
-      const commandes = commandesData.commandes;
+      const recoltes = recoltesData.recoltes || [];
+      const commandes = commandesData.commandes || [];
 
       const recoltesVendues = recoltes.filter((r: any) => r.statut === 'vendue').length;
       const revenusTotal = recoltes
@@ -69,18 +70,15 @@ export function ProducteurProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) {
         setLoading(false);
-        const defaultStats: ProducteurStats = { recoltesTotales: 0, recoltesVendues: 0, revenusTotal: 0, commandesEnCours: 0 };
+        setStats(defaultStats);
+        return defaultStats;
+      }
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) {
         setStats(defaultStats);
         return defaultStats;
       }
       console.error('Error loading producteur stats:', error);
-      
-      const defaultStats: ProducteurStats = {
-        recoltesTotales: 0,
-        recoltesVendues: 0,
-        revenusTotal: 0,
-        commandesEnCours: 0,
-      };
       setStats(defaultStats);
       return defaultStats;
     } finally {

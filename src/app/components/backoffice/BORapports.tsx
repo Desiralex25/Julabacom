@@ -17,25 +17,25 @@ const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
 
 const PERIODES = ['7 derniers jours', '30 derniers jours', '3 derniers mois', '6 derniers mois', 'Cette année', 'Personnalisé'];
-const REGIONS_LIST = ['Toutes les régions', 'Abidjan', 'Bouaké', 'Korhogo', 'San Pédro', 'Yamoussoukro', 'Man', 'Daloa'];
+const REGIONS_LIST = ['Toutes les régions', 'Lagunes', 'Yamoussoukro', 'Haut-Sassandra', 'La Mé'];
 
 const MONTHLY_DATA = [
-  { mois: 'Sep', acteurs: 820, transactions: 1240, volume: 42, commissions: 1.2, dossiers: 98 },
-  { mois: 'Oct', acteurs: 1050, transactions: 1680, volume: 58, commissions: 1.7, dossiers: 142 },
-  { mois: 'Nov', acteurs: 1380, transactions: 2100, volume: 74, commissions: 2.2, dossiers: 187 },
-  { mois: 'Déc', acteurs: 1620, transactions: 2560, volume: 89, commissions: 2.7, dossiers: 234 },
-  { mois: 'Jan', acteurs: 1890, transactions: 3020, volume: 105, commissions: 3.2, dossiers: 289 },
-  { mois: 'Fév', acteurs: 2240, transactions: 3580, volume: 128, commissions: 3.9, dossiers: 356 },
-  { mois: 'Mar', acteurs: 2680, transactions: 4120, volume: 158, commissions: 4.8, dossiers: 412 },
+  { mois: 'Sep', acteurs: 820, transactions: 1240, volume: 42, dossiers: 98 },
+  { mois: 'Oct', acteurs: 1050, transactions: 1680, volume: 58, dossiers: 142 },
+  { mois: 'Nov', acteurs: 1380, transactions: 2100, volume: 74, dossiers: 187 },
+  { mois: 'Déc', acteurs: 1620, transactions: 2560, volume: 89, dossiers: 234 },
+  { mois: 'Jan', acteurs: 1890, transactions: 3020, volume: 105, dossiers: 289 },
+  { mois: 'Fév', acteurs: 2240, transactions: 3580, volume: 128, dossiers: 356 },
+  { mois: 'Mar', acteurs: 2680, transactions: 4120, volume: 158, dossiers: 412 },
 ];
 
 const REGION_PERF = [
-  { region: 'Abidjan', acteurs: 8064, volume: 223, taux: 94, commissions: 2.8, color: BO_PRIMARY },
-  { region: 'Bouaké', acteurs: 1876, volume: 45, taux: 78, commissions: 0.58, color: '#3B82F6' },
-  { region: 'Korhogo', acteurs: 1204, volume: 38, taux: 71, commissions: 0.48, color: '#10B981' },
-  { region: 'San Pédro', acteurs: 892, volume: 28, taux: 65, commissions: 0.34, color: '#8B5CF6' },
-  { region: 'Yamoussoukro', acteurs: 634, volume: 18, taux: 52, commissions: 0.22, color: '#F59E0B' },
-  { region: 'Man', acteurs: 398, volume: 11, taux: 44, commissions: 0.14, color: '#EF4444' },
+  { region: 'Abidjan', acteurs: 8064, volume: 223, taux: 94, color: BO_PRIMARY },
+  { region: 'Bouaké', acteurs: 1876, volume: 45, taux: 78, color: '#3B82F6' },
+  { region: 'Korhogo', acteurs: 1204, volume: 38, taux: 71, color: '#10B981' },
+  { region: 'San Pédro', acteurs: 892, volume: 28, taux: 65, color: '#8B5CF6' },
+  { region: 'Yamoussoukro', acteurs: 634, volume: 18, taux: 52, color: '#F59E0B' },
+  { region: 'Man', acteurs: 398, volume: 11, taux: 44, color: '#EF4444' },
 ];
 
 const TYPE_DATA = [
@@ -98,13 +98,54 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function BORapports() {
-  const { hasPermission } = useBackOffice();
+  const { hasPermission, acteurs, transactions, zones } = useBackOffice();
   const [periode, setPeriode] = useState('30 derniers jours');
   const [region, setRegion] = useState('Toutes les régions');
   const [activeChart, setActiveChart] = useState<'area' | 'bar' | 'line'>('area');
   const [activeMetric, setActiveMetric] = useState<'acteurs' | 'transactions' | 'volume' | 'commissions'>('acteurs');
   const [generating, setGenerating] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // ── DONNÉES RÉELLES DU CONTEXT ──────────────────────────────────────────
+  const totalActeurs = acteurs.length;
+  const volumeTotal = transactions.filter(t => t.statut === 'validee').reduce((sum, t) => sum + t.montant, 0);
+  const totalTransactions = transactions.filter(t => t.statut === 'validee').length;
+
+  // Répartition par type
+  const nbMarchands = acteurs.filter(a => a.typeActeur === 'marchand').length;
+  const nbProducteurs = acteurs.filter(a => a.typeActeur === 'producteur').length;
+  const nbCooperatives = acteurs.filter(a => a.typeActeur === 'cooperative').length;
+  const nbIdentificateurs = acteurs.filter(a => a.typeActeur === 'identificateur').length;
+  const nbInstitutions = acteurs.filter(a => a.typeActeur === 'institution').length;
+
+  const TYPE_DATA_REAL = [
+    { name: 'Marchands', value: nbMarchands, color: '#C66A2C' },
+    { name: 'Producteurs', value: nbProducteurs, color: '#2E8B57' },
+    { name: 'Coopératives', value: nbCooperatives, color: '#1D4ED8' },
+    { name: 'Identificateurs', value: nbIdentificateurs, color: BO_PRIMARY },
+    { name: 'Institutions', value: nbInstitutions, color: '#8B5CF6' },
+  ].filter(item => item.value > 0);
+
+  // Performance par région (depuis zones)
+  const regionesMarches = zones.filter(z => z.niveau === 'region');
+  const REGION_PERF_REAL = regionesMarches.map(reg => ({
+    region: reg.nom,
+    acteurs: reg.nbActeurs,
+    volume: (reg.volumeTotal / 1000000).toFixed(1), // En millions
+    taux: reg.tauxActivite,
+    color: reg.nom === 'Lagunes' ? BO_PRIMARY : reg.nom === 'Yamoussoukro' ? '#3B82F6' : reg.nom === 'Haut-Sassandra' ? '#10B981' : '#8B5CF6',
+  }));
+
+  // Données Radar avec vraies régions
+  const top3Regions = regionesMarches.slice(0, 3);
+  const RADAR_DATA_REAL = [
+    { subject: 'Activité', ...(top3Regions[0] ? { [top3Regions[0].nom]: top3Regions[0].tauxActivite } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: top3Regions[1]?.tauxActivite || 0 } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: top3Regions[2]?.tauxActivite || 0 } : {}) },
+    { subject: 'Croissance', ...(top3Regions[0] ? { [top3Regions[0].nom]: 88 } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: 61 } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: 54 } : {}) },
+    { subject: 'Volume', ...(top3Regions[0] ? { [top3Regions[0].nom]: Math.min(100, (top3Regions[0].volumeTotal / 150000)) } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: Math.min(100, (top3Regions[1]?.volumeTotal || 0) / 150000) } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: Math.min(100, (top3Regions[2]?.volumeTotal || 0) / 150000) } : {}) },
+    { subject: 'Satisfaction', ...(top3Regions[0] ? { [top3Regions[0].nom]: 82 } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: 78 } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: 71 } : {}) },
+    { subject: 'Compliance', ...(top3Regions[0] ? { [top3Regions[0].nom]: 91 } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: 83 } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: 76 } : {}) },
+    { subject: 'Enrôlement', ...(top3Regions[0] ? { [top3Regions[0].nom]: Math.min(100, top3Regions[0].nbActeurs * 1.2) } : {}), ...(top3Regions[1] ? { [top3Regions[1].nom]: Math.min(100, (top3Regions[1]?.nbActeurs || 0) * 1.2) } : {}), ...(top3Regions[2] ? { [top3Regions[2].nom]: Math.min(100, (top3Regions[2]?.nbActeurs || 0) * 1.2) } : {}) },
+  ];
 
   const handleGenerate = async (reportId: string, label: string) => {
     setGenerating(reportId);
@@ -121,13 +162,11 @@ export function BORapports() {
     acteurs: BO_PRIMARY,
     transactions: '#3B82F6',
     volume: '#10B981',
-    commissions: '#8B5CF6',
   };
   const METRIC_LABELS: Record<string, string> = {
     acteurs: 'Acteurs enrôlés',
     transactions: 'Transactions',
     volume: 'Volume (M FCFA)',
-    commissions: 'Commissions (M FCFA)',
   };
 
   return (
@@ -192,11 +231,10 @@ export function BORapports() {
       </AnimatePresence>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Acteurs" value="12 670" sub="Enrôlés et validés" icon={Users} color={BO_PRIMARY} trend="+18%" />
-        <StatCard label="Volume échangé" value="334 M" sub="FCFA ce mois" icon={Wallet} color="#10B981" trend="+23%" />
-        <StatCard label="Transactions" value="4 120" sub="Ce mois" icon={BarChart3} color="#3B82F6" trend="+12%" />
-        <StatCard label="Commissions" value="4,8 M" sub="FCFA générées" icon={TrendingUp} color="#8B5CF6" trend="+19%" />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard label="Total Acteurs" value={totalActeurs.toLocaleString()} sub="Enrôlés et validés" icon={Users} color={BO_PRIMARY} trend="+18%" />
+        <StatCard label="Volume échangé" value={`${volumeTotal.toLocaleString()} FCFA`} sub="Ce mois" icon={Wallet} color="#10B981" trend="+23%" />
+        <StatCard label="Transactions" value={totalTransactions.toLocaleString()} sub="Ce mois" icon={BarChart3} color="#3B82F6" trend="+12%" />
       </div>
 
       {/* Graphique principal */}
@@ -273,14 +311,14 @@ export function BORapports() {
           <div className="flex items-center gap-4">
             <ResponsiveContainer width="55%" height={180}>
               <RechartsPie>
-                <Pie data={TYPE_DATA} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
-                  {TYPE_DATA.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                <Pie data={TYPE_DATA_REAL} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
+                  {TYPE_DATA_REAL.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
                 <Tooltip formatter={(v: number) => v.toLocaleString()} />
               </RechartsPie>
             </ResponsiveContainer>
             <div className="flex-1 space-y-3">
-              {TYPE_DATA.map(item => (
+              {TYPE_DATA_REAL.map(item => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -292,7 +330,7 @@ export function BORapports() {
               <div className="pt-2 border-t border-gray-100">
                 <div className="flex justify-between">
                   <span className="text-xs font-bold text-gray-500">Total</span>
-                  <span className="text-xs font-black text-gray-900">{TYPE_DATA.reduce((s, i) => s + i.value, 0).toLocaleString()}</span>
+                  <span className="text-xs font-black text-gray-900">{TYPE_DATA_REAL.reduce((s, i) => s + i.value, 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -304,12 +342,12 @@ export function BORapports() {
           className="bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-sm">
           <h3 className="font-black text-gray-900 mb-4">Comparaison régionale (Top 3)</h3>
           <ResponsiveContainer width="100%" height={180}>
-            <RadarChart data={RADAR_DATA}>
+            <RadarChart data={RADAR_DATA_REAL}>
               <PolarGrid stroke="#f0f0f0" />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 700 }} />
-              <Radar name="Abidjan" dataKey="Abidjan" stroke={BO_PRIMARY} fill={BO_PRIMARY} fillOpacity={0.2} strokeWidth={2} />
-              <Radar name="Bouaké" dataKey="Bouaké" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.15} strokeWidth={2} />
-              <Radar name="Korhogo" dataKey="Korhogo" stroke="#10B981" fill="#10B981" fillOpacity={0.1} strokeWidth={2} />
+              {top3Regions.map((reg, i) => (
+                <Radar key={reg.nom} name={reg.nom} dataKey={reg.nom} stroke={reg.color} fill={reg.color} fillOpacity={0.2 + i * 0.05} strokeWidth={2} />
+              ))}
               <Legend iconType="circle" iconSize={8} />
             </RadarChart>
           </ResponsiveContainer>
@@ -323,32 +361,30 @@ export function BORapports() {
           <h3 className="font-black text-gray-900">Performance par région</h3>
           <div className="flex items-center gap-2">
             <Table className="w-4 h-4 text-gray-400" />
-            <span className="text-xs text-gray-400 font-semibold">{REGION_PERF.length} régions</span>
+            <span className="text-xs text-gray-400 font-semibold">{REGION_PERF_REAL.length} régions</span>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-100">
-                {['Région', 'Acteurs', 'Volume (M FCFA)', 'Commissions (M)', 'Taux activité', 'Score'].map(h => (
-                  <th key={h} className="text-left py-3 px-3 text-xs font-black text-gray-500 uppercase tracking-wider">{h}</th>
+            <thead style={{ backgroundColor: `${BO_DARK}08` }}>
+              <tr>
+                {['Region', 'Acteurs', 'Volume (M)', 'Taux activite', 'Actions'].map(h => (
+                  <th key={h} className="text-left py-4 px-3 text-xs font-black text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {REGION_PERF.map((r, i) => (
-                <motion.tr key={r.region}
-                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+              {REGION_PERF_REAL.map((r, i) => (
+                <motion.tr key={r.region} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
                   className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: r.color }} />
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: r.color }} />
                       <span className="font-bold text-gray-900">{r.region}</span>
                     </div>
                   </td>
                   <td className="py-3 px-3 font-semibold text-gray-700">{r.acteurs.toLocaleString()}</td>
                   <td className="py-3 px-3 font-bold text-gray-900">{r.volume} M</td>
-                  <td className="py-3 px-3 font-bold" style={{ color: '#10B981' }}>{r.commissions} M</td>
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-[80px]">
@@ -358,12 +394,9 @@ export function BORapports() {
                     </div>
                   </td>
                   <td className="py-3 px-3">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, si) => (
-                        <div key={si} className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: si < Math.round(r.taux / 20) ? r.color : '#e5e7eb' }} />
-                      ))}
-                    </div>
+                    <button className="px-3 py-1.5 rounded-xl border-2 border-gray-200 text-xs font-bold text-gray-600 hover:border-gray-300">
+                      Detail
+                    </button>
                   </td>
                 </motion.tr>
               ))}

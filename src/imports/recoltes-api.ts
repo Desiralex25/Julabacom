@@ -1,90 +1,23 @@
 /**
- * Client API Récoltes - JÙLABA
+ * API Recoltes (Mode Local)
  */
 
-import { projectId } from '/utils/supabase/info';
-import { apiRequest as _apiRequest } from './api-client';
-
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/api`;
-
-function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  return _apiRequest<T>(API_URL, endpoint, options);
+export async function createRecolte(recolte: any): Promise<any> {
+  console.log('Mode local - createRecolte non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface Recolte {
-  id: string;
-  producteur_id: string;
-  produit: string;
-  quantite: number;
-  unite: string;
-  qualite: 'standard' | 'premium' | 'bio';
-  prix_unitaire: number;
-  statut: 'declaree' | 'validee' | 'vendue';
-  date_recolte: string;
-  parcelle?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
+export async function fetchRecoltes(userId?: string): Promise<any> {
+  console.log('Mode local - fetchRecoltes non disponible');
+  return { recoltes: [] };
 }
 
-export interface CreateRecolteData {
-  produit: string;
-  quantite: number;
-  unite: string;
-  qualite?: 'standard' | 'premium' | 'bio';
-  prix_unitaire: number;
-  date_recolte: string;
-  parcelle?: string;
-  notes?: string;
+export async function updateRecolte(id: string, updates: any): Promise<any> {
+  console.log('Mode local - updateRecolte non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }
 
-export interface UpdateRecolteData {
-  statut?: Recolte['statut'];
-  quantite?: number;
-  prix_unitaire?: number;
-  notes?: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// API FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Récupérer toutes les récoltes du producteur
- */
-export async function fetchRecoltes(): Promise<{ recoltes: Recolte[] }> {
-  return apiRequest<{ recoltes: Recolte[] }>('/recoltes');
-}
-
-/**
- * Déclarer une nouvelle récolte
- */
-export async function createRecolte(data: CreateRecolteData): Promise<{ recolte: Recolte }> {
-  return apiRequest<{ recolte: Recolte }>('/recoltes', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-/**
- * Modifier une récolte
- */
-export async function updateRecolte(id: string, data: UpdateRecolteData): Promise<{ recolte: Recolte }> {
-  return apiRequest<{ recolte: Recolte }>(`/recoltes/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
-}
-
-/**
- * Supprimer une récolte
- */
-export async function deleteRecolte(id: string): Promise<{ success: boolean }> {
-  return apiRequest<{ success: boolean }>(`/recoltes/${id}`, {
-    method: 'DELETE',
-  });
+export async function deleteRecolte(id: string): Promise<any> {
+  console.log('Mode local - deleteRecolte non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }

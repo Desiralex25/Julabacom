@@ -78,9 +78,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         return JSON.parse(stored);
       }
       // Fallback dev : sessionStorage
-      if (import.meta.env.DEV) {
+      try {
         const storedDev = sessionStorage.getItem('julaba_dev_user');
         if (storedDev) return JSON.parse(storedDev);
+      } catch (e) {
+        // Ignorer si sessionStorage n'est pas disponible
       }
     } catch (e) {
       console.warn('Error loading stored user:', e);
@@ -93,16 +95,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (user) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-        if (import.meta.env.DEV) {
+        // Mode développement : sauvegarder également dans sessionStorage
+        try {
           sessionStorage.setItem('julaba_dev_user', JSON.stringify(user));
+        } catch (e) {
+          // Ignorer si sessionStorage n'est pas disponible
         }
       } catch (e) {
         console.warn('Error saving user:', e);
       }
     } else {
       localStorage.removeItem(STORAGE_KEY);
-      if (import.meta.env.DEV) {
+      try {
         sessionStorage.removeItem('julaba_dev_user');
+      } catch (e) {
+        // Ignorer si sessionStorage n'est pas disponible
       }
     }
   }, [user]);
@@ -147,8 +154,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUserState(null);
     localStorage.removeItem(STORAGE_KEY);
-    if (import.meta.env.DEV) {
+    try {
       sessionStorage.removeItem('julaba_dev_user');
+    } catch (e) {
+      // Ignorer si sessionStorage n'est pas disponible
     }
   };
 

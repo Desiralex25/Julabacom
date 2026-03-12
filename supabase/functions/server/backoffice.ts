@@ -458,7 +458,7 @@ export async function getTransactions(c: Context) {
         produit: row.produit || '',
         quantite: String(row.quantite || ''),
         montant,
-        commission: Math.round(montant * 0.02 * 100) / 100,
+        commission: Math.round(montant * 0.01 * 100) / 100,
         statut: statutMap[row.statut] || 'en_cours',
         date: row.created_at || row.date_creation || new Date().toISOString(),
         region: user?.region || '',
@@ -473,7 +473,7 @@ export async function getTransactions(c: Context) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────��─────────
 // ROUTES : Zones (table zones) — requêtes sans FK joins pour compatibilité max
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -875,7 +875,7 @@ export async function updateCommissionStatut(c: Context) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTES : Audit Logs (table audit_logs)
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────���───────────────────────────────────────
 
 export async function getAuditLogs(c: Context) {
   const auth = await checkAuthBO(c);

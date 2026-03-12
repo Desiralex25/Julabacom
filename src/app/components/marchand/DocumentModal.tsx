@@ -319,7 +319,7 @@ export function DocumentModal({
                       Document obligatoire pour activation complète
                     </p>
                     <p className="text-xs text-red-700 mt-1">
-                      Veuillez charger votre {localDocument.title.toLowerCase()} pour compléter votre dossier JULABA
+                      Veuillez charger votre {(localDocument.title || '').toLowerCase()} pour compléter votre dossier JULABA
                     </p>
                   </div>
                 </motion.div>

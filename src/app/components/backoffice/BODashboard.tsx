@@ -76,7 +76,7 @@ function KPICard({ label, value, sub, icon: Icon, color, trend, trendUp, animate
 }
 
 export function BODashboard() {
-  const { acteurs, dossiers, transactions, zones, commissions, missions } = useBackOffice();
+  const { acteurs, dossiers, transactions, zones, missions } = useBackOffice();
   const navigate = useNavigate();
   const [activeAlerte, setActiveAlerte] = useState<number | null>(null);
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -84,12 +84,16 @@ export function BODashboard() {
   const [loading, setLoading] = useState(false);
 
   // ─── KPIs calculés depuis les vraies données ──────────────────────────────
-  const totalActeurs = acteurs.length;
-  const actifs = acteurs.filter(a => a.statut === 'actif').length;
-  const suspendus = acteurs.filter(a => a.statut === 'suspendu').length;
-  const enAttente = dossiers.filter(d => d.statut === 'pending').length;
-  const volumeTotal = transactions.reduce((s, t) => s + (t.montant || 0), 0);
-  const commissionsTotal = commissions.reduce((s, c) => s + (c.montantTotal || 0), 0);
+  const kpis = useMemo(() => {
+    const totalActeurs = acteurs.length;
+    const actifs = acteurs.filter(a => a.statut === 'actif').length;
+    const suspendus = acteurs.filter(a => a.statut === 'suspendu').length;
+    const enAttente = dossiers.filter(d => d.statut === 'pending').length;
+    const volumeTotal = transactions.reduce((s, t) => s + (t.montant || 0), 0);
+    return { totalActeurs, actifs, suspendus, enAttente, volumeTotal };
+  }, [acteurs, dossiers, transactions]);
+
+  const { totalActeurs, actifs, suspendus, enAttente, volumeTotal } = kpis;
 
   // ─── Données graphique : croissance mensuelle des acteurs ─────────────────
   const monthlyData = useMemo(() => {
@@ -109,7 +113,7 @@ export function BODashboard() {
         .filter(t => t.date?.slice(0, 7) === key)
         .reduce((s, t) => s + (t.montant || 0), 0);
       months.push({
-        mois: moisLabels[d.getMonth()],
+        mois: `${moisLabels[d.getMonth()]} ${d.getFullYear()}`, // Ajouter l'année pour éviter les clés dupliquées
         acteurs: nbActeurs,
         transactions: nbTx,
         volume: Math.round(vol / 1000000),
@@ -194,21 +198,6 @@ export function BODashboard() {
       });
     }
 
-    // Commissions en attente
-    const commEn = commissions.filter(c => c.statut === 'en_attente');
-    if (commEn.length > 0) {
-      const totalComm = commEn.reduce((s, c) => s + c.montantTotal, 0);
-      list.push({
-        id: 3,
-        type: 'info',
-        icon: Wallet,
-        titre: `${commEn.length} commission${commEn.length > 1 ? 's' : ''} à valider`,
-        desc: `Total : ${totalComm.toLocaleString('fr-FR')} FCFA en attente de paiement`,
-        temps: 'maintenant',
-        region: 'National',
-      });
-    }
-
     // Missions en cours
     const missionsEnCours = missions.filter(m => m.statut === 'en_cours');
     if (missionsEnCours.length > 0) {
@@ -236,7 +225,7 @@ export function BODashboard() {
     }
 
     return list;
-  }, [enAttente, suspendus, commissions, missions]);
+  }, [enAttente, suspendus, missions]);
 
   // ─── Ticker : dernières transactions réelles ──────────────────────────────
   const tickerItems = useMemo(() => {
@@ -266,20 +255,16 @@ export function BODashboard() {
       .map(a => {
         const nom = `${a.prenoms} ${a.nom}`.trim();
         const nbDossiers = dossiersParIdent[nom] || 0;
-        const commTotal = commissions
-          .filter(c => c.identificateurNom === nom)
-          .reduce((s, c) => s + c.montantTotal, 0);
         return {
           nom,
           zone: a.region || a.zone || 'Non défini',
           dossiers: nbDossiers,
-          commission: commTotal,
           taux: 0,
         };
       })
       .sort((a, b) => b.dossiers - a.dossiers)
       .slice(0, 5);
-  }, [acteurs, dossiers, commissions]);
+  }, [acteurs, dossiers]);
 
   // ─── Objectifs nationaux calculés ────────────────────────────────────────
   const objectifs = useMemo(() => {
@@ -298,7 +283,6 @@ export function BODashboard() {
     { label: 'Supervision', icon: Eye, path: '/backoffice/supervision', color: '#3B82F6' },
     { label: 'Rapports', icon: BarChart3, path: '/backoffice/rapports', color: '#8B5CF6' },
     { label: 'Acteurs', icon: Users, path: '/backoffice/acteurs', color: BO_PRIMARY },
-    { label: 'Commissions', icon: Wallet, path: '/backoffice/commissions', color: '#C66A2C', badge: commissions.filter(c => c.statut === 'en_attente').length || null },
     { label: 'Missions', icon: Target, path: '/backoffice/missions', color: '#10B981', badge: missions.filter(m => m.statut === 'en_cours').length || null },
   ];
 
@@ -378,19 +362,10 @@ export function BODashboard() {
         <KPICard label="Acteurs Actifs" value="" animated target={actifs} sub="du total" icon={UserCheck} color="#10B981" />
         <KPICard
           label="Volume Total"
-          value={volumeTotal >= 1000000
-            ? `${(volumeTotal / 1000000).toFixed(1)}M FCFA`
-            : `${volumeTotal.toLocaleString('fr-FR')} FCFA`}
+          value={`${volumeTotal.toLocaleString('fr-FR')} FCFA`}
           sub="toutes transactions"
           icon={Wallet}
           color="#3B82F6"
-        />
-        <KPICard
-          label="Commissions"
-          value={`${commissionsTotal.toLocaleString('fr-FR')} F`}
-          sub="generées"
-          icon={Award}
-          color="#8B5CF6"
         />
         <KPICard label="Suspendus" value={suspendus} sub="acteurs" icon={XCircle} color="#EF4444" />
         <KPICard label="En Attente" value={enAttente} sub="dossiers à valider" icon={Clock} color="#F59E0B" />
@@ -496,7 +471,7 @@ export function BODashboard() {
               <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
                   <Pie data={typeData} cx="50%" cy="50%" innerRadius={42} outerRadius={68} dataKey="value" paddingAngle={3}>
-                    {typeData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    {typeData.map((entry, index) => <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />)}
                   </Pie>
                   <Tooltip contentStyle={{ borderRadius: '12px', fontSize: 12 }} formatter={(v: number) => v.toLocaleString('fr-FR')} />
                 </PieChart>
@@ -697,7 +672,7 @@ export function BODashboard() {
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-bold text-sm text-gray-900 truncate">{ident.nom}</p>
                       <span className="text-xs font-black flex-shrink-0 ml-2" style={{ color: BO_PRIMARY }}>
-                        {ident.commission.toLocaleString('fr-FR')} F
+                        {ident.identifications} ID
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-1.5">

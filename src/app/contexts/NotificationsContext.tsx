@@ -179,6 +179,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       setNotifications(notifList);
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      if (error?.message === 'Invalid JWT' || error?.message === 'SESSION_EXPIRED' || error?.message === 'AUCUNE_SESSION_BO') {
+        // Erreurs d'auth silencieuses - ne pas polluer la console
+        setNotifications([]);
+        return;
+      }
       console.error('Error loading notifications:', error);
     } finally {
       setLoading(false);

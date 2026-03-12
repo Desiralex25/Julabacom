@@ -63,6 +63,11 @@ export function ZoneProvider({ children }: { children: ReactNode }) {
       setZones(data);
     } catch (err: any) {
       if (err?.message === NOT_AUTHENTICATED) { setLoading(false); return; }
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (err?.message?.includes('Invalid JWT') || err?.message?.includes('JWT')) {
+        setLoading(false);
+        return;
+      }
       console.error('Error loading zones:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
     } finally {

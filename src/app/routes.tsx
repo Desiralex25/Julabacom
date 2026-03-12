@@ -101,24 +101,25 @@ import { SupportPage } from './components/shared/SupportPage';
 
 // ── BACK-OFFICE ───────────────────────────────────────────────────────────────
 import { BORoot } from './components/backoffice/BORoot';
-import { BODashboard } from './components/backoffice/BODashboard';
-import { BOActeurs } from './components/backoffice/BOActeurs';
-import { BOActeurDetail } from './components/backoffice/BOActeurDetail';
-import { BOEnrolement } from './components/backoffice/BOEnrolement';
-import { BOSupervision } from './components/backoffice/BOSupervision';
-import { BOZones } from './components/backoffice/BOZones';
-import { BOCommissions } from './components/backoffice/BOCommissions';
-import { BOAcademy } from './components/backoffice/BOAcademy';
-import { BOMissions } from './components/backoffice/BOMissions';
-import { BOParametres } from './components/backoffice/BOParametres';
-import { BOAudit } from './components/backoffice/BOAudit';
-import { BOUtilisateurs } from './components/backoffice/BOUtilisateurs';
-import { BOInstitutions } from './components/backoffice/BOInstitutions';
-import { BOProfil } from './components/backoffice/BOProfil';
-import { BORapports } from './components/backoffice/BORapports';
-import { BONotifications } from './components/backoffice/BONotifications';
-import { BOSupport } from './components/backoffice/BOSupport';
 import { BOLogin } from './components/backoffice/BOLogin';
+// Lazy load des composants BackOffice pour optimiser la performance
+import { lazy } from 'react';
+const BODashboard = lazy(() => import('./components/backoffice/BODashboard').then(m => ({ default: m.BODashboard })));
+const BOActeurs = lazy(() => import('./components/backoffice/BOActeurs').then(m => ({ default: m.BOActeurs })));
+const BOActeurDetail = lazy(() => import('./components/backoffice/BOActeurDetail').then(m => ({ default: m.BOActeurDetail })));
+const BOEnrolement = lazy(() => import('./components/backoffice/BOEnrolement').then(m => ({ default: m.BOEnrolement })));
+const BOSupervision = lazy(() => import('./components/backoffice/BOSupervision').then(m => ({ default: m.BOSupervision })));
+const BOZones = lazy(() => import('./components/backoffice/BOZones').then(m => ({ default: m.BOZones })));
+const BOAcademy = lazy(() => import('./components/backoffice/BOAcademy').then(m => ({ default: m.BOAcademy })));
+const BOMissions = lazy(() => import('./components/backoffice/BOMissions').then(m => ({ default: m.BOMissions })));
+const BOParametres = lazy(() => import('./components/backoffice/BOParametres').then(m => ({ default: m.BOParametres })));
+const BOAudit = lazy(() => import('./components/backoffice/BOAudit').then(m => ({ default: m.BOAudit })));
+const BOUtilisateurs = lazy(() => import('./components/backoffice/BOUtilisateurs').then(m => ({ default: m.BOUtilisateurs })));
+const BOInstitutions = lazy(() => import('./components/backoffice/BOInstitutions').then(m => ({ default: m.BOInstitutions })));
+const BOProfil = lazy(() => import('./components/backoffice/BOProfil').then(m => ({ default: m.BOProfil })));
+const BORapports = lazy(() => import('./components/backoffice/BORapports').then(m => ({ default: m.BORapports })));
+const BONotifications = lazy(() => import('./components/backoffice/BONotifications').then(m => ({ default: m.BONotifications })));
+const BOSupport = lazy(() => import('./components/backoffice/BOSupport').then(m => ({ default: m.BOSupport })));
 
 export const router = createBrowserRouter([
   {
@@ -274,7 +275,6 @@ export const router = createBrowserRouter([
           { path: 'enrolement', element: <BOEnrolement /> },
           { path: 'supervision', element: <BOSupervision /> },
           { path: 'zones', element: <BOZones /> },
-          { path: 'commissions', element: <BOCommissions /> },
           { path: 'academy', element: <BOAcademy /> },
           { path: 'missions', element: <BOMissions /> },
           { path: 'parametres', element: <BOParametres /> },

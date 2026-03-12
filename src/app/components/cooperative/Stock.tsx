@@ -152,7 +152,7 @@ export function Stock() {
   const filteredStocks = stocks
     .filter(stock => {
       const matchesCategory = selectedCategory === 'tous' || stock.category === selectedCategory;
-      const matchesSearch = stock.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (stock.name || '').toLowerCase().includes((searchQuery || '').toLowerCase());
       
       let matchesActiveFilter = true;
       if (activeFilter === 'alerts') {

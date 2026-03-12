@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { useUser } from '../../contexts/UserContext';
 import { X, Code, ChevronRight, ShieldCheck } from 'lucide-react';
-import { useBackOffice, MOCK_BO_USERS, BORoleType } from '../../contexts/BackOfficeContext';
+import { useBackOffice, BORoleType } from '../../contexts/BackOfficeContext';
 import { DEV_MOCK_USERS } from '../../data/mockUsers';
 
 const PROFILE_STYLES: Record<string, { borderColor: string; bgColor: string; avatarColor: string; roleColor: string; roleLabel: string }> = {
@@ -34,12 +34,22 @@ export function ProfileSwitcher({ forceShow = false }: { forceShow?: boolean }) 
   const handleBOAccess = async () => {
     setBoLoading(true);
     await new Promise(r => setTimeout(r, 350));
-    const user = MOCK_BO_USERS.find(u => u.role === 'super_admin');
-    if (user) {
-      setBOUser(user);
-      setIsOpen(false);
-      navigate('/backoffice/dashboard');
-    }
+    // Compte unique ICONE SOLUTION
+    const user = {
+      id: 'bo-icone-solution',
+      nom: 'SOLUTION',
+      prenom: 'ICONE',
+      email: 'admin@julaba.local',
+      role: 'super_admin' as BORoleType,
+      region: 'National',
+      lastLogin: new Date().toISOString(),
+      actif: true,
+    };
+    setBOUser(user);
+    localStorage.setItem('julaba_bo_user', JSON.stringify(user));
+    localStorage.setItem('julaba_access_token', 'bo-direct-token');
+    setIsOpen(false);
+    navigate('/backoffice/dashboard');
     setBoLoading(false);
   };
 

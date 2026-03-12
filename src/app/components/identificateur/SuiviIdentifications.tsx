@@ -49,10 +49,10 @@ export function SuiviIdentifications() {
   } = useIdentificateur();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'draft' | 'submitted' | 'approved' | 'rejected'>('all');
   const [selectedIdentification, setSelectedIdentification] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const [showRapports, setShowRapports] = useState(false); // Ne pas afficher les filtres par défaut
+  const [showRapports, setShowRapports] = useState(true); // Activé par défaut
   const [selectedRole, setSelectedRole] = useState<'all' | 'marchand' | 'producteur'>('all');
 
   // Récupérer le filtre depuis la navigation (si venant de l'accueil)
@@ -140,7 +140,11 @@ export function SuiviIdentifications() {
   let filteredIdentifications = mesIdentifications;
 
   // Appliquer le filtre actif des KPIs
-  if (activeFilter === 'approved') {
+  if (activeFilter === 'draft') {
+    filteredIdentifications = filteredIdentifications.filter(i => normalizeStatut(i.statut) === 'draft');
+  } else if (activeFilter === 'submitted') {
+    filteredIdentifications = filteredIdentifications.filter(i => normalizeStatut(i.statut) === 'submitted');
+  } else if (activeFilter === 'approved') {
     filteredIdentifications = filteredIdentifications.filter(i => normalizeStatut(i.statut) === 'approved');
   } else if (activeFilter === 'rejected') {
     filteredIdentifications = filteredIdentifications.filter(i => normalizeStatut(i.statut) === 'rejected');

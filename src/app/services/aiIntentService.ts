@@ -1,18 +1,13 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- * JÙLABA - Service d'Intention IA (Frontend)
+ * JÙLABA - Service d'Intention IA (Mode Local)
  * ═══════════════════════════════════════════════════════════════════
  * 
- * Service frontend pour communiquer avec le moteur d'intention IA
- * Utilisé par Tantie Sagesse pour interpréter les messages utilisateur
+ * Service frontend pour interpreter les messages utilisateur
+ * Mode local sans backend
  */
 
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Types
 export type Intent =
   | 'create_order'
   | 'update_order'
@@ -39,8 +34,8 @@ export type Entity =
   | 'stock'
   | 'profil'
   | 'support'
-  | 'récolte'
-  | 'coopérative'
+  | 'recolte'
+  | 'cooperative'
   | 'identification'
   | 'wallet'
   | 'caisse'
@@ -79,139 +74,51 @@ export interface IntentResult {
   details?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SERVICE
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Service (mode local - pas de backend)
 class AIIntentService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
-  }
-
-  /**
-   * Analyser un message utilisateur pour détecter l'intention
-   */
   async interpret(request: IntentRequest): Promise<IntentResult> {
-    try {
-      console.log('🤖 [AI Intent] Analyse du message:', request.message);
-
-      const response = await fetch(`${this.baseUrl}/api/ai-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
-        body: JSON.stringify(request),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('❌ [AI Intent] Erreur API:', data);
-        return {
-          success: false,
-          error: data.error || 'Erreur lors de l\'analyse',
-          details: data.details,
-        };
-      }
-
-      console.log('✅ [AI Intent] Intention détectée:', data.result?.intent);
-      return data;
-
-    } catch (error) {
-      console.error('❌ [AI Intent] Erreur réseau:', error);
-      return {
-        success: false,
-        error: 'Erreur de connexion au serveur',
-        details: error instanceof Error ? error.message : 'Erreur inconnue',
-      };
-    }
+    console.log('AI Intent mode local - pas de backend disponible');
+    return {
+      success: false,
+      error: 'Mode local - service IA non disponible',
+    };
   }
 
-  /**
-   * Récupérer la liste des intentions disponibles
-   */
   async getAvailableIntents(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/ai-intent/intents`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
-      });
-
-      return await response.json();
-
-    } catch (error) {
-      console.error('❌ [AI Intent] Erreur récupération intents:', error);
-      return {
-        success: false,
-        error: 'Erreur de récupération des intentions',
-      };
-    }
+    return {
+      success: false,
+      error: 'Mode local - service IA non disponible',
+    };
   }
 
-  /**
-   * Mapper une intention vers une action applicative
-   */
   mapIntentToAction(intent: Intent, role: string): string {
     const rolePrefix = `/${role}`;
-
     const actionMap: Record<Intent, string> = {
-      // Commandes
       create_order: `${rolePrefix}/caisse`,
       update_order: `${rolePrefix}/historique`,
       cancel_order: 'action:cancel_order',
-
-      // Récoltes
       create_harvest: `${rolePrefix}/recolte`,
-
-      // Stock
       update_stock: `${rolePrefix}/produits`,
       check_stock: 'action:show_stock',
-
-      // Identification
       create_identification: `${rolePrefix}/identifier`,
       validate_identification: 'action:validate_identification',
-
-      // Vues
       view_dashboard: `${rolePrefix}/dashboard`,
       view_wallet: `${rolePrefix}/wallet`,
-
-      // Support
       create_support_ticket: `${rolePrefix}/support`,
-
-      // Profil
       update_profile: `${rolePrefix}/profil`,
-
-      // Dashboard actions
       show_sales: 'action:announce_sales',
       show_expenses: 'action:announce_expenses',
       show_balance: 'action:announce_balance',
-
-      // POS
       add_product: 'action:add_to_cart',
       checkout: 'action:checkout',
-
-      // Marché
       search_product: 'action:search_product',
-
-      // Fallback
       unknown: 'action:unknown',
     };
-
     return actionMap[intent] || 'action:unknown';
   }
 
-  /**
-   * Extraire les paramètres utiles d'une intention
-   */
   extractParameters(result: IntentResponse): Record<string, any> {
     const { parameters } = result;
-
-    // Nettoyer et typer les paramètres
     return {
       product: parameters.product || null,
       quantity: parameters.quantity ? parseFloat(parameters.quantity) : null,
@@ -220,52 +127,42 @@ class AIIntentService {
       targetUser: parameters.targetUser || null,
       zone: parameters.zone || null,
       period: parameters.period || null,
-      ...parameters, // Conserver tous les autres paramètres
+      ...parameters,
     };
   }
 
-  /**
-   * Vérifier si une action nécessite une confirmation
-   */
   requiresConfirmation(result: IntentResponse): boolean {
     return result.requiresConfirmation;
   }
 
-  /**
-   * Obtenir un message d'erreur convivial
-   */
   getErrorMessage(error: string): string {
     const errorMessages: Record<string, string> = {
-      'Moteur d\'intelligence artificielle non configuré': 'Le moteur IA n\'est pas encore configuré. Contacte le support.',
+      'Moteur d\'intelligence artificielle non configure': 'Le moteur IA n\'est pas encore configure.',
       'Message requis pour l\'analyse d\'intention': 'Dis-moi ce que tu veux faire.',
-      'Erreur de connexion au serveur': 'Problème de connexion. Vérifie ta connexion internet.',
-      'Réponse vide de l\'IA': 'Je n\'ai pas compris. Peux-tu reformuler ?',
+      'Erreur de connexion au serveur': 'Probleme de connexion.',
+      'Reponse vide de l\'IA': 'Je n\'ai pas compris.',
     };
-
-    return errorMessages[error] || 'Une erreur est survenue. Réessaye.';
+    return errorMessages[error] || 'Une erreur est survenue.';
   }
 
-  /**
-   * Suggérer des exemples de messages selon le rôle
-   */
   getSuggestionsByRole(role: string): string[] {
     const suggestions: Record<string, string[]> = {
       marchand: [
-        'Combien j\'ai gagné aujourd\'hui ?',
+        'Combien j\'ai gagne aujourd\'hui ?',
         'Ajouter un produit au panier',
         'Voir mon stock',
         'Fermer ma caisse',
       ],
       producteur: [
-        'Déclarer ma récolte de cacao',
-        'Combien vaut ma récolte ?',
+        'Declarer ma recolte de cacao',
+        'Combien vaut ma recolte ?',
         'Voir mes cycles agricoles',
-        'Créer un nouveau cycle',
+        'Creer un nouveau cycle',
       ],
       cooperative: [
         'Combien de membres actifs ?',
-        'Trésorerie de la coopérative',
-        'Créer un achat groupé',
+        'Tresorerie de la cooperative',
+        'Creer un achat groupe',
         'Liste des cotisations',
       ],
       identificateur: [
@@ -277,15 +174,13 @@ class AIIntentService {
       institution: [
         'Statistiques de la plateforme',
         'Valider un compte',
-        'Générer un rapport',
+        'Generer un rapport',
         'Utilisateurs actifs',
       ],
     };
-
     return suggestions[role] || suggestions.marchand;
   }
 }
 
-// Export singleton
 export const aiIntentService = new AIIntentService();
 export default aiIntentService;

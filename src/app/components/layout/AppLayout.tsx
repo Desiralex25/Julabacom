@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { useApp } from '../../contexts/AppContext';
-import { useUser } from '../../contexts/UserContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
 import { BottomBar } from './BottomBar';
-import { ProfileSwitcher } from '../dev/ProfileSwitcher';
 import { ScrollToTop } from './ScrollToTop';
+import { useApp } from '../../contexts/AppContext';
+import { useUser } from '../../contexts/UserContext';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export function AppLayout() {
       {!hideBottomBar && <BottomBar role={user.role} />}
 
       {/* Dev Profile Switcher - Only in development */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
     </div>
   );
 }

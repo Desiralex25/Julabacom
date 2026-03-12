@@ -402,7 +402,6 @@ export function BOActeurDetail() {
                       </div>
                       <div className="text-right">
                         <p className="font-black text-base" style={{ color: BO_PRIMARY }}>{tx.montant.toLocaleString('fr-FR')} F</p>
-                        <p className="text-xs text-gray-500">Commission: {tx.commission.toLocaleString('fr-FR')} F</p>
                       </div>
                     </div>
                   ))}
@@ -419,7 +418,7 @@ export function BOActeurDetail() {
                 {[
                   { label: 'Score global', value: `${acteur.score}/100`, icon: Star, color: BO_PRIMARY },
                   { label: 'Transactions', value: acteur.transactionsTotal, icon: Activity, color: '#3B82F6' },
-                  { label: 'Volume total', value: `${(acteur.volumeTotal / 1000000).toFixed(2)}M F`, icon: Wallet, color: '#10B981' },
+                  { label: 'Volume total', value: `${acteur.volumeTotal.toLocaleString()} FCFA`, icon: Wallet, color: '#10B981' },
                   { label: 'Taux activité', value: `${acteur.validated ? '87' : '32'}%`, icon: TrendingUp, color: '#8B5CF6' },
                   { label: 'Alertes actives', value: acteur.statut === 'suspendu' ? '1' : '0', icon: AlertCircle, color: '#EF4444' },
                   { label: 'Rang régional', value: '#12', icon: Shield, color: BO_DARK },
@@ -448,9 +447,9 @@ export function BOActeurDetail() {
                   l.acteurImpacte && l.acteurImpacte.toLowerCase().includes(acteur.nom.toLowerCase())
                 );
                 const baseHistory = [
-                  { action: 'Compte créé sur Jùlaba', date: acteur.dateInscription, auteur: 'Système automatique', couleur: '#6b7280', module: 'Système' },
-                  { action: 'Dossier soumis par identificateur', date: acteur.dateInscription, auteur: 'GNAGNE Brice-Olivier', couleur: BO_PRIMARY, module: 'Enrôlement' },
-                  ...(acteur.validated ? [{ action: 'Dossier validé — acteur actif', date: '2025-11-15', auteur: 'BAMBA Fatoumata (Admin National)', couleur: '#10B981', module: 'Enrôlement', detail: undefined }] : []),
+                  { action: 'Compte cree sur Julaba', date: acteur.dateInscription, auteur: 'Systeme automatique', couleur: '#6b7280', module: 'Systeme' },
+                  { action: 'Dossier soumis par identificateur', date: acteur.dateInscription, auteur: 'Mamadou COULIBALY', couleur: BO_PRIMARY, module: 'Enrolement' },
+                  ...(acteur.validated ? [{ action: 'Dossier valide - acteur actif', date: acteur.dateInscription, auteur: 'ICONE SOLUTION (Super Admin)', couleur: '#10B981', module: 'Enrolement', detail: undefined }] : []),
                 ];
                 const auditHistory = acteurLogs.map(l => ({
                   action: l.action,

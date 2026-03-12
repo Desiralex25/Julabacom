@@ -43,22 +43,28 @@ export function RecolteProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const { recoltes: data } = await recoltesApi.fetchRecoltes();
       
-      const recolteList: Recolte[] = data.map((r: any) => ({
-        id: r.id,
-        producteurId: r.producteur_id,
-        produit: r.produit,
-        quantite: r.quantite,
-        unite: r.unite,
-        qualite: r.qualite,
-        prixPropose: r.prix_propose,
-        statut: r.statut,
-        dateRecolte: r.date_recolte,
-        dateExpiration: r.date_expiration,
-      }));
+      if (data && Array.isArray(data)) {
+        const recolteList: Recolte[] = data.map((r: any) => ({
+          id: r.id,
+          producteurId: r.producteur_id,
+          produit: r.produit,
+          quantite: r.quantite,
+          unite: r.unite,
+          qualite: r.qualite,
+          prixPropose: r.prix_propose,
+          statut: r.statut,
+          dateRecolte: r.date_recolte,
+          dateExpiration: r.date_expiration,
+        }));
 
-      setRecoltes(recolteList);
+        setRecoltes(recolteList);
+      } else {
+        setRecoltes([]);
+      }
     } catch (error: any) {
       if (error?.message === NOT_AUTHENTICATED) return;
+      // Ignorer silencieusement les erreurs JWT en mode demo
+      if (error?.message?.includes('Invalid JWT') || error?.message?.includes('JWT')) return;
       console.error('Error loading recoltes:', error);
     } finally {
       setLoading(false);

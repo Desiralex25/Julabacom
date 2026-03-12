@@ -1,109 +1,48 @@
 /**
- * Client API Coopératives - JÙLABA
+ * API Cooperatives (Mode Local)
  */
 
-import { projectId } from '/utils/supabase/info';
-import { apiRequest as _apiRequest } from './api-client';
-
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3/api`;
-
-function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  return _apiRequest<T>(API_URL, endpoint, options);
+export async function fetchCooperatives(): Promise<any> {
+  console.log('Mode local - fetchCooperatives non disponible');
+  return { cooperatives: [] };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface Cooperative {
-  id: string;
-  user_id: string;
-  nom: string;
-  president_id?: string;
-  tresorier_id?: string;
-  secretaire_id?: string;
-  solde_tresorerie: number;
-  created_at: string;
-  updated_at: string;
+export async function fetchCooperativeById(id: string): Promise<any> {
+  console.log('Mode local - fetchCooperativeById non disponible');
+  return { cooperative: null };
 }
 
-export interface CooperativeMembre {
-  id: string;
-  cooperative_id: string;
-  membre_id: string;
-  role: 'president' | 'tresorier' | 'secretaire' | 'membre';
-  date_adhesion: string;
-  cotisation_payee: boolean;
-  actif: boolean;
-  created_at: string;
-  updated_at: string;
+export async function fetchCooperative(): Promise<any> {
+  console.log('Mode local - fetchCooperative non disponible');
+  return { cooperative: null };
 }
 
-export interface TresorerieTransaction {
-  id: string;
-  cooperative_id: string;
-  type: 'cotisation' | 'vente' | 'achat' | 'subvention' | 'depense' | 'retrait';
-  montant: number;
-  membre_id?: string;
-  description?: string;
-  created_at: string;
+export async function fetchCooperativeMembres(): Promise<any> {
+  console.log('Mode local - fetchCooperativeMembres non disponible');
+  return { membres: [] };
 }
 
-export interface AddTresorerieData {
-  type: TresorerieTransaction['type'];
-  montant: number;
-  membre_id?: string;
-  description?: string;
+export async function fetchCooperativeTresorerie(): Promise<any> {
+  console.log('Mode local - fetchCooperativeTresorerie non disponible');
+  return { transactions: [] };
 }
 
-export interface AddMembreData {
-  membre_id: string;
-  role?: CooperativeMembre['role'];
-  date_adhesion: string;
-  cotisation_payee?: boolean;
+export async function addCooperativeMembre(membre: any): Promise<any> {
+  console.log('Mode local - addCooperativeMembre non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// API FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Récupérer le profil de la coopérative
- */
-export async function fetchCooperative(): Promise<{ cooperative: Cooperative }> {
-  return apiRequest<{ cooperative: Cooperative }>('/cooperative');
+export async function addTresorerieTransaction(transaction: any): Promise<any> {
+  console.log('Mode local - addTresorerieTransaction non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }
 
-/**
- * Récupérer les membres de la coopérative
- */
-export async function fetchCooperativeMembres(): Promise<{ membres: CooperativeMembre[] }> {
-  return apiRequest<{ membres: CooperativeMembre[] }>('/cooperative/membres');
+export async function createCooperative(cooperative: any): Promise<any> {
+  console.log('Mode local - createCooperative non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }
 
-/**
- * Récupérer l'historique de la trésorerie
- */
-export async function fetchCooperativeTresorerie(): Promise<{ transactions: TresorerieTransaction[] }> {
-  return apiRequest<{ transactions: TresorerieTransaction[] }>('/cooperative/tresorerie');
-}
-
-/**
- * Ajouter une transaction de trésorerie
- */
-export async function addTresorerieTransaction(data: AddTresorerieData): Promise<{ transaction: TresorerieTransaction }> {
-  return apiRequest<{ transaction: TresorerieTransaction }>('/cooperative/tresorerie', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-/**
- * Ajouter un membre à la coopérative
- */
-export async function addCooperativeMembre(data: AddMembreData): Promise<{ membre: CooperativeMembre }> {
-  return apiRequest<{ membre: CooperativeMembre }>('/cooperative/membres', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function updateCooperative(id: string, updates: any): Promise<any> {
+  console.log('Mode local - updateCooperative non disponible');
+  return { success: false, error: 'Mode local - backend non disponible' };
 }

@@ -34,36 +34,31 @@ interface StockContextType {
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
+const MOCK_COCOVICO_STOCKS: StockItem[] = [
+  { id: '1', marchandId: 'cocovico', produit: 'Banane plantain', quantite: 150, unite: 'tas', prixUnitaire: 500, derniereModification: new Date().toISOString() },
+  { id: '2', marchandId: 'cocovico', produit: 'Poisson', quantite: 50, unite: 'tas', prixUnitaire: 2500, derniereModification: new Date().toISOString() },
+  { id: '3', marchandId: 'cocovico', produit: 'Poulet', quantite: 30, unite: 'unité', prixUnitaire: 4500, derniereModification: new Date().toISOString() },
+  { id: '4', marchandId: 'cocovico', produit: 'Tomate', quantite: 200, unite: 'tas', prixUnitaire: 500, derniereModification: new Date().toISOString() },
+  { id: '5', marchandId: 'cocovico', produit: 'Oignon', quantite: 120, unite: 'tas', prixUnitaire: 600, derniereModification: new Date().toISOString() },
+  { id: '6', marchandId: 'cocovico', produit: 'Attiéké', quantite: 300, unite: 'sachet', prixUnitaire: 300, derniereModification: new Date().toISOString() },
+  { id: '7', marchandId: 'cocovico', produit: 'Piment', quantite: 80, unite: 'tas', prixUnitaire: 200, derniereModification: new Date().toISOString() },
+  { id: '8', marchandId: 'cocovico', produit: 'Viande', quantite: 40, unite: 'kg', prixUnitaire: 3000, derniereModification: new Date().toISOString() },
+  { id: '9', marchandId: 'cocovico', produit: 'Poisson fumé', quantite: 60, unite: 'tas', prixUnitaire: 1500, derniereModification: new Date().toISOString() },
+  { id: '10', marchandId: 'cocovico', produit: 'Fruits', quantite: 100, unite: 'tas', prixUnitaire: 1000, derniereModification: new Date().toISOString() },
+  { id: '11', marchandId: 'cocovico', produit: 'Manioc', quantite: 90, unite: 'tas', prixUnitaire: 500, derniereModification: new Date().toISOString() },
+  { id: '12', marchandId: 'cocovico', produit: 'Gombo', quantite: 70, unite: 'tas', prixUnitaire: 200, derniereModification: new Date().toISOString() },
+];
+
 export function StockProvider({ children }: { children: ReactNode }) {
-  const [stocks, setStocks] = useState<StockItem[]>([]);
+  const [stocks, setStocks] = useState<StockItem[]>(MOCK_COCOVICO_STOCKS);
   const [loading, setLoading] = useState(false);
 
   const loadStocks = async () => {
-    if (DEV_MODE) {
-      devLog('StockContext', 'Mode dev - skip API call');
-      return;
-    }
-    try {
-      setLoading(true);
-      const { stocks: data } = await stocksApi.fetchStocks();
-
-      const stockList: StockItem[] = data.map((s: any) => ({
-        id: s.id,
-        marchandId: s.marchand_id,
-        produit: s.produit,
-        quantite: s.quantite,
-        unite: s.unite,
-        prixUnitaire: s.prix_unitaire,
-        derniereModification: s.updated_at,
-      }));
-
-      setStocks(stockList);
-    } catch (error: any) {
-      if (error?.message === NOT_AUTHENTICATED) return;
-      console.error('Error loading stocks:', error);
-    } finally {
+    // Mode local uniquement, on ne touche pas à Supabase
+    setLoading(true);
+    setTimeout(() => {
       setLoading(false);
-    }
+    }, 500);
   };
 
   useEffect(() => {
@@ -71,41 +66,22 @@ export function StockProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addStock = async (data: Omit<StockItem, 'id' | 'derniereModification'>) => {
-    try {
-      await stocksApi.upsertStock({
-        produit: data.produit,
-        quantite: data.quantite,
-        unite: data.unite,
-        prix_achat: data.prixUnitaire,
-      });
-      await loadStocks();
-    } catch (error) {
-      console.error('Error adding stock:', error);
-      throw error;
-    }
+    const newItem: StockItem = {
+      ...data,
+      id: Date.now().toString(),
+      derniereModification: new Date().toISOString(),
+    };
+    setStocks(prev => [...prev, newItem]);
   };
 
   const updateStock = async (id: string, data: Partial<StockItem>) => {
-    try {
-      await stocksApi.updateStock(id, {
-        quantite: data.quantite,
-        prix_achat: data.prixUnitaire,
-      });
-      await loadStocks();
-    } catch (error) {
-      console.error('Error updating stock:', error);
-      throw error;
-    }
+    setStocks(prev => prev.map(s => 
+      s.id === id ? { ...s, ...data, derniereModification: new Date().toISOString() } : s
+    ));
   };
 
   const deleteStock = async (id: string) => {
-    try {
-      await stocksApi.deleteStock(id);
-      setStocks(prev => prev.filter(s => s.id !== id));
-    } catch (error) {
-      console.error('Error deleting stock:', error);
-      throw error;
-    }
+    setStocks(prev => prev.filter(s => s.id !== id));
   };
 
   const getStockByProduit = (produit: string): StockItem | undefined => {

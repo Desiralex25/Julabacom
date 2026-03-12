@@ -1,36 +1,60 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- * JÙLABA — Client Supabase Singleton
+ * JÙLABA — Client Mock (Supabase supprimé)
  * ═══════════════════════════════════════════════════════════════════
  *
- * Instance unique partagée par toute l'application frontend.
- * Évite les "Multiple GoTrueClient instances" et permet la gestion
- * automatique du refresh de token par Supabase.
- *
- * Utilisation :
- *   import { supabase } from '../services/supabaseClient';
- *
- * Après un login via le serveur Hono :
- *   await supabase.auth.setSession({ access_token, refresh_token });
- *
- * Pour obtenir un token valide (auto-refresh si expiré) :
- *   const { data: { session } } = await supabase.auth.getSession();
- *   const token = session?.access_token;
+ * Mock client pour remplacer Supabase
+ * L'application fonctionne maintenant uniquement en mode local
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-
-const supabaseUrl = `https://${projectId}.supabase.co`;
-
-export const supabase = createClient(supabaseUrl, publicAnonKey, {
-  auth: {
-    // Supabase gère le refresh automatique des tokens
-    autoRefreshToken: true,
-    persistSession: true,
-    // Utiliser localStorage pour persister entre les rechargements de page
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'julaba_supabase_session',
-    detectSessionInUrl: false,
+// Mock query builder
+const createMockQueryBuilder = () => ({
+  select: function(columns?: string) { return this; },
+  insert: function(data: any) { return this; },
+  update: function(data: any) { return this; },
+  delete: function() { return this; },
+  eq: function(column: string, value: any) { return this; },
+  in: function(column: string, values: any[]) { return this; },
+  ilike: function(column: string, pattern: string) { return this; },
+  order: function(column: string, options?: any) { return this; },
+  limit: function(count: number) { return this; },
+  maybeSingle: async function() { return { data: null, error: null }; },
+  single: async function() { return { data: null, error: null }; },
+  then: async function(resolve: any) { 
+    return resolve({ data: null, error: null }); 
   },
 });
+
+// Mock auth object
+const mockAuth = {
+  setSession: async () => ({ data: { session: null }, error: null }),
+  getSession: async () => ({ data: { session: null }, error: null }),
+  signOut: async () => ({ error: null }),
+  getUser: async () => ({ data: { user: null }, error: null }),
+  refreshSession: async () => ({ data: { session: null }, error: null }),
+  signInWithPassword: async () => ({ data: { session: null, user: null }, error: null }),
+  onAuthStateChange: (callback: any) => {
+    // Retourner un mock de subscription
+    return {
+      data: {
+        subscription: {
+          unsubscribe: () => {},
+        },
+      },
+    };
+  },
+  admin: {
+    createUser: async () => ({ data: { user: null }, error: null }),
+    deleteUser: async () => ({ error: null }),
+    getUserById: async () => ({ data: { user: null }, error: null }),
+    listUsers: async () => ({ data: { users: [] }, error: null }),
+    updateUserById: async () => ({ error: null }),
+    signOut: async () => ({ error: null }),
+  },
+};
+
+// Mock supabase client
+export const supabase = {
+  auth: mockAuth,
+  from: (table: string) => createMockQueryBuilder(),
+};

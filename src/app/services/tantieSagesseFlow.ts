@@ -1,19 +1,12 @@
 /**
- * JULABA - Tantie Sagesse Voice Flow Orchestrator
+ * JULABA - Tantie Sagesse Voice Flow Orchestrator (Mode Local)
  * 
- * Pipeline complet:
- * 1. Enregistrement micro (MediaRecorder)
- * 2. Audio -> ElevenLabs STT -> Texte
- * 3. Texte -> OpenAI Intent Engine -> Action + Message
- * 4. Message -> ElevenLabs TTS -> Audio reponse
- * 5. Lecture audio a l'utilisateur
+ * Version simplifiee sans backend
  */
 
-import { projectId, publicAnonKey } from '/utils/supabase/info';
 import { aiIntentService, type IntentResult, type IntentResponse } from './aiIntentService';
 
-// ---- TYPES ----
-
+// Types
 export type FlowStep =
   | 'idle'
   | 'recording'
@@ -35,10 +28,7 @@ export interface FlowState {
 
 export type FlowCallback = (state: FlowState) => void;
 
-const BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
-
-// ---- AUDIO RECORDER ----
-
+// Audio Recorder (mode local)
 class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
@@ -55,7 +45,6 @@ class AudioRecorder {
         }
       });
 
-      // Preferer webm/opus pour la compatibilite
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
@@ -71,10 +60,10 @@ class AudioRecorder {
         }
       };
 
-      this.mediaRecorder.start(250); // Chunks toutes les 250ms
+      this.mediaRecorder.start(250);
     } catch (err) {
       console.error('Microphone error:', err);
-      throw new Error('Impossible d\'acceder au micro. Verifie les permissions.');
+      throw new Error('Impossible d\'acceder au micro.');
     }
   }
 
@@ -117,65 +106,6 @@ class AudioRecorder {
   }
 }
 
-// ---- STT SERVICE ----
-
-async function transcribeAudio(audioBlob: Blob): Promise<string> {
-  const formData = new FormData();
-  // Determiner l'extension correcte selon le type
-  const ext = audioBlob.type.includes('webm') ? 'webm' : 'mp4';
-  formData.append('audio', audioBlob, `recording.${ext}`);
-
-  const response = await fetch(`${BASE_URL}/api/stt/transcribe`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${publicAnonKey}`,
-    },
-    body: formData,
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.success) {
-    console.error('STT error:', data);
-    throw new Error(data.error || 'Erreur de transcription');
-  }
-
-  return data.text;
-}
-
-// ---- TTS SERVICE ----
-
-async function textToSpeech(text: string): Promise<string> {
-  const response = await fetch(`${BASE_URL}/tts/speak`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${publicAnonKey}`,
-    },
-    body: JSON.stringify({
-      text,
-      voiceId: 'XB0fDUnXU5powFXDhCwa' // Charlotte - voix feminine francaise
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.error || 'Erreur de synthese vocale');
-  }
-
-  return data.audio; // base64
-}
-
-function playBase64Audio(base64: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const audio = new Audio(`data:audio/mpeg;base64,${base64}`);
-    audio.onended = () => resolve();
-    audio.onerror = () => reject(new Error('Erreur lecture audio'));
-    audio.play().catch(reject);
-  });
-}
-
 // Fallback Web Speech API
 function speakFallback(text: string): Promise<void> {
   return new Promise((resolve) => {
@@ -193,13 +123,11 @@ function speakFallback(text: string): Promise<void> {
   });
 }
 
-// ---- FLOW ORCHESTRATOR ----
-
+// Flow Orchestrator
 export class TantieSagesseFlow {
   private recorder = new AudioRecorder();
   private onUpdate: FlowCallback;
   private aborted = false;
-  private currentAudio: HTMLAudioElement | null = null;
 
   private state: FlowState = {
     step: 'idle',
@@ -219,8 +147,6 @@ export class TantieSagesseFlow {
     this.onUpdate(this.state);
   }
 
-  // ---- STEP 1: Enregistrement ----
-
   async startRecording(): Promise<void> {
     this.aborted = false;
     this.emit({
@@ -239,39 +165,24 @@ export class TantieSagesseFlow {
     }
   }
 
-  // ---- STEP 2-5: Stop + Pipeline complet ----
-
   async stopAndProcess(role: string, screen: string, userId?: string): Promise<void> {
     if (this.aborted) return;
 
     try {
-      // Stop recording
       const audioBlob = await this.recorder.stop();
 
       if (audioBlob.size < 1000) {
         this.emit({
           step: 'error',
-          error: 'Enregistrement trop court. Parle un peu plus longtemps.'
+          error: 'Enregistrement trop court.'
         });
         return;
       }
 
-      // Step 2: Transcription STT
-      this.emit({ step: 'transcribing' });
-      const text = await transcribeAudio(audioBlob);
-
-      if (!text || text.trim().length === 0) {
-        this.emit({
-          step: 'error',
-          error: 'Je n\'ai pas entendu ce que tu as dit. Essaye encore.'
-        });
-        return;
-      }
-
-      this.emit({ transcribedText: text });
-
-      // Continue with text processing
-      await this.processText(text, role, screen, userId);
+      this.emit({ 
+        step: 'error',
+        error: 'Mode local - service de transcription non disponible'
+      });
 
     } catch (err: any) {
       console.error('Flow error:', err);
@@ -281,8 +192,6 @@ export class TantieSagesseFlow {
       });
     }
   }
-
-  // ---- Process text (used by both voice and keyboard modes) ----
 
   async processText(text: string, role: string, screen: string, userId?: string): Promise<void> {
     if (this.aborted) return;
@@ -297,56 +206,13 @@ export class TantieSagesseFlow {
         error: '',
       });
 
-      // Step 3: OpenAI Intent Detection
-      const intentResult: IntentResult = await aiIntentService.interpret({
-        message: text,
-        role,
-        screen,
-        userId,
-      });
-
-      if (this.aborted) return;
-
-      if (!intentResult.success || !intentResult.result) {
-        const errorMsg = intentResult.error
-          ? aiIntentService.getErrorMessage(intentResult.error)
-          : 'Je n\'ai pas compris. Reformule ta demande.';
-
-        this.emit({
-          step: 'error',
-          error: errorMsg,
-        });
-        return;
-      }
-
-      const result = intentResult.result;
-      const actionPath = aiIntentService.mapIntentToAction(result.intent, role);
+      const errorMsg = 'Mode local - service IA non disponible';
+      await speakFallback(errorMsg);
 
       this.emit({
-        step: 'executing',
-        intentResult: result,
-        responseMessage: result.message,
-        actionPath,
+        step: 'error',
+        error: errorMsg,
       });
-
-      // Step 4: TTS - Generer la reponse audio
-      this.emit({ step: 'speaking' });
-
-      try {
-        const audioBase64 = await textToSpeech(result.message);
-        if (!this.aborted) {
-          await playBase64Audio(audioBase64);
-        }
-      } catch (ttsErr) {
-        console.warn('TTS ElevenLabs failed, using fallback:', ttsErr);
-        if (!this.aborted) {
-          await speakFallback(result.message);
-        }
-      }
-
-      if (!this.aborted) {
-        this.emit({ step: 'done' });
-      }
 
     } catch (err: any) {
       console.error('Process text error:', err);
@@ -359,22 +225,14 @@ export class TantieSagesseFlow {
     }
   }
 
-  // ---- ABORT ----
-
   abort(): void {
     this.aborted = true;
     this.recorder.cancel();
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
-    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     this.emit({ step: 'idle' });
   }
-
-  // ---- RESET ----
 
   reset(): void {
     this.abort();

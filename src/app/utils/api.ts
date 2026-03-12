@@ -1,6 +1,6 @@
-import { projectId, publicAnonKey } from '/utils/supabase/info';
-
-const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-488793d3`;
+/**
+ * API Utils (Mode Local)
+ */
 
 export interface ApiResponse<T = any> {
   success?: boolean;
@@ -10,43 +10,17 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * Envoyer un code OTP par SMS
+ * Envoyer un code OTP par SMS (mode local)
  */
 export async function sendOTP(phone: string): Promise<ApiResponse<{ code?: string; expiresAt?: string }>> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`
-      },
-      body: JSON.stringify({ phone })
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { 
-        error: data.error || 'Erreur lors de l\'envoi du code',
-        details: data.details 
-      };
-    }
-
-    return { 
-      success: true, 
-      data: data.devOnly // Code OTP en développement uniquement
-    };
-  } catch (error) {
-    console.error('Error sending OTP:', error);
-    return { 
-      error: 'Erreur réseau lors de l\'envoi du code',
-      details: error instanceof Error ? error.message : 'Erreur inconnue'
-    };
-  }
+  console.log('Mode local - OTP non disponible');
+  return { 
+    error: 'Mode local - utilisez le mode DEV pour tester',
+  };
 }
 
 /**
- * Vérifier le code OTP et connecter l'utilisateur
+ * Verifier le code OTP (mode local)
  */
 export async function verifyOTP(phone: string, code: string): Promise<ApiResponse<{
   newUser: boolean;
@@ -56,37 +30,14 @@ export async function verifyOTP(phone: string, code: string): Promise<ApiRespons
   phone?: string;
   message?: string;
 }>> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`
-      },
-      body: JSON.stringify({ phone, code })
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { 
-        error: data.error || 'Code OTP invalide',
-        details: data.details 
-      };
-    }
-
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error verifying OTP:', error);
-    return { 
-      error: 'Erreur réseau lors de la vérification',
-      details: error instanceof Error ? error.message : 'Erreur inconnue'
-    };
-  }
+  console.log('Mode local - OTP non disponible');
+  return { 
+    error: 'Mode local - utilisez le mode DEV pour tester',
+  };
 }
 
 /**
- * Récupérer les paramètres système (numéro de support, etc.)
+ * Recuperer les parametres systeme (mode local)
  */
 export async function getSystemSettings(): Promise<{ 
   success?: boolean;
@@ -95,28 +46,10 @@ export async function getSystemSettings(): Promise<{
     supportPhone?: string;
   };
 }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/system/settings`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`
-      }
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return { 
-        error: data.error || 'Erreur lors de la récupération des paramètres'
-      };
+  return { 
+    success: true, 
+    settings: {
+      supportPhone: '+225 0700000000'
     }
-
-    return { success: true, settings: data.settings };
-  } catch (error) {
-    console.error('Error fetching system settings:', error);
-    return { 
-      error: 'Erreur réseau'
-    };
-  }
+  };
 }

@@ -47,7 +47,7 @@ const CATEGORY_LABELS: Record<NotifCategory, string> = {
 
 const MOCK_NOTIFS: Notification[] = [];
 export function BONotifications() {
-  const { boUser, hasPermission, dossiers, commissions, zones, acteurs, auditLogs } = useBackOffice();
+  const { boUser, hasPermission, dossiers, zones, acteurs, auditLogs } = useBackOffice();
 
   // Générer les notifications depuis les vraies données
   const generatedNotifs = React.useMemo((): Notification[] => {
@@ -87,25 +87,6 @@ export function BONotifications() {
         temps: 'maintenant',
         action: '/backoffice/acteurs',
         actionLabel: 'Voir acteurs',
-      });
-    }
-
-    // Commissions en attente
-    const commEn = commissions.filter(c => c.statut === 'en_attente');
-    if (commEn.length > 0) {
-      const totalComm = commEn.reduce((s, c) => s + c.montantTotal, 0);
-      list.push({
-        id: `gen_${idCounter++}`,
-        level: 'info',
-        category: 'transactions',
-        lu: false,
-        icon: Wallet,
-        titre: `${commEn.length} commission${commEn.length > 1 ? 's' : ''} à valider`,
-        desc: `Total : ${totalComm.toLocaleString('fr-FR')} FCFA en attente de paiement.`,
-        region: 'National',
-        temps: 'maintenant',
-        action: '/backoffice/commissions',
-        actionLabel: 'Voir commissions',
       });
     }
 
@@ -179,7 +160,7 @@ export function BONotifications() {
     }
 
     return list;
-  }, [dossiers, commissions, zones, acteurs, auditLogs]);
+  }, [dossiers, zones, acteurs, auditLogs]);
 
   const [notifs, setNotifs] = useState<Notification[]>([]);
 

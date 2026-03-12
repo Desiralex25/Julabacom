@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Outlet, useNavigate, useLocation, NavLink } from 'react-router';
+import { useBackOfficeOptional } from '../../contexts/BackOfficeContext';
+import { useTickets } from '../../contexts/TicketsContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  LayoutDashboard, Users, UserPlus, Eye, MapPin, Wallet,
-  BookOpen, Target, Settings, FileText, LogOut, Menu, X,
-  Bell, Search, ChevronRight, Shield, Volume2, BarChart3,
-  Building2, Headphones, MessageSquare, Hash, Clock,
-  CheckCircle2, Circle, AlertCircle, Sparkles, BellRing,
+  LayoutDashboard, Users, Eye, FileText, Shield, Settings, Bell, BellRing, Menu, X,
+  Search, ChevronRight, Volume2, LogOut, MapPin, Wallet, UserPlus, BookOpen, Target,
+  BarChart3, Building2, Headphones, Circle, AlertCircle, Clock, Hash, MessageSquare,
+  CheckCircle2, Sparkles
 } from 'lucide-react';
-import { useBackOffice, BORoleType } from '../../contexts/BackOfficeContext';
-import { useTickets, Ticket } from '../../contexts/TicketsContext';
 import { ScrollToTop } from '../layout/ScrollToTop';
-import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import type { Ticket } from '../../contexts/TicketsContext';
+import type { BORoleType } from '../../contexts/BackOfficeContext';
 
 const BO_PRIMARY = '#E6A817';
 const BO_DARK = '#3B3C36';
@@ -43,7 +45,6 @@ const SIDEBAR_ITEMS = [
   { id: 'enrolement', label: 'Enrôlement', icon: UserPlus, path: '/backoffice/enrolement', permission: 'enrolement.read' },
   { id: 'supervision', label: 'Supervision', icon: Eye, path: '/backoffice/supervision', permission: 'supervision.read' },
   { id: 'zones', label: 'Zones & Territoires', icon: MapPin, path: '/backoffice/zones', permission: 'zones.read' },
-  { id: 'commissions', label: 'Commissions', icon: Wallet, path: '/backoffice/commissions', permission: 'commissions.read' },
   { id: 'audit', label: 'Audit & Logs', icon: FileText, path: '/backoffice/audit', permission: 'audit.read' },
   { id: 'sep1', label: '──────────', icon: null, path: '', permission: null, separator: true },
   { id: 'utilisateurs', label: 'Utilisateurs BO', icon: Shield, path: '/backoffice/utilisateurs', permission: 'utilisateurs.read' },
@@ -214,7 +215,7 @@ function NotifPanel({ open, onClose, tickets, nouveauxCount, onVoirTicket, onMar
                 <div className="p-3 space-y-2">
                   <AnimatePresence mode="popLayout">
                     {displayed.map((ticket, i) => {
-                      const statut  = STATUT_CONFIG[ticket.statut];
+                      const statut  = STATUT_CONFIG[ticket.statut] || STATUT_CONFIG['nouveau'];
                       const dernier = ticket.messages[ticket.messages.length - 1];
                       const isNew   = !ticket.luParBO;
                       return (
@@ -412,8 +413,45 @@ function PushToast({ ticket, onClose, onOuvrir }: PushToastProps) {
 export function BOLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { boUser, hasPermission, setBOUser } = useBackOffice();
-  const { tickets, nouveauxCount, creerTicketDemo, marquerLuParBO } = useTickets();
+  const backOfficeContext = useBackOfficeOptional();
+  
+  // Si le contexte n'est pas disponible, afficher un loader
+  if (!backOfficeContext) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <motion.div
+            className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+            style={{ backgroundColor: BO_PRIMARY }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          >
+            <span className="text-white font-black text-2xl">J</span>
+          </motion.div>
+          <p className="text-sm font-bold text-gray-600">Chargement du BackOffice...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const { boUser, hasPermission, setBOUser } = backOfficeContext;
+  
+  // Protection: vérifier que le contexte Tickets est disponible
+  let tickets: Ticket[] = [];
+  let nouveauxCount = 0;
+  let creerTicketDemo: (() => void) | undefined;
+  let marquerLuParBO: ((ticketId: string) => Promise<void>) | undefined;
+  
+  try {
+    const ticketsContext = useTickets();
+    tickets = ticketsContext.tickets;
+    nouveauxCount = ticketsContext.nouveauxCount;
+    creerTicketDemo = ticketsContext.creerTicketDemo;
+    marquerLuParBO = ticketsContext.marquerLuParBO;
+  } catch (e) {
+    // Si le contexte n'est pas disponible, utiliser des valeurs par défaut
+    console.warn('TicketsContext not available in BOLayout');
+  }
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
@@ -459,6 +497,7 @@ export function BOLayout() {
 
   // ── Simulation : nouveau ticket toutes les 45 secondes (démo) ────────────
   useEffect(() => {
+    if (!creerTicketDemo) return;
     const id = setInterval(() => {
       creerTicketDemo();
     }, 45000);
@@ -640,7 +679,7 @@ export function BOLayout() {
         </div>
       </div>
 
-      {/* ── TOPBAR DESKTOP ─────────────────────────────────────────────── */}
+      {/* ── TOPBAR DESKTOP ────────────────────────────────────────────── */}
       <div
         className="hidden lg:flex fixed top-0 right-0 z-40 h-16 items-center px-6 gap-4 bg-white border-b-2 border-gray-100 shadow-sm"
         style={{ left: '280px' }}
@@ -704,7 +743,7 @@ export function BOLayout() {
           tickets={tickets}
           nouveauxCount={nouveauxCount}
           onVoirTicket={handleVoirTicket}
-          onMarquerLu={marquerLuParBO}
+          onMarquerLu={marquerLuParBO || (async () => {})}
         />
 
         <div className="flex items-center gap-2">
@@ -770,7 +809,7 @@ export function BOLayout() {
           tickets={tickets}
           nouveauxCount={nouveauxCount}
           onVoirTicket={handleVoirTicket}
-          onMarquerLu={marquerLuParBO}
+          onMarquerLu={marquerLuParBO || (async () => {})}
         />
       </div>
 
@@ -859,7 +898,7 @@ export function BOLayout() {
       </div>
 
       {/* ProfileSwitcher en mode DEV */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
     </div>
   );
 }

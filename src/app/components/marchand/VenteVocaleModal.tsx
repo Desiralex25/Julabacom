@@ -113,16 +113,16 @@ export function VenteVocaleModal({ isOpen, onClose }: VenteVocaleModalProps) {
   // Fonction pour trouver un produit dans le stock
   const findProductInStock = (productName: string) => {
     const stock = getStock();
-    const normalizedName = productName.toLowerCase().trim();
+    const normalizedName = (productName || '').toLowerCase().trim();
     
     // Recherche exacte
-    let product = stock.find(p => p.name.toLowerCase() === normalizedName);
+    let product = stock.find(p => (p.name || '').toLowerCase() === normalizedName);
     
     // Recherche partielle
     if (!product) {
       product = stock.find(p => 
-        p.name.toLowerCase().includes(normalizedName) || 
-        normalizedName.includes(p.name.toLowerCase())
+        (p.name || '').toLowerCase().includes(normalizedName) || 
+        normalizedName.includes((p.name || '').toLowerCase())
       );
     }
     

@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router';
+import { useUser } from '../../contexts/UserContext';
+import { useApp } from '../../contexts/AppContext';
+import { ProfileSwitcher } from '../dev/ProfileSwitcher';
+import { IS_DEV } from '../../utils/env';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home, Users, BarChart3, Eye, FileText, User,
   Lock, ShieldOff,
 } from 'lucide-react';
 import { useInstitutionAccess } from '../../contexts/InstitutionAccessContext';
-import { ProfileSwitcher } from '../dev/ProfileSwitcher';
-import { NotifBellButton, NotificationsPanel } from '../shared/NotificationsPanel';
-import { useUser } from '../../contexts/UserContext';
 import { ModuleAcces } from '../../contexts/BackOfficeContext';
 import { ScrollToTop } from '../layout/ScrollToTop';
+import { NotifBellButton, NotificationsPanel } from '../shared/NotificationsPanel';
 
 const PRIMARY_COLOR = '#712864';
 
@@ -307,7 +309,7 @@ export function InstitutionLayout() {
   const institutionId = user?.id || 'institution-001';
 
   // Debug en mode DEV
-  if (import.meta.env.DEV) {
+  if (IS_DEV) {
     console.log('[InstitutionLayout] User:', user);
     console.log('[InstitutionLayout] User role:', user?.role);
   }
@@ -328,7 +330,7 @@ export function InstitutionLayout() {
           <p className="text-gray-600 text-sm mb-2">
             Cette page est réservée aux utilisateurs avec un profil <strong>Institution</strong>.
           </p>
-          {import.meta.env.DEV && (
+          {IS_DEV && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-4 text-left">
               <p className="text-xs font-bold text-blue-900 mb-2">MODE DÉVELOPPEMENT</p>
               <p className="text-xs text-blue-700 mb-3">
@@ -350,7 +352,7 @@ export function InstitutionLayout() {
             Retour à l'accueil
           </motion.button>
         </motion.div>
-        {import.meta.env.DEV && <ProfileSwitcher />}
+        {IS_DEV && <ProfileSwitcher />}
       </div>
     );
   }
@@ -363,7 +365,7 @@ export function InstitutionLayout() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full animate-pulse" style={{ backgroundColor: `${PRIMARY_COLOR}20` }} />
           <p className="text-gray-500">Chargement du profil institution...</p>
         </div>
-        {import.meta.env.DEV && <ProfileSwitcher />}
+        {IS_DEV && <ProfileSwitcher />}
       </div>
     );
   }
@@ -379,7 +381,7 @@ export function InstitutionLayout() {
     return (
       <div className="min-h-screen bg-gray-50">
         <InstitutionSuspended />
-        {import.meta.env.DEV && <ProfileSwitcher />}
+        {IS_DEV && <ProfileSwitcher />}
       </div>
     );
   }
@@ -434,7 +436,7 @@ export function InstitutionLayout() {
       <BottomNav navItems={navItems} institutionProfil={institutionProfil} />
 
       {/* Dev only */}
-      {import.meta.env.DEV && <ProfileSwitcher />}
+      {IS_DEV && <ProfileSwitcher />}
     </div>
   );
 }
